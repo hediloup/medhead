@@ -1,0 +1,16 @@
+[
+  {
+    "name": "Fred Brooks",
+    "specialities": ["Cardiologie", "Immunologie"],
+    "availableBeds": 2,
+    "latitude": 51.5007,
+    "longitude": -0.1246
+  },
+  {
+    "name": "Julia Crusher",
+    "specialities": ["Cardiologie"],
+    "availableBeds": 0,
+    "latitude": 51.5034,
+    "longitude": -0.1195
+  }
+]
