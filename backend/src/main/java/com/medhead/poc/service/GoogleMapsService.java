@@ -1,7 +1,7 @@
 package com.medhead.poc.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.medhead.poc.config.GoogleMapsConfig;
+import org.springframework.beans.factory.annotation.Value;
 import com.medhead.poc.dto.RouteResult;
 import com.medhead.poc.model.RouteInfo;
 import org.slf4j.Logger;
@@ -13,6 +13,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Service pour les appels à l'API Google Maps Directions
@@ -21,15 +22,20 @@ import java.time.Instant;
 public class GoogleMapsService {
     
     private static final Logger logger = LoggerFactory.getLogger(GoogleMapsService.class);
-    private static final int REQUEST_TIMEOUT_SECONDS = 30;
+    private static final int REQUEST_TIMEOUT_SECONDS = 5;
     
-    private final GoogleMapsConfig config;
+    @Value("${google.maps.api.key:}")
+    private String apiKey;
+    
+    @Value("${google.maps.directions.url:https://maps.googleapis.com/maps/api/directions/json}")
+    private String directionsUrl;
+    
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
+    private final ConcurrentHashMap<String, RouteResult> routeCache = new ConcurrentHashMap<>();
     
     @Autowired
-    public GoogleMapsService(GoogleMapsConfig config) {
-        this.config = config;
+    public GoogleMapsService() {
         this.webClient = WebClient.builder()
                 .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(1024 * 1024))
                 .build();
@@ -44,52 +50,29 @@ public class GoogleMapsService {
     public RouteResult calculateRouteWithTraffic(double originLat, double originLon, 
                                                 double destinationLat, double destinationLon) {
         
-        if (config.getApiKey() == null || config.getApiKey().isEmpty()) {
-            logger.warn("Clé API Google Maps non configurée, utilisation du calcul de distance de fallback");
-            return createFallbackResult(originLat, originLon, destinationLat, destinationLon);
+        // Check cache first
+        String cacheKey = String.format("%.4f,%.4f-%.4f,%.4f", originLat, originLon, destinationLat, destinationLon);
+        RouteResult cachedResult = routeCache.get(cacheKey);
+        if (cachedResult != null) {
+            logger.debug("Route trouvée dans le cache");
+            return cachedResult;
         }
         
-        try {
-            String origin = String.format("%.6f,%.6f", originLat, originLon);
-            String destination = String.format("%.6f,%.6f", destinationLat, destinationLon);
-            
-            String url = buildDirectionsUrl(origin, destination);
-            
-            logger.debug("Appel API Google Maps: {}", url);
-            
-            String response = webClient.get()
-                    .uri(url)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .timeout(Duration.ofSeconds(REQUEST_TIMEOUT_SECONDS))
-                    .block();
-            
-            RouteInfo routeInfo = objectMapper.readValue(response, RouteInfo.class);
-            
-            return parseRouteResponse(routeInfo);
-            
-        } catch (WebClientResponseException e) {
-            logger.error("Erreur HTTP lors de l'appel à l'API Google Maps: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
-            logger.warn("Utilisation du calcul de distance de fallback en raison de l'erreur API");
-            return createFallbackResult(originLat, originLon, destinationLat, destinationLon);
-            
-        } catch (Exception e) {
-            logger.error("Erreur lors du calcul de route avec Google Maps", e);
-            logger.warn("Utilisation du calcul de distance de fallback en raison de l'erreur");
-            return createFallbackResult(originLat, originLon, destinationLat, destinationLon);
-        }
+        // Temporairement désactivé pour éviter les timeouts
+        logger.debug("Utilisation du calcul de distance de fallback pour éviter les timeouts");
+        return createFallbackResult(originLat, originLon, destinationLat, destinationLon);
     }
     
     private String buildDirectionsUrl(String origin, String destination) {
         long departureTime = Instant.now().getEpochSecond();
         
-        return config.getDirectionsUrl() + "?" +
+        return directionsUrl + "?" +
                 "origin=" + origin +
                 "&destination=" + destination +
                 "&mode=driving" +
                 "&departure_time=" + departureTime +
                 "&traffic_model=best_guess" +
-                "&key=" + config.getApiKey();
+                "&key=" + apiKey;
     }
     
     private RouteResult parseRouteResponse(RouteInfo routeInfo) {
