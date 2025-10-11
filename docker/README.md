@@ -45,7 +45,7 @@ docker-compose down -v
 
 ### PostgreSQL
 - **Host** : localhost
-- **Port** : 5432
+- **Port** : 5433
 - **Database** : medhead_db
 - **Username** : medhead_user
 - **Password** : medhead_password
@@ -243,9 +243,9 @@ docker-compose logs -f postgres
 ### Le port 5432 est déjà utilisé
 ```bash
 # Trouver le processus qui utilise le port
-sudo netstat -tulpn | grep :5432
+ss -tulpn | grep :5432
 
-# Ou modifier le port dans docker-compose.yml
+# Le port a été changé pour 5433 dans docker-compose.yml
 ports:
   - "5433:5432"  # Utiliser le port 5433 au lieu de 5432
 ```
