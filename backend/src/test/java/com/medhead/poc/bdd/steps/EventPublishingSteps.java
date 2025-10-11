@@ -37,7 +37,17 @@ public class EventPublishingSteps {
 
     @Then("le message contient :")
     public void le_message_contient(DataTable table) {
-        Map<String, String> map = table.asMap(String.class, String.class);
-        assertThat(map).containsKeys("champ", "valeur");
+        // Convertir la DataTable en Map pour validation
+        Map<String, String> expectedData = table.asMap(String.class, String.class);
+        
+        // Vérifier les données attendues
+        assertThat(expectedData).containsKey("hospital_id");
+        assertThat(expectedData).containsKey("speciality");
+        assertThat(expectedData).containsKey("timestamp");
+        
+        // Vérifier les valeurs
+        assertThat(expectedData.get("hospital_id")).isEqualTo(this.hospitalId);
+        assertThat(expectedData.get("speciality")).isEqualTo(this.speciality);
+        assertThat(expectedData.get("timestamp")).isEqualTo("non nul");
     }
 }
