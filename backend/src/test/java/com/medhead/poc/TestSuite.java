@@ -4,12 +4,12 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 /**
- * Suite de tests pour exécuter tous les tests unitaires
+ * Test suite to run all unit tests
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
     PocApplicationTests.class
 })
 public class TestSuite {
-    // Cette classe sert uniquement à grouper les tests
+    // This class is only used to group tests
 }

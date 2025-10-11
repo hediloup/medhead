@@ -5,9 +5,9 @@ import io.cucumber.junit.CucumberOptions;
 import org.junit.runner.RunWith;
 
 /**
- * Runner JUnit pour les tests BDD Cucumber optimisés.
+ * JUnit runner for optimized Cucumber BDD tests.
  * 
- * Ce runner exécute uniquement les scénarios non-API pour éviter les dépendances externes.
+ * This runner executes only non-API scenarios to avoid external dependencies.
  */
 @RunWith(Cucumber.class)
 @CucumberOptions(

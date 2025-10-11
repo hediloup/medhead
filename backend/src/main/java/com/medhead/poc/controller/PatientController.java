@@ -11,8 +11,8 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Contrôleur pour la gestion sécurisée des données patients.
- * Implémente les bonnes pratiques RGPD et de protection des données.
+ * Controller for secure patient data management.
+ * Implements GDPR and data protection best practices.
  */
 @RestController
 @RequestMapping("/api/patients")
@@ -23,7 +23,7 @@ public class PatientController {
     private PatientAnonymizationService patientAnonymizationService;
     
     /**
-     * Obtient les statistiques anonymisées des patients
+     * Gets anonymized patient statistics
      */
     @GetMapping("/statistics")
     @PreAuthorize("hasRole('ADMIN')")
@@ -37,42 +37,42 @@ public class PatientController {
     }
     
     /**
-     * Anonymise tous les patients non anonymisés
+     * Anonymizes all non-anonymized patients
      */
     @PostMapping("/anonymize-all")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> anonymizeAllPatients() {
         try {
             int count = patientAnonymizationService.anonymizeAllNonAnonymizedPatients();
-            return ResponseEntity.ok("Anonymisation réussie : " + count + " patients traités");
+            return ResponseEntity.ok("Anonymization successful: " + count + " patients processed");
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Erreur lors de l'anonymisation : " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Error during anonymization: " + e.getMessage());
         }
     }
     
     /**
-     * Supprime les données expirées (conformité RGPD)
+     * Deletes expired data (GDPR compliance)
      */
     @DeleteMapping("/cleanup-expired")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> cleanupExpiredPatients() {
         try {
             int count = patientAnonymizationService.deleteExpiredPatients();
-            return ResponseEntity.ok("Nettoyage réussi : " + count + " patients expirés supprimés");
+            return ResponseEntity.ok("Cleanup successful: " + count + " expired patients deleted");
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Erreur lors du nettoyage : " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Error during cleanup: " + e.getMessage());
         }
     }
     
     /**
-     * Obtient les informations anonymisées d'un patient par son UUID
+     * Gets anonymized information of a patient by their UUID
      */
     @GetMapping("/{patientUuid}")
     @PreAuthorize("hasRole('MEDICAL_STAFF')")
     public ResponseEntity<Patient> getPatientByUuid(@PathVariable String patientUuid) {
         try {
-            // Note: Cette méthode devrait être implémentée dans le service
-            // Pour l'instant, on retourne une erreur car le service ne l'implémente pas encore
+            // Note: This method should be implemented in the service
+            // For now, we return an error because the service does not implement it yet
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
@@ -80,14 +80,14 @@ public class PatientController {
     }
     
     /**
-     * Vérifie si un patient existe par son UUID
+     * Checks if a patient exists by their UUID
      */
     @GetMapping("/exists/{patientUuid}")
     @PreAuthorize("hasRole('MEDICAL_STAFF')")
     public ResponseEntity<Boolean> patientExists(@PathVariable String patientUuid) {
         try {
-            // Note: Cette méthode devrait être implémentée dans le service
-            // Pour l'instant, on retourne false
+            // Note: This method should be implemented in the service
+            // For now, we return false
             return ResponseEntity.ok(false);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
@@ -95,10 +95,10 @@ public class PatientController {
     }
     
     /**
-     * Endpoint de santé pour le contrôleur patient
+     * Health endpoint for patient controller
      */
     @GetMapping("/health")
     public ResponseEntity<String> health() {
-        return ResponseEntity.ok("Patient Controller opérationnel - Données protégées par RGPD");
+        return ResponseEntity.ok("Patient Controller operational - Data protected by GDPR");
     }
 }

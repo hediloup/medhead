@@ -6,7 +6,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Modèle représentant une spécialité médicale.
+ * Model representing a medical specialty.
  */
 @Entity
 @Table(name = "specialities")
@@ -28,7 +28,7 @@ public class Speciality {
     @ManyToMany(mappedBy = "specialities", fetch = FetchType.LAZY)
     private Set<Hospital> hospitals = new HashSet<>();
     
-    // Constructeurs
+    // Constructors
     public Speciality() {
         this.createdAt = LocalDateTime.now();
     }
@@ -39,7 +39,7 @@ public class Speciality {
         this.description = description;
     }
     
-    // Getters et Setters
+    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -80,7 +80,7 @@ public class Speciality {
         this.hospitals = hospitals;
     }
     
-    // Méthodes utilitaires
+    // Utility methods
     public void addHospital(Hospital hospital) {
         hospitals.add(hospital);
         hospital.getSpecialities().add(this);

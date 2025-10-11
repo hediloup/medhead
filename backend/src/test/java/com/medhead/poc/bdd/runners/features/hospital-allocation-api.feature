@@ -1,12 +1,12 @@
 @api @e2e
-Feature: Allocation d’un lit d’hôpital selon la spécialité et la localisation
-  En tant que système d’intervention d’urgence
-  Je veux recommander l’hôpital adéquat le plus proche
-  Afin d’attribuer un lit disponible dans la bonne spécialité
+Feature: Hospital bed allocation based on specialty and location
+  As an emergency intervention system
+  I want to recommend the nearest appropriate hospital
+  In order to assign an available bed in the right specialty
 
-  Scenario: Attribution d’un lit en cardiologie pour un patient proche de Fred Brooks
-    Given un patient nécessitant des soins en "Cardiologie"
-    And la localisation du patient est "51.5009, -0.1253"
-    When l’API d’allocation est appelée avec ces paramètres
-    Then le code HTTP doit être 200
-    And la réponse doit contenir "Hôpital Fred Brooks"
+  Scenario: Cardiology bed allocation for a patient near Fred Brooks
+    Given a patient requiring care in "Cardiology"
+    And the patient's location is "51.5009, -0.1253"
+    When the allocation API is called with these parameters
+    Then the HTTP code must be 200
+    And the response must contain "Fred Brooks Hospital"

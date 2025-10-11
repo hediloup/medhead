@@ -5,110 +5,110 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 /**
- * Écouteur pour les événements de lit réservé.
- * Traite les événements BED_RESERVED publiés dans le système.
+ * Listener for bed reserved events.
+ * Processes BED_RESERVED events published in the system.
  */
 @Component
 public class BedReservedEventListener {
     
     /**
-     * Écoute et traite les événements BED_RESERVED
+     * Listens and processes BED_RESERVED events
      */
     @EventListener
     public void handleBedReservedEvent(BedReservedEvent event) {
         try {
-            System.out.println("=== ÉVÉNEMENT BED_RESERVED REÇU ===");
-            System.out.println("ID Événement: " + event.getEventId());
+            System.out.println("=== BED_RESERVED EVENT RECEIVED ===");
+            System.out.println("Event ID: " + event.getEventId());
             System.out.println("Timestamp: " + event.getTimestamp());
-            System.out.println("Patient anonymisé: " + event.getAnonymizedPatientId());
-            System.out.println("Spécialité: " + event.getRequiredSpecialty());
-            System.out.println("Niveau de gravité: " + event.getSeverityLevel());
-            System.out.println("Groupe d'âge: " + event.getAgeGroup());
-            System.out.println("Hôpital: " + event.getHospitalName() + " (" + event.getHospitalCity() + ")");
+            System.out.println("Anonymized Patient: " + event.getAnonymizedPatientId());
+            System.out.println("Specialty: " + event.getRequiredSpecialty());
+            System.out.println("Severity Level: " + event.getSeverityLevel());
+            System.out.println("Age Group: " + event.getAgeGroup());
+            System.out.println("Hospital: " + event.getHospitalName() + " (" + event.getHospitalCity() + ")");
             System.out.println("Distance: " + event.getDistanceKm() + " km");
-            System.out.println("Lits disponibles après: " + event.getAvailableBedsAfter());
-            System.out.println("Temps estimé: " + event.getEstimatedTimeMinutes() + " minutes");
-            System.out.println("Statut: " + event.getAllocationStatus());
+            System.out.println("Available beds after: " + event.getAvailableBedsAfter());
+            System.out.println("Estimated time: " + event.getEstimatedTimeMinutes() + " minutes");
+            System.out.println("Status: " + event.getAllocationStatus());
             System.out.println("=====================================");
             
-            // Ici vous pouvez ajouter d'autres traitements :
-            // - Envoi de notifications
-            // - Mise à jour de dashboards
-            // - Intégration avec d'autres systèmes
-            // - Logging dans une base de données d'audit
-            // - Envoi d'emails/SMS aux équipes médicales
+            // Here you can add other processing:
+            // - Sending notifications
+            // - Updating dashboards
+            // - Integration with other systems
+            // - Logging to audit database
+            // - Sending emails/SMS to medical teams
             
             processBedReservation(event);
             
         } catch (Exception e) {
-            System.err.println("Erreur lors du traitement de l'événement BED_RESERVED : " + e.getMessage());
+            System.err.println("Error processing BED_RESERVED event: " + e.getMessage());
             e.printStackTrace();
         }
     }
     
     /**
-     * Traite la réservation de lit
+     * Processes bed reservation
      */
     private void processBedReservation(BedReservedEvent event) {
-        // Exemples de traitements possibles :
+        // Examples of possible processing:
         
-        // 1. Notification aux équipes médicales
+        // 1. Notification to medical teams
         notifyMedicalTeams(event);
         
-        // 2. Mise à jour des statistiques
+        // 2. Statistics update
         updateStatistics(event);
         
         // 3. Audit trail
         logAuditTrail(event);
         
-        // 4. Intégration avec systèmes externes
+        // 4. Integration with external systems
         integrateWithExternalSystems(event);
     }
     
     /**
-     * Notifie les équipes médicales
+     * Notifies medical teams
      */
     private void notifyMedicalTeams(BedReservedEvent event) {
-        // Simulation d'une notification
-        System.out.println("📧 Notification envoyée aux équipes de " + event.getHospitalName());
+        // Notification simulation
+        System.out.println("📧 Notification sent to teams at " + event.getHospitalName());
         System.out.println("   Patient: " + event.getAnonymizedPatientId());
-        System.out.println("   Spécialité: " + event.getRequiredSpecialty());
-        System.out.println("   Niveau: " + event.getSeverityLevel());
-        System.out.println("   Arrivée estimée: " + event.getEstimatedTimeMinutes() + " minutes");
+        System.out.println("   Specialty: " + event.getRequiredSpecialty());
+        System.out.println("   Level: " + event.getSeverityLevel());
+        System.out.println("   Estimated arrival: " + event.getEstimatedTimeMinutes() + " minutes");
     }
     
     /**
-     * Met à jour les statistiques
+     * Updates statistics
      */
     private void updateStatistics(BedReservedEvent event) {
-        // Simulation de mise à jour de statistiques
-        System.out.println("📊 Statistiques mises à jour :");
-        System.out.println("   - Allocation " + event.getRequiredSpecialty() + " à " + event.getHospitalName());
-        System.out.println("   - Temps de réponse: " + event.getEstimatedTimeMinutes() + " minutes");
-        System.out.println("   - Distance moyenne pour " + event.getRequiredSpecialty() + ": " + event.getDistanceKm() + " km");
+        // Statistics update simulation
+        System.out.println("📊 Statistics updated:");
+        System.out.println("   - " + event.getRequiredSpecialty() + " allocation to " + event.getHospitalName());
+        System.out.println("   - Response time: " + event.getEstimatedTimeMinutes() + " minutes");
+        System.out.println("   - Average distance for " + event.getRequiredSpecialty() + ": " + event.getDistanceKm() + " km");
     }
     
     /**
-     * Enregistre dans l'audit trail
+     * Logs to audit trail
      */
     private void logAuditTrail(BedReservedEvent event) {
-        // Simulation d'un audit trail
-        System.out.println("🔍 Audit Trail - Réservation de lit :");
-        System.out.println("   UUID Patient: " + event.getPatientUuid());
-        System.out.println("   Hôpital: " + event.getHospitalId() + " - " + event.getHospitalName());
+        // Audit trail simulation
+        System.out.println("🔍 Audit Trail - Bed reservation:");
+        System.out.println("   Patient UUID: " + event.getPatientUuid());
+        System.out.println("   Hospital: " + event.getHospitalId() + " - " + event.getHospitalName());
         System.out.println("   Timestamp: " + event.getTimestamp());
-        System.out.println("   Données sensibles: ANONYMISÉES ✅");
+        System.out.println("   Sensitive data: ANONYMIZED ✅");
     }
     
     /**
-     * Intègre avec des systèmes externes
+     * Integrates with external systems
      */
     private void integrateWithExternalSystems(BedReservedEvent event) {
-        // Simulation d'intégration avec des systèmes externes
-        System.out.println("🔗 Intégration systèmes externes :");
-        System.out.println("   - Système de gestion hôpital: Réservation confirmée");
-        System.out.println("   - Système de transport: Ambulance notifiée");
-        System.out.println("   - Dashboard temps réel: Mise à jour effectuée");
-        System.out.println("   - Système de facturation: Préparation dossier");
+        // External systems integration simulation
+        System.out.println("🔗 External systems integration:");
+        System.out.println("   - Hospital management system: Reservation confirmed");
+        System.out.println("   - Transport system: Ambulance notified");
+        System.out.println("   - Real-time dashboard: Update completed");
+        System.out.println("   - Billing system: File preparation");
     }
 }

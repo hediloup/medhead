@@ -5,8 +5,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Modèle représentant un patient avec protection RGPD.
- * Les données sensibles sont anonymisées et chiffrées.
+ * Model representing a patient with GDPR protection.
+ * Sensitive data is anonymized and encrypted.
  */
 @Entity
 @Table(name = "patients")
@@ -19,7 +19,7 @@ public class Patient {
     @Column(name = "patient_uuid", nullable = false, unique = true)
     private String patientUuid;
     
-    // Données anonymisées
+    // Anonymized data
     @Column(name = "anonymized_name", nullable = false)
     private String anonymizedName;
     
@@ -30,9 +30,9 @@ public class Patient {
     private String gender; // "M", "F", "O" (Other)
     
     @Column(name = "postal_code")
-    private String postalCode; // Code postal (moins sensible que l'adresse complète)
+    private String postalCode; // Postal code (less sensitive than full address)
     
-    // Données médicales nécessaires
+    // Required medical data
     @Column(name = "required_specialty", nullable = false)
     private String requiredSpecialty;
     
@@ -45,7 +45,7 @@ public class Patient {
     @Column(name = "longitude")
     private Double longitude;
     
-    // Métadonnées de sécurité
+    // Security metadata
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
     

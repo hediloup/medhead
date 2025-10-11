@@ -6,7 +6,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Modèle représentant un hôpital avec ses spécialités et sa géolocalisation.
+ * Model representing a hospital with its specialties and geolocation.
  */
 @Entity
 @Table(name = "hospitals")
@@ -48,7 +48,7 @@ public class Hospital {
     )
     private Set<Speciality> specialities = new HashSet<>();
     
-    // Constructeurs
+    // Constructors
     public Hospital() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
@@ -64,7 +64,7 @@ public class Hospital {
         this.availableBeds = availableBeds;
     }
     
-    // Getters et Setters
+    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -145,7 +145,7 @@ public class Hospital {
         this.specialities = specialities;
     }
     
-    // Méthodes utilitaires
+    // Utility methods
     public void addSpeciality(Speciality speciality) {
         specialities.add(speciality);
         speciality.getHospitals().add(this);
@@ -157,7 +157,7 @@ public class Hospital {
     }
     
     /**
-     * Vérifie si l'hôpital dispose de la spécialité demandée.
+     * Checks if the hospital has the requested specialty.
      */
     public boolean hasSpecialty(String specialtyName) {
         return specialities.stream()
@@ -165,14 +165,14 @@ public class Hospital {
     }
     
     /**
-     * Vérifie si l'hôpital a des lits disponibles.
+     * Checks if the hospital has available beds.
      */
     public boolean hasAvailableBeds() {
         return availableBeds != null && availableBeds > 0;
     }
     
     /**
-     * Met à jour automatiquement le timestamp updated_at
+     * Automatically updates the updated_at timestamp
      */
     @PreUpdate
     public void preUpdate() {

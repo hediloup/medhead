@@ -1,0 +1,140 @@
+<div class="container">
+  <div class="card">
+    <h1>🏥 MedHead - Allocation d'Lits d'Hôpital</h1>
+    <p>Sélectionnez une spécialité médicale et saisissez votre localisation pour obtenir une recommandation d'hôpital.</p>
+
+    <!-- Messages d'erreur et de succès -->
+    <div *ngIf="errorMessage" class="alert alert-danger">
+      {{ errorMessage }}
+    </div>
+    
+    <div *ngIf="successMessage" class="alert alert-success">
+      {{ successMessage }}
+    </div>
+
+    <!-- Formulaire de demande d'allocation -->
+    <form [formGroup]="allocationForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="specialty" class="form-label">Spécialité médicale *</label>
+        <select 
+          id="specialty" 
+          class="form-control form-select" 
+          formControlName="specialty"
+          [class.is-invalid]="hasFieldError('specialty')">
+          <option value="">Sélectionnez une spécialité...</option>
+          <option *ngFor="let specialty of medicalSpecialties" [value]="specialty">
+            {{ specialty }}
+          </option>
+        </select>
+        <div *ngIf="hasFieldError('specialty')" class="invalid-feedback">
+          {{ getFieldError('specialty') }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="address" class="form-label">Adresse ou localisation *</label>
+        <input 
+          type="text" 
+          id="address" 
+          class="form-control" 
+          formControlName="address"
+          placeholder="Ex: 123 Rue de la Paix, Paris, France"
+          [class.is-invalid]="hasFieldError('address')">
+        <div *ngIf="hasFieldError('address')" class="invalid-feedback">
+          {{ getFieldError('address') }}
+        </div>
+        <small class="form-text">
+          Saisissez votre adresse complète pour une localisation précise.
+        </small>
+      </div>
+
+      <!-- Indicateurs de chargement -->
+      <div *ngIf="isGeocoding" class="alert alert-info">
+        <div class="loading">
+          <div class="spinner"></div>
+          Recherche de l'adresse...
+        </div>
+      </div>
+
+      <div *ngIf="isLoading && !isGeocoding" class="alert alert-info">
+        <div class="loading">
+          <div class="spinner"></div>
+          Recherche d'un hôpital disponible...
+        </div>
+      </div>
+
+      <!-- Boutons d'action -->
+      <div class="form-group">
+        <button 
+          type="submit" 
+          class="btn" 
+          [disabled]="isLoading || allocationForm.invalid">
+          <span *ngIf="!isLoading">🔍 Rechercher un hôpital</span>
+          <span *ngIf="isLoading">⏳ Recherche en cours...</span>
+        </button>
+        
+        <button 
+          type="button" 
+          class="btn btn-secondary" 
+          (click)="resetForm()"
+          [disabled]="isLoading">
+          🔄 Nouvelle recherche
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Résultats de l'allocation -->
+  <div *ngIf="allocationResult" class="card result-card">
+    <h2 class="result-title">✅ Hôpital Recommandé</h2>
+    
+    <div class="result-info">
+      <div class="result-item">
+        <div class="result-label">Nom de l'hôpital</div>
+        <div class="result-value">{{ allocationResult.hospital_name }}</div>
+      </div>
+      
+      <div class="result-item">
+        <div class="result-label">Spécialité</div>
+        <div class="result-value">{{ allocationResult.specialty }}</div>
+      </div>
+      
+      <div class="result-item">
+        <div class="result-label">Distance</div>
+        <div class="result-value">{{ allocationResult.distance_km }} km</div>
+      </div>
+      
+      <div class="result-item">
+        <div class="result-label">Temps estimé</div>
+        <div class="result-value">{{ allocationResult.estimated_time_minutes }} minutes</div>
+      </div>
+      
+      <div class="result-item">
+        <div class="result-label">Lits disponibles</div>
+        <div class="result-value">{{ allocationResult.available_beds }}</div>
+      </div>
+      
+      <div class="result-item">
+        <div class="result-label">ID Hôpital</div>
+        <div class="result-value">#{{ allocationResult.hospital_id }}</div>
+      </div>
+    </div>
+
+    <div class="alert alert-success">
+      <strong>🎉 Allocation réussie !</strong><br>
+      Un lit a été réservé pour vous à l'hôpital {{ allocationResult.hospital_name }}. 
+      Temps de trajet estimé: {{ allocationResult.estimated_time_minutes }} minutes.
+    </div>
+  </div>
+
+  <!-- Informations sur le service -->
+  <div class="card">
+    <h3>ℹ️ À propos de ce service</h3>
+    <ul>
+      <li><strong>Géolocalisation :</strong> Utilise OpenStreetMap Nominatim pour convertir les adresses en coordonnées</li>
+      <li><strong>Allocation intelligente :</strong> Trouve l'hôpital le plus proche avec des lits disponibles dans la spécialité demandée</li>
+      <li><strong>Temps réel :</strong> Les données de disponibilité sont mises à jour en temps réel</li>
+      <li><strong>Sécurisé :</strong> Conforme au RGPD avec anonymisation des données patient</li>
+    </ul>
+  </div>
+</div>

@@ -1,34 +1,34 @@
-# 🏥 MedHead - Système d'Allocation de Lits d'Hôpital
+# 🏥 MedHead - Hospital Bed Allocation System
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/medhead/poc)
 [![Java](https://img.shields.io/badge/java-17-orange.svg)](https://openjdk.java.net/)
 [![Spring Boot](https://img.shields.io/badge/spring%20boot-3.5.6-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## 📋 Table des Matières
+## 📋 Table of Contents
 
-- [Vue d'ensemble](#-vue-densemble)
+- [Overview](#-overview)
 - [Architecture](#-architecture)
-- [Prérequis](#-prérequis)
+- [Prerequisites](#-prerequisites)
 - [Installation](#-installation)
 - [Tests](#-tests)
-- [Pipeline CI/CD](#-pipeline-cicd)
-- [Workflow Git](#-workflow-git)
+- [CI/CD Pipeline](#-cicd-pipeline)
+- [Git Workflow](#-git-workflow)
 - [API Documentation](#-api-documentation)
-- [Déploiement](#-déploiement)
+- [Deployment](#-deployment)
 - [Contributing](#-contributing)
 
-## 🎯 Vue d'ensemble
+## 🎯 Overview
 
-MedHead est un système d'allocation intelligente de lits d'hôpital qui recommande l'établissement le plus approprié en fonction de la spécialité médicale requise et de la localisation géographique du patient.
+MedHead is an intelligent hospital bed allocation system that recommends the most appropriate facility based on the required medical specialty and the patient's geographic location.
 
-### Fonctionnalités principales
+### Key Features
 
-- 🔍 **Allocation intelligente** : Recommandation d'hôpital basée sur la spécialité et la géolocalisation
-- 🏥 **Gestion des hôpitaux** : Catalogue d'établissements avec spécialités et disponibilité
-- 🔐 **Sécurité** : Authentification et autorisation par rôles (ADMIN, MEDICAL_STAFF)
-- 📊 **Anonymisation** : Protection des données personnelles des patients
-- 🧪 **Tests BDD** : Scénarios de test avec Cucumber pour validation métier
+- 🔍 **Intelligent Allocation**: Hospital recommendation based on specialty and geolocation
+- 🏥 **Hospital Management**: Catalog of facilities with specialties and availability
+- 🔐 **Security**: Authentication and role-based authorization (ADMIN, MEDICAL_STAFF)
+- 📊 **Anonymization**: Protection of patient personal data
+- 🧪 **BDD Tests**: Cucumber test scenarios for business validation
 
 ## 🏗️ Architecture
 
@@ -46,49 +46,49 @@ MedHead est un système d'allocation intelligente de lits d'hôpital qui recomma
                       └─────────────────┘
 ```
 
-### Stack technique
+### Technical Stack
 
-- **Backend** : Spring Boot 3.5.6, Java 17
-- **Base de données** : PostgreSQL (production), H2 (développement/test)
-- **Sécurité** : Spring Security avec authentification par rôles
-- **Tests** : JUnit 5, Cucumber (BDD), Maven Surefire
-- **Documentation** : Spring Boot Actuator
+- **Backend**: Spring Boot 3.5.6, Java 17
+- **Database**: PostgreSQL (production), H2 (development/test)
+- **Security**: Spring Security with role-based authentication
+- **Tests**: JUnit 5, Cucumber (BDD), Maven Surefire
+- **Documentation**: Spring Boot Actuator
 
-## ⚙️ Prérequis
+## ⚙️ Prerequisites
 
-- **Java** : OpenJDK 17 ou supérieur
-- **Maven** : 3.6+ (ou utilisez le wrapper inclus `./mvnw`)
-- **Base de données** : PostgreSQL 12+ (pour la production)
-- **Outils** : Git, IDE (IntelliJ IDEA, Eclipse, VS Code)
+- **Java**: OpenJDK 17 or higher
+- **Maven**: 3.6+ (or use the included wrapper `./mvnw`)
+- **Database**: PostgreSQL 12+ (for production)
+- **Tools**: Git, IDE (IntelliJ IDEA, Eclipse, VS Code)
 
 ## 🚀 Installation
 
-### 1. Cloner le repository
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/medhead/poc.git
 cd medhead
 ```
 
-### 2. Configuration de la base de données
+### 2. Database configuration
 
-#### Développement (H2 - automatique)
+#### Development (H2 - automatic)
 ```bash
-# Aucune configuration requise, H2 démarre automatiquement
+# No configuration required, H2 starts automatically
 ```
 
 #### Production (PostgreSQL)
 ```bash
-# Créer la base de données
+# Create the database
 createdb medhead_prod
 
-# Configurer les variables d'environnement
+# Configure environment variables
 export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/medhead_prod
 export SPRING_DATASOURCE_USERNAME=your_username
 export SPRING_DATASOURCE_PASSWORD=your_password
 ```
 
-### 3. Compilation et démarrage
+### 3. Compilation and startup
 
 ```bash
 cd backend
@@ -96,86 +96,86 @@ cd backend
 # Compilation
 ./mvnw clean compile
 
-# Démarrage en mode développement
+# Start in development mode
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 
-# Ou démarrage avec JAR
+# Or start with JAR
 ./mvnw clean package
 java -jar target/poc-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
 ```
 
-L'application sera accessible sur : `http://localhost:8080`
+The application will be accessible at: `http://localhost:8080`
 
 ## 🧪 Tests
 
-### Structure des tests
+### Test structure
 
 ```
 src/test/java/com/medhead/poc/
-├── PocApplicationTests.java          # Tests unitaires Spring Boot
-├── TestSuite.java                    # Suite de tests
+├── PocApplicationTests.java          # Spring Boot unit tests
+├── TestSuite.java                    # Test suite
 └── bdd/
     ├── runners/
-    │   └── CucumberBddTest.java      # Tests BDD Cucumber
+    │   └── CucumberBddTest.java      # Cucumber BDD tests
     └── steps/
-        ├── AllocationSteps.java      # Étapes d'allocation
-        ├── PerformanceSteps.java     # Tests de performance
-        └── ...                       # Autres étapes BDD
+        ├── AllocationSteps.java      # Allocation steps
+        ├── PerformanceSteps.java     # Performance tests
+        └── ...                       # Other BDD steps
 ```
 
-### Exécution des tests
+### Test execution
 
-#### Tests unitaires (recommandé)
+#### Unit tests (recommended)
 ```bash
-# Tests unitaires uniquement
+# Unit tests only
 ./mvnw test
 
-# Ou avec le script optimisé
+# Or with the optimized script
 ./run-tests.sh unit
 ```
 
-#### Tests BDD Cucumber
+#### Cucumber BDD tests
 ```bash
-# Tests BDD séparément
+# BDD tests separately
 ./mvnw test -Pbdd-tests
 
-# Ou avec le script
+# Or with the script
 ./run-tests.sh bdd
 ```
 
-#### Tous les tests
+#### All tests
 ```bash
-# Tests complets
+# Complete tests
 ./mvnw clean test
 
-# Ou avec le script
+# Or with the script
 ./run-tests.sh all
 ```
 
-### Scripts de test disponibles
+### Available test scripts
 
-| Commande | Description |
+| Command | Description |
 |----------|-------------|
-| `./run-tests.sh unit` | Tests unitaires uniquement |
-| `./run-tests.sh bdd` | Tests BDD Cucumber |
-| `./run-tests.sh all` | Tous les tests |
-| `./run-tests.sh clean` | Nettoyage des fichiers de test |
+| `./run-tests.sh unit` | Unit tests only |
+| `./run-tests.sh bdd` | Cucumber BDD tests |
+| `./run-tests.sh all` | All tests |
+| `./run-tests.sh clean` | Test files cleanup |
 
-### Types de tests
+### Test types
 
-#### Tests unitaires
-- ✅ Tests d'intégration Spring Boot
-- ✅ Validation du contexte d'application
-- ✅ Tests de configuration H2
+#### Unit tests
+- ✅ Spring Boot integration tests
+- ✅ Application context validation
+- ✅ H2 configuration tests
 
-#### Tests BDD (Behavior Driven Development)
-- 🎭 **Validation CI/CD** : Pipeline automatisé
-- 🎭 **Allocation d'hôpital** : Scénarios métier
-- 🎭 **Performance** : Tests de charge simulés
-- 🎭 **Sécurité** : Conformité et anonymisation
-- 🎭 **Disponibilité** : Gestion des lits
+#### BDD tests (Behavior Driven Development)
+- 🎭 **CI/CD Validation**: Automated pipeline
+- 🎭 **Hospital Allocation**: Business scenarios
+- 🎭 **Performance**: Simulated load tests
+- 🎭 **Security**: Compliance and anonymization
+- 🎭 **Availability**: Bed management
 
-### Configuration des tests
+### Test configuration
 
 ```properties
 # application-dev.properties
@@ -184,55 +184,55 @@ spring.jpa.hibernate.ddl-auto=create-drop
 spring.jpa.show-sql=true
 ```
 
-## 🔄 Pipeline CI/CD
+## 🔄 CI/CD Pipeline
 
-### Vue d'ensemble du pipeline
+### Pipeline overview
 
 ```mermaid
 graph LR
     A[Git Push] --> B[Build]
-    B --> C[Tests Unitaires]
-    C --> D[Tests BDD]
+    B --> C[Unit Tests]
+    C --> D[BDD Tests]
     D --> E[Quality Gate]
-    E --> F[Build Docker]
-    F --> G[Déploiement]
+    E --> F[Docker Build]
+    F --> G[Deployment]
 ```
 
-### Étapes du pipeline
+### Pipeline stages
 
 #### 1. **Build** (`mvn clean compile`)
-- Compilation du code source
-- Résolution des dépendances
-- Validation de la syntaxe
+- Source code compilation
+- Dependency resolution
+- Syntax validation
 
-#### 2. **Tests Unitaires** (`mvn test`)
-- Exécution des tests JUnit
-- Validation du contexte Spring Boot
-- Tests d'intégration avec H2
+#### 2. **Unit Tests** (`mvn test`)
+- JUnit test execution
+- Spring Boot context validation
+- H2 integration tests
 
-#### 3. **Tests BDD** (`mvn test -Pbdd-tests`)
-- Validation des scénarios métier
-- Tests de performance simulés
-- Vérification de la conformité
+#### 3. **BDD Tests** (`mvn test -Pbdd-tests`)
+- Business scenario validation
+- Simulated performance tests
+- Compliance verification
 
 #### 4. **Quality Gate**
-- Couverture de code (minimum 80%)
-- Analyse statique (SonarQube)
-- Validation de la sécurité
+- Code coverage (minimum 80%)
+- Static analysis (SonarQube)
+- Security validation
 
-#### 5. **Build Docker**
-- Création de l'image Docker
-- Push vers le registry
-- Préparation du déploiement
+#### 5. **Docker Build**
+- Docker image creation
+- Push to registry
+- Deployment preparation
 
-#### 6. **Déploiement**
-- Déploiement en environnement de test
-- Tests de régression
-- Déploiement en production (si validation)
+#### 6. **Deployment**
+- Test environment deployment
+- Regression tests
+- Production deployment (if validated)
 
-### Configuration CI/CD
+### CI/CD Configuration
 
-#### GitHub Actions (exemple)
+#### GitHub Actions (example)
 ```yaml
 name: CI/CD Pipeline
 
@@ -257,15 +257,15 @@ jobs:
       run: ./mvnw test -Pbdd-tests
 ```
 
-### Métriques et rapports
+### Metrics and reports
 
-- **Couverture de code** : Générée dans `target/site/jacoco/`
-- **Rapports BDD** : Disponibles dans `target/cucumber-reports/`
-- **Logs de build** : Accessibles via l'interface CI/CD
+- **Code coverage**: Generated in `target/site/jacoco/`
+- **BDD reports**: Available in `target/cucumber-reports/`
+- **Build logs**: Accessible via CI/CD interface
 
-## 🌿 Workflow Git
+## 🌿 Git Workflow
 
-### Stratégie de branchement (Git Flow)
+### Branching strategy (Git Flow)
 
 ```mermaid
 graph LR
@@ -281,95 +281,95 @@ graph LR
     E --> B
 ```
 
-### Types de branches
+### Branch types
 
-#### Branches principales
-- **`main`** : Branche de production, code stable
-- **`develop`** : Branche de développement, intégration continue
+#### Main branches
+- **`main`**: Production branch, stable code
+- **`develop`**: Development branch, continuous integration
 
-#### Branches de support
-- **`feature/*`** : Nouvelles fonctionnalités
-- **`release/*`** : Préparation des versions
-- **`hotfix/*`** : Corrections urgentes en production
+#### Support branches
+- **`feature/*`**: New features
+- **`release/*`**: Version preparation
+- **`hotfix/*`**: Urgent production fixes
 
-### Workflow détaillé
+### Detailed workflow
 
-#### 1. **Développement de fonctionnalité**
+#### 1. **Feature development**
 
 ```bash
-# Créer une branche feature depuis develop
+# Create a feature branch from develop
 git checkout develop
 git pull origin develop
 git checkout -b feature/allocation-algorithm
 
-# Développer la fonctionnalité
+# Develop the feature
 git add .
 git commit -m "feat: implement advanced allocation algorithm"
 
-# Pousser et créer une Pull Request
+# Push and create a Pull Request
 git push origin feature/allocation-algorithm
 ```
 
-#### 2. **Processus de Pull Request**
+#### 2. **Pull Request process**
 
 ```bash
-# Titre de PR : [TYPE] Description courte
-# Exemple : [FEAT] Advanced hospital allocation algorithm
+# PR title: [TYPE] Short description
+# Example: [FEAT] Advanced hospital allocation algorithm
 
-# Description de PR (template) :
-## 🎯 Objectif
-Décrire l'objectif de la fonctionnalité
+# PR description (template):
+## 🎯 Objective
+Describe the feature objective
 
-## 🔧 Changements
-- [ ] Nouvelle fonctionnalité
-- [ ] Correction de bug
+## 🔧 Changes
+- [ ] New feature
+- [ ] Bug fix
 - [ ] Refactoring
 - [ ] Documentation
 
 ## 🧪 Tests
-- [ ] Tests unitaires ajoutés
-- [ ] Tests BDD mis à jour
-- [ ] Tests d'intégration validés
+- [ ] Unit tests added
+- [ ] BDD tests updated
+- [ ] Integration tests validated
 
 ## 📋 Checklist
-- [ ] Code reviewé
-- [ ] Tests passent
-- [ ] Documentation mise à jour
-- [ ] Pas de conflits avec develop
+- [ ] Code reviewed
+- [ ] Tests pass
+- [ ] Documentation updated
+- [ ] No conflicts with develop
 ```
 
-#### 3. **Processus de release**
+#### 3. **Release process**
 
 ```bash
-# Créer une branche release depuis develop
+# Create a release branch from develop
 git checkout develop
 git checkout -b release/v1.2.0
 
-# Finaliser la release
+# Finalize the release
 git commit -m "chore: prepare release v1.2.0"
 
-# Merger vers main et develop
+# Merge to main and develop
 git checkout main
 git merge release/v1.2.0
 git tag v1.2.0
 git checkout develop
 git merge release/v1.2.0
 
-# Supprimer la branche release
+# Delete the release branch
 git branch -d release/v1.2.0
 ```
 
-#### 4. **Hotfix en production**
+#### 4. **Production hotfix**
 
 ```bash
-# Créer une branche hotfix depuis main
+# Create a hotfix branch from main
 git checkout main
 git checkout -b hotfix/critical-security-fix
 
-# Appliquer le fix
+# Apply the fix
 git commit -m "fix: resolve critical security vulnerability"
 
-# Merger vers main et develop
+# Merge to main and develop
 git checkout main
 git merge hotfix/critical-security-fix
 git tag v1.2.1
@@ -377,27 +377,27 @@ git checkout develop
 git merge hotfix/critical-security-fix
 ```
 
-### Conventions de commit
+### Commit conventions
 
-#### Format des messages
+#### Message format
 ```
 <type>(<scope>): <description>
 
-[body optionnel]
+[optional body]
 
-[footer optionnel]
+[optional footer]
 ```
 
-#### Types de commit
-- **`feat`** : Nouvelle fonctionnalité
-- **`fix`** : Correction de bug
-- **`docs`** : Documentation
-- **`style`** : Formatage, pas de changement de code
-- **`refactor`** : Refactoring
-- **`test`** : Ajout de tests
-- **`chore`** : Tâches de maintenance
+#### Commit types
+- **`feat`**: New feature
+- **`fix`**: Bug fix
+- **`docs`**: Documentation
+- **`style`**: Formatting, no code change
+- **`refactor`**: Refactoring
+- **`test`**: Adding tests
+- **`chore`**: Maintenance tasks
 
-#### Exemples
+#### Examples
 ```bash
 feat(allocation): add geolocation-based hospital recommendation
 fix(security): resolve patient data anonymization issue
@@ -406,27 +406,27 @@ test(bdd): add performance test scenarios
 chore(deps): update Spring Boot to 3.5.6
 ```
 
-### Protection des branches
+### Branch protection
 
-#### Branche `main`
-- ✅ Requiert une Pull Request
-- ✅ Requiert une review d'au moins 1 développeur senior
-- ✅ Requiert que tous les tests passent
-- ✅ Requiert un statut "up-to-date" avec `develop`
+#### `main` branch
+- ✅ Requires a Pull Request
+- ✅ Requires review from at least 1 senior developer
+- ✅ Requires all tests to pass
+- ✅ Requires "up-to-date" status with `develop`
 
-#### Branche `develop`
-- ✅ Requiert une Pull Request
-- ✅ Requiert une review d'au moins 1 développeur
-- ✅ Requiert que tous les tests passent
+#### `develop` branch
+- ✅ Requires a Pull Request
+- ✅ Requires review from at least 1 developer
+- ✅ Requires all tests to pass
 
-### Outils de qualité
+### Quality tools
 
 #### Pre-commit hooks
 ```bash
-# Installation des hooks
+# Install hooks
 npm install -g husky lint-staged
 
-# Configuration dans package.json
+# Configuration in package.json
 {
   "husky": {
     "hooks": {
@@ -436,22 +436,22 @@ npm install -g husky lint-staged
 }
 ```
 
-#### Validation automatique
-- **SonarQube** : Analyse de qualité du code
-- **CodeClimate** : Métriques de complexité
-- **Dependabot** : Mise à jour automatique des dépendances
+#### Automatic validation
+- **SonarQube**: Code quality analysis
+- **CodeClimate**: Complexity metrics
+- **Dependabot**: Automatic dependency updates
 
 ## 📚 API Documentation
 
-### Endpoints principaux
+### Main endpoints
 
-#### Allocation d'hôpital
+#### Hospital allocation
 ```http
 POST /api/allocate
 Content-Type: application/json
 
 {
-  "specialty": "Cardiologie",
+  "specialty": "Cardiology",
   "latitude": 51.5009,
   "longitude": -0.1253
 }
@@ -462,37 +462,37 @@ Content-Type: application/json
 GET /api/health
 ```
 
-#### Gestion des patients (authentification requise)
+#### Patient management (authentication required)
 ```http
 GET /api/patients/statistics
 Authorization: Bearer <token>
 ```
 
-### Collection Postman
+### Postman Collection
 
-Une collection Postman complète est disponible : `MedHead_API_Collection.postman_collection.json`
+A complete Postman collection is available: `MedHead_API_Collection.postman_collection.json`
 
 ```bash
-# Importer dans Postman
+# Import into Postman
 # File > Import > Select Files > MedHead_API_Collection.postman_collection.json
 ```
 
-### Documentation interactive
+### Interactive documentation
 
-- **Swagger UI** : `http://localhost:8080/swagger-ui.html`
-- **Actuator** : `http://localhost:8080/actuator`
+- **Swagger UI**: `http://localhost:8080/swagger-ui.html`
+- **Actuator**: `http://localhost:8080/actuator`
 
-## 🚀 Déploiement
+## 🚀 Deployment
 
-### Environnements
+### Environments
 
-| Environnement | URL | Base de données | Profil |
+| Environment | URL | Database | Profile |
 |---------------|-----|-----------------|---------|
-| Développement | `http://localhost:8080` | H2 (mémoire) | `dev` |
+| Development | `http://localhost:8080` | H2 (memory) | `dev` |
 | Test | `https://medhead-test.example.com` | PostgreSQL | `test` |
 | Production | `https://medhead.example.com` | PostgreSQL | `prod` |
 
-### Configuration Docker
+### Docker configuration
 
 ```dockerfile
 FROM openjdk:17-jdk-slim
@@ -504,7 +504,7 @@ EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app.jar"]
 ```
 
-### Variables d'environnement
+### Environment variables
 
 ```bash
 # Production
@@ -516,39 +516,39 @@ SPRING_DATASOURCE_PASSWORD=secure_password
 
 ## 🤝 Contributing
 
-### Comment contribuer
+### How to contribute
 
-1. **Fork** le repository
-2. **Créer** une branche feature (`git checkout -b feature/amazing-feature`)
-3. **Commit** vos changements (`git commit -m 'feat: add amazing feature'`)
-4. **Push** vers la branche (`git push origin feature/amazing-feature`)
-5. **Ouvrir** une Pull Request
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit** your changes (`git commit -m 'feat: add amazing feature'`)
+4. **Push** to the branch (`git push origin feature/amazing-feature`)
+5. **Open** a Pull Request
 
-### Standards de code
+### Code standards
 
-- **Java** : Respecter les conventions Oracle
-- **Tests** : Couverture minimum de 80%
-- **Documentation** : JavaDoc pour les méthodes publiques
-- **Commits** : Messages en français, format conventional commits
+- **Java**: Follow Oracle conventions
+- **Tests**: Minimum 80% coverage
+- **Documentation**: JavaDoc for public methods
+- **Commits**: Messages in English, conventional commits format
 
 ### Code Review
 
-- ✅ Tests unitaires et BDD passent
-- ✅ Code reviewé par au moins 1 développeur
-- ✅ Pas de code dupliqué
-- ✅ Documentation mise à jour
-- ✅ Pas de vulnérabilités de sécurité
+- ✅ Unit and BDD tests pass
+- ✅ Code reviewed by at least 1 developer
+- ✅ No duplicated code
+- ✅ Documentation updated
+- ✅ No security vulnerabilities
 
 ## 📞 Support
 
-- **Issues** : [GitHub Issues](https://github.com/medhead/poc/issues)
-- **Documentation** : [Wiki du projet](https://github.com/medhead/poc/wiki)
-- **Email** : dev-team@medhead.com
+- **Issues**: [GitHub Issues](https://github.com/medhead/poc/issues)
+- **Documentation**: [Project Wiki](https://github.com/medhead/poc/wiki)
+- **Email**: dev-team@medhead.com
 
-## 📄 Licence
+## 📄 License
 
-Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
+This project is licensed under MIT. See the [LICENSE](LICENSE) file for more details.
 
 ---
 
-**🏥 MedHead** - Optimiser l'allocation des lits d'hôpital pour sauver des vies
+**🏥 MedHead** - Optimize hospital bed allocation to save lives

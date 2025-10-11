@@ -1,92 +1,108 @@
 # Docker Configuration - MedHead
 
-Ce dossier contient la configuration Docker pour lancer une base de données PostgreSQL avec des données réelles d'hôpitaux du Royaume-Uni pour l'API REST MedHead.
+This folder contains the complete Docker configuration to launch the entire MedHead application stack:
+- PostgreSQL database with real UK hospital data
+- Spring Boot backend API
+- Angular frontend application
+- pgAdmin for database administration
 
-## 🏥 Données incluses
+## 🏥 Included Data
 
-La base de données PostgreSQL contient des données réelles d'hôpitaux du Royaume-Uni avec :
-- **34 hôpitaux** répartis dans tout le Royaume-Uni (Angleterre, Écosse, Pays de Galles, Irlande du Nord)
-- **33 spécialités médicales** basées sur les standards NHS
-- **Coordonnées GPS** précises pour chaque hôpital
-- **Adresses complètes** et informations détaillées
-- **Nombre de lits disponibles** par hôpital
-- **Villes principales** : Londres, Manchester, Birmingham, Leeds, Liverpool, Newcastle, Bristol, Sheffield, Nottingham, Leicester, Cardiff, Edinburgh, Glasgow, Belfast
+The PostgreSQL database contains real UK hospital data with:
+- **34 hospitals** distributed across the UK (England, Scotland, Wales, Northern Ireland)
+- **33 medical specialties** based on NHS standards
+- **Precise GPS coordinates** for each hospital
+- **Complete addresses** and detailed information
+- **Number of available beds** per hospital
+- **Major cities**: London, Manchester, Birmingham, Leeds, Liverpool, Newcastle, Bristol, Sheffield, Nottingham, Leicester, Cardiff, Edinburgh, Glasgow, Belfast
 
-## 🚀 Démarrage rapide
+## 🚀 Quick Start
 
-### Prérequis
-- Docker et Docker Compose installés
-- Ports 5432 et 8081 disponibles
+### Prerequisites
+- Docker and Docker Compose installed
+- Ports 4200, 5433, 8080, and 8081 available
 
-### Lancement de la base de données
+### Starting the complete application
 
 ```bash
-# Depuis le dossier docker
+# From the docker folder
 cd docker
 
-# Démarrer PostgreSQL et pgAdmin
-docker-compose up -d
+# Start all services (database, backend, frontend, pgAdmin)
+./start-medhead.sh
 
-# Vérifier que les services sont démarrés
+# Or manually:
+docker-compose up --build -d
+
+# Check that services are started
 docker-compose ps
 ```
 
-### Arrêt des services
+### Stopping services
 
 ```bash
-# Arrêter les services
+# Stop services
 docker-compose down
 
-# Arrêter et supprimer les volumes (ATTENTION: supprime les données)
+# Stop and remove volumes (WARNING: deletes data)
 docker-compose down -v
 ```
 
-## 📊 Accès aux services
+## 📊 Service Access
 
-### PostgreSQL
-- **Host** : localhost
-- **Port** : 5433
-- **Database** : medhead_db
-- **Username** : medhead_user
-- **Password** : medhead_password
+### Frontend Angular
+- **URL**: http://localhost:4200
+- **Description**: Interface utilisateur pour l'allocation d'Lits d'Hôpital
 
-### pgAdmin (interface web d'administration)
-- **URL** : http://localhost:8081
-- **Email** : admin@medhead.com
-- **Password** : admin123
+### Backend API
+- **URL**: http://localhost:8080
+- **API Health**: http://localhost:8080/api/health
+- **Description**: API REST Spring Boot
 
-Pour connecter pgAdmin à PostgreSQL :
-1. Ouvrir pgAdmin
-2. Clic droit sur "Servers" → "Create" → "Server"
-3. Onglet "General" : nom = "MedHead PostgreSQL"
-4. Onglet "Connection" :
-   - Host : `postgres` (nom du service Docker)
-   - Port : 5432
-   - Database : medhead_db
-   - Username : medhead_user
-   - Password : medhead_password
+### PostgreSQL Database
+- **Host**: localhost
+- **Port**: 5433
+- **Database**: medhead_db
+- **Username**: medhead_user
+- **Password**: medhead_password
 
-## 🔧 Configuration de l'application
+### pgAdmin (web administration interface)
+- **URL**: http://localhost:8081
+- **Email**: admin@medhead.com
+- **Password**: admin123
 
-### Pour utiliser PostgreSQL avec l'API
+To connect pgAdmin to PostgreSQL:
+1. Open pgAdmin
+2. Right-click on "Servers" → "Create" → "Server"
+3. "General" tab: name = "MedHead PostgreSQL"
+4. "Connection" tab:
+   - Host: `postgres` (Docker service name)
+   - Port: 5432
+   - Database: medhead_db
+   - Username: medhead_user
+   - Password: medhead_password
 
-1. **Démarrer PostgreSQL** :
+## 🔧 Application Configuration
+
+### To use PostgreSQL with the API
+
+1. **Start PostgreSQL**:
 ```bash
 cd docker
 docker-compose up -d postgres
 ```
 
-2. **Lancer l'application avec le profil de production** :
+2. **Launch the application with production profile**:
 ```bash
 cd ../backend
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=prod
 ```
 
-L'API sera disponible sur : http://localhost:8082
+The API will be available at: http://localhost:8082
 
-### Test de l'API
+### API Testing
 
-Une fois l'application démarrée, vous pouvez tester l'API :
+Once the application is started, you can test the API:
 
 **POST** `/api/allocate`
 ```bash
@@ -104,71 +120,71 @@ curl -X POST http://localhost:8082/api/allocate \
 curl "http://localhost:8082/api/allocate?specialty=Cardiology&latitude=51.5074&longitude=-0.1278"
 ```
 
-### Profils disponibles
+### Available profiles
 
-- **dev** (par défaut) : H2 en mémoire avec données de test
-- **prod** : PostgreSQL avec données réelles
+- **dev** (default): H2 in-memory with test data
+- **prod**: PostgreSQL with real data
 
-## 📁 Structure des fichiers
+## 📁 File Structure
 
 ```
 docker/
-├── docker-compose.yml          # Configuration Docker Compose
-├── postgres.conf              # Configuration PostgreSQL optimisée
+├── docker-compose.yml          # Docker Compose configuration
+├── postgres.conf              # Optimized PostgreSQL configuration
 ├── init-scripts/
-│   └── 01-init-database.sql   # Script d'initialisation avec données réelles
-└── README.md                  # Ce fichier
+│   └── 01-init-database.sql   # Initialization script with real data
+└── README.md                  # This file
 ```
 
-## 🗄️ Base de données
+## 🗄️ Database
 
-### Table specialities
+### specialities table
 
-| Colonne | Type | Description |
+| Column | Type | Description |
 |---------|------|-------------|
-| id | BIGSERIAL | Identifiant unique |
-| name | VARCHAR(255) | Nom de la spécialité |
-| description | TEXT | Description de la spécialité |
-| created_at | TIMESTAMP | Date de création |
+| id | BIGSERIAL | Unique identifier |
+| name | VARCHAR(255) | Specialty name |
+| description | TEXT | Specialty description |
+| created_at | TIMESTAMP | Creation date |
 
-### Table hospitals
+### hospitals table
 
-| Colonne | Type | Description |
+| Column | Type | Description |
 |---------|------|-------------|
-| id | BIGSERIAL | Identifiant unique |
-| name | VARCHAR(255) | Nom de l'hôpital |
-| latitude | DOUBLE PRECISION | Latitude GPS |
-| longitude | DOUBLE PRECISION | Longitude GPS |
-| city | VARCHAR(255) | Ville de l'hôpital |
-| address | TEXT | Adresse complète |
-| available_beds | INTEGER | Nombre de lits disponibles |
-| created_at | TIMESTAMP | Date de création |
-| updated_at | TIMESTAMP | Date de mise à jour |
+| id | BIGSERIAL | Unique identifier |
+| name | VARCHAR(255) | Hospital name |
+| latitude | DOUBLE PRECISION | GPS latitude |
+| longitude | DOUBLE PRECISION | GPS longitude |
+| city | VARCHAR(255) | Hospital city |
+| address | TEXT | Complete address |
+| available_beds | INTEGER | Number of available beds |
+| created_at | TIMESTAMP | Creation date |
+| updated_at | TIMESTAMP | Last update date |
 
-### Table hospital_specialities (table de liaison)
+### hospital_specialities table (junction table)
 
-| Colonne | Type | Description |
+| Column | Type | Description |
 |---------|------|-------------|
-| hospital_id | BIGINT | Référence vers hospitals.id |
-| speciality_id | BIGINT | Référence vers specialities.id |
+| hospital_id | BIGINT | Reference to hospitals.id |
+| speciality_id | BIGINT | Reference to specialities.id |
 
-### Index créés
+### Created indexes
 
-- `idx_hospitals_location` : Optimise les requêtes géospatiales
-- `idx_hospitals_city` : Index sur la ville
-- `idx_hospital_specialities_hospital` : Index sur hospital_id
-- `idx_hospital_specialities_speciality` : Index sur speciality_id
+- `idx_hospitals_location`: Optimizes geospatial queries
+- `idx_hospitals_city`: Index on city
+- `idx_hospital_specialities_hospital`: Index on hospital_id
+- `idx_hospital_specialities_speciality`: Index on speciality_id
 
-## 🔍 Requêtes utiles
+## 🔍 Useful Queries
 
-### Lister toutes les spécialités
+### List all specialties
 ```sql
 SELECT id, name, description 
 FROM specialities 
 ORDER BY name;
 ```
 
-### Lister tous les hôpitaux avec leurs spécialités
+### List all hospitals with their specialties
 ```sql
 SELECT h.id, h.name, h.city, h.available_beds, 
        STRING_AGG(s.name, ', ') as specialities
@@ -179,7 +195,7 @@ GROUP BY h.id, h.name, h.city, h.available_beds
 ORDER BY h.name;
 ```
 
-### Trouver les hôpitaux par spécialité
+### Find hospitals by specialty
 ```sql
 SELECT h.name, h.city, h.available_beds, s.name as speciality
 FROM hospitals h
@@ -189,7 +205,7 @@ WHERE s.name = 'Cardiology'
 AND h.available_beds > 0;
 ```
 
-### Hôpitaux près d'une position (exemple: Londres)
+### Hospitals near a position (example: London)
 ```sql
 SELECT h.name, h.city,
        (6371 * acos(cos(radians(51.5074)) * cos(radians(h.latitude)) * 
@@ -204,7 +220,7 @@ ORDER BY distance_km
 LIMIT 5;
 ```
 
-### Spécialités disponibles dans une ville
+### Specialties available in a city
 ```sql
 SELECT DISTINCT s.name
 FROM specialities s
@@ -216,71 +232,71 @@ ORDER BY s.name;
 
 ## 🛠️ Maintenance
 
-### Sauvegarder la base de données
+### Backup the database
 ```bash
 docker-compose exec postgres pg_dump -U medhead_user medhead_db > backup.sql
 ```
 
-### Restaurer la base de données
+### Restore the database
 ```bash
 docker-compose exec -T postgres psql -U medhead_user medhead_db < backup.sql
 ```
 
-### Consulter les logs
+### Check logs
 ```bash
-# Logs PostgreSQL
+# PostgreSQL logs
 docker-compose logs postgres
 
-# Logs pgAdmin
+# pgAdmin logs
 docker-compose logs pgadmin
 
-# Logs en temps réel
+# Real-time logs
 docker-compose logs -f postgres
 ```
 
-## 🐛 Dépannage
+## 🐛 Troubleshooting
 
-### Le port 5432 est déjà utilisé
+### Port 5432 is already in use
 ```bash
-# Trouver le processus qui utilise le port
+# Find the process using the port
 ss -tulpn | grep :5432
 
-# Le port a été changé pour 5433 dans docker-compose.yml
+# Port has been changed to 5433 in docker-compose.yml
 ports:
-  - "5433:5432"  # Utiliser le port 5433 au lieu de 5432
+  - "5433:5432"  # Use port 5433 instead of 5432
 ```
 
-### La base de données ne démarre pas
+### Database won't start
 ```bash
-# Vérifier les logs
+# Check logs
 docker-compose logs postgres
 
-# Supprimer les volumes et redémarrer
+# Remove volumes and restart
 docker-compose down -v
 docker-compose up -d
 ```
 
-### Réinitialiser complètement
+### Complete reset
 ```bash
-# Arrêter et supprimer tout
+# Stop and remove everything
 docker-compose down -v
 docker system prune -f
 
-# Redémarrer
+# Restart
 docker-compose up -d
 ```
 
-## 📝 Notes importantes
+## 📝 Important Notes
 
-- Les données sont persistantes grâce aux volumes Docker
-- Le script d'initialisation ne s'exécute qu'au premier démarrage
-- La configuration PostgreSQL est optimisée pour le développement
-- H2 reste disponible pour les tests (profil `dev`)
+- Data is persistent thanks to Docker volumes
+- Initialization script only runs on first startup
+- PostgreSQL configuration is optimized for development
+- H2 remains available for tests (`dev` profile)
 
-## 🔒 Sécurité
+## 🔒 Security
 
-⚠️ **Attention** : Cette configuration est destinée au développement uniquement. Pour la production, modifiez :
-- Les mots de passe par défaut
-- La configuration de sécurité PostgreSQL
-- Les paramètres de connexion
-- Activez SSL/TLS
+⚠️ **Warning**: This configuration is for development only. For production, modify:
+- Default passwords
+- PostgreSQL security configuration
+- Connection parameters
+- Enable SSL/TLS

@@ -1,14 +1,14 @@
-Feature: Publication d’événement après allocation de lit
-  En tant que service d’orchestration
-  Je veux publier un événement après une attribution réussie
-  Afin d’assurer la cohérence entre microservices
+Feature: Event publishing after bed allocation
+  As an orchestration service
+  I want to publish an event after a successful allocation
+  In order to ensure consistency between microservices
 
-  Scenario: Publication d’un événement “BED_RESERVED”
-    Given une demande de lit validée pour "fred_brooks_001"
-    When le système confirme la réservation
-    Then un message avec type "BED_RESERVED" est publié sur le topic "hospital.events"
-    And le message contient :
-      | champ       | valeur           |
+  Scenario: Publishing a "BED_RESERVED" event
+    Given a validated bed request for "fred_brooks_001"
+    When the system confirms the reservation
+    Then a message with type "BED_RESERVED" is published on topic "hospital.events"
+    And the message contains:
+      | field       | value            |
       | hospital_id | fred_brooks_001  |
-      | speciality  | Cardiologie      |
-      | timestamp   | non nul          |
+      | speciality  | Cardiology       |
+      | timestamp   | non null         |

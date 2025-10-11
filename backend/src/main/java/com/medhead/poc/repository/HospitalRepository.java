@@ -9,24 +9,24 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
- * Repository pour la gestion des données des hôpitaux.
+ * Repository for hospital data management.
  */
 @Repository
 public interface HospitalRepository extends JpaRepository<Hospital, Long> {
     
     /**
-     * Trouve les hôpitaux qui ont la spécialité demandée et des lits disponibles.
+     * Finds hospitals that have the requested specialty and available beds.
      */
     @Query("SELECT DISTINCT h FROM Hospital h JOIN h.specialities s WHERE LOWER(s.name) LIKE LOWER(CONCAT('%', :specialty, '%')) AND h.availableBeds > 0")
     List<Hospital> findBySpecialtyAndAvailableBeds(@Param("specialty") String specialty);
     
     /**
-     * Trouve tous les hôpitaux avec des lits disponibles.
+     * Finds all hospitals with available beds.
      */
     List<Hospital> findByAvailableBedsGreaterThan(Integer minBeds);
     
     /**
-     * Trouve les hôpitaux par nom.
+     * Finds hospitals by name.
      */
     List<Hospital> findByNameContainingIgnoreCase(String name);
 }

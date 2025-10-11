@@ -12,8 +12,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 
 /**
- * Configuration de sécurité pour l'API MedHead.
- * Implémente les bonnes pratiques de sécurité pour la protection des données patients.
+ * Security configuration for MedHead API.
+ * Implements security best practices for patient data protection.
  */
 @Configuration
 @EnableWebSecurity
@@ -22,40 +22,40 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            // Désactiver CSRF pour les API REST
+            // Disable CSRF for REST APIs
             .csrf(AbstractHttpConfigurer::disable)
             
-            // Configuration des sessions
+            // Session configuration
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             
-            // Configuration des autorisations
+            // Authorization configuration
             .authorizeHttpRequests(authz -> authz
-                // Endpoints publics (sans authentification)
+                // Public endpoints (no authentication)
                 .requestMatchers("/api/allocate", "/api/health").permitAll()
                 
-                // Endpoints de monitoring (authentification basique)
+                // Monitoring endpoints (basic authentication)
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 .requestMatchers("/actuator/**").hasRole("ADMIN")
                 
-                // Endpoints de gestion des patients (authentification requise)
+                // Patient management endpoints (authentication required)
                 .requestMatchers("/api/patients/**").hasRole("MEDICAL_STAFF")
                 
-                // Endpoints de statistiques (authentification requise)
+                // Statistics endpoints (authentication required)
                 .requestMatchers("/api/statistics/**").hasRole("ADMIN")
                 
-                // Tous les autres endpoints nécessitent une authentification
+                // All other endpoints require authentication
                 .anyRequest().authenticated()
             )
             
-            // Configuration des headers de sécurité
+            // Security headers configuration
             .headers(headers -> headers
                 .frameOptions().deny()
                 .contentTypeOptions()
             )
             
-            // Configuration CORS pour permettre les appels depuis le frontend
+            // CORS configuration to allow calls from frontend
             .cors(cors -> cors
                 .configurationSource(request -> {
                     var corsConfig = new org.springframework.web.cors.CorsConfiguration();

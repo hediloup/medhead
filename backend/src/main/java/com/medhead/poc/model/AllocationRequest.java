@@ -3,7 +3,7 @@ package com.medhead.poc.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Modèle représentant une demande d'allocation de lit d'hôpital.
+ * Model representing a hospital bed allocation request.
  */
 public class AllocationRequest {
     
@@ -16,7 +16,7 @@ public class AllocationRequest {
     @JsonProperty("longitude")
     private Double longitude;
     
-    // Constructeurs
+    // Constructors
     public AllocationRequest() {}
     
     public AllocationRequest(String specialty, Double latitude, Double longitude) {
@@ -25,7 +25,7 @@ public class AllocationRequest {
         this.longitude = longitude;
     }
     
-    // Getters et Setters
+    // Getters and Setters
     public String getSpecialty() {
         return specialty;
     }
