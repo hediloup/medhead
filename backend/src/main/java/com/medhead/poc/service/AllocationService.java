@@ -64,21 +64,20 @@ public class AllocationService {
                                     request.getSpecialty() + "'");
         }
         
-        // Calculate routes with traffic optimization in parallel and sort by travel time
-        List<CompletableFuture<HospitalWithRoute>> futures = eligibleHospitals.stream()
-            .map(hospital -> CompletableFuture.supplyAsync(() -> {
+        // Calculate routes with traffic optimization - sequential processing for better performance
+        List<Hospital> limitedHospitals = eligibleHospitals.stream()
+            .limit(3) // Limit to 3 hospitals for faster response
+            .collect(Collectors.toList());
+            
+        List<HospitalWithRoute> hospitalsWithRoute = limitedHospitals.stream()
+            .map(hospital -> {
                 RouteResult routeResult = distanceService.calculateOptimalRouteToHospital(
                     request.getLatitude(), 
                     request.getLongitude(), 
                     hospital
                 );
                 return new HospitalWithRoute(hospital, routeResult);
-            }, executorService))
-            .collect(Collectors.toList());
-        
-        // Wait for all futures to complete and collect results
-        List<HospitalWithRoute> hospitalsWithRoute = futures.stream()
-            .map(CompletableFuture::join)
+            })
             .filter(hwr -> !hwr.getRouteResult().isError()) // Filter out hospitals with route errors
             .sorted(Comparator.comparingInt(hwr -> hwr.getRouteResult().getOptimalDurationMinutes()))
             .collect(Collectors.toList());

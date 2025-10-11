@@ -68,4 +68,19 @@ public class AllocationController {
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("Allocation API operational");
     }
+    
+    /**
+     * Test endpoint to diagnose allocation issues.
+     */
+    @GetMapping("/test")
+    public ResponseEntity<String> test() {
+        try {
+            AllocationRequest request = new AllocationRequest("Cardiology", 53.3976314, -2.1829641);
+            AllocationResponse response = allocationService.findBestHospital(request);
+            return ResponseEntity.ok("Test successful: " + response.getHospitalName());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Test failed: " + e.getMessage());
+        }
+    }
 }
