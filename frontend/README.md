@@ -1,48 +1,48 @@
-# MedHead Frontend - Interface d'Allocation d'Lits d'Hôpital
+# MedHead Frontend - Hospital Bed Allocation Interface
 
-Cette application Angular fournit une interface graphique pour consommer l'API `/api/allocate` du backend MedHead. Elle permet de sélectionner une spécialité médicale et de saisir une localisation pour obtenir une recommandation d'hôpital.
+This Angular application provides a graphical interface to consume the `/api/allocate` API from the MedHead backend. It allows users to select a medical specialty and enter a location to get a hospital recommendation.
 
-## 🚀 Fonctionnalités
+## 🚀 Features
 
-- **Géocodage automatique** : Convertit les adresses en coordonnées latitude/longitude via l'API Nominatim (OpenStreetMap)
-- **Sélection de spécialité** : Interface intuitive pour choisir parmi 16 spécialités médicales
-- **Recherche d'hôpital** : Trouve l'hôpital le plus proche avec des lits disponibles
-- **Affichage des résultats** : Présente toutes les informations importantes (nom, distance, temps estimé, lits disponibles)
-- **Design responsive** : Interface adaptée aux appareils mobiles et desktop
-- **Gestion d'erreurs** : Messages d'erreur clairs et informatifs
+- **Automatic geocoding**: Converts addresses to latitude/longitude coordinates via Nominatim API (OpenStreetMap)
+- **Specialty selection**: Intuitive interface to choose from 16 medical specialties
+- **Hospital search**: Finds the nearest hospital with available beds
+- **Results display**: Shows all important information (name, distance, estimated time, available beds)
+- **Responsive design**: Interface adapted for mobile and desktop devices
+- **Error handling**: Clear and informative error messages
 
-## 🛠️ Technologies utilisées
+## 🛠️ Technologies Used
 
-- **Angular 16** : Framework frontend
-- **TypeScript** : Langage de développement
-- **Reactive Forms** : Gestion des formulaires
-- **HttpClient** : Communication avec l'API backend
-- **CSS3** : Styles modernes avec animations
-- **Nominatim API** : Service de géocodage OpenStreetMap
+- **Angular 16**: Frontend framework
+- **TypeScript**: Development language
+- **Reactive Forms**: Form management
+- **HttpClient**: Backend API communication
+- **CSS3**: Modern styles with animations
+- **Nominatim API**: OpenStreetMap geocoding service
 
-## 📋 Prérequis
+## 📋 Prerequisites
 
-- Node.js (version 18 ou supérieure)
-- npm (version 9 ou supérieure)
-- Backend MedHead en cours d'exécution sur `http://localhost:8080`
+- Node.js (version 18 or higher)
+- npm (version 9 or higher)
+- MedHead backend running on `http://localhost:8080`
 
-## 🔧 Installation et démarrage
+## 🔧 Installation and Startup
 
-1. **Installer les dépendances** :
+1. **Install dependencies**:
    ```bash
    cd frontend
    npm install
    ```
 
-2. **Démarrer l'application** :
+2. **Start the application**:
    ```bash
    npm start
    ```
 
-3. **Accéder à l'application** :
-   Ouvrez votre navigateur à l'adresse : `http://localhost:4200`
+3. **Access the application**:
+   Open your browser at: `http://localhost:4200`
 
-## 🏗️ Structure du projet
+## 🏗️ Project Structure
 
 ```
 frontend/
@@ -68,25 +68,25 @@ frontend/
 └── tsconfig.json
 ```
 
-## 🔄 Flux de fonctionnement
+## 🔄 Workflow
 
-1. **Saisie des données** : L'utilisateur sélectionne une spécialité et saisit son adresse
-2. **Géocodage** : L'adresse est convertie en coordonnées via l'API Nominatim
-3. **Demande d'allocation** : Les coordonnées et la spécialité sont envoyées à l'API backend
-4. **Résultat** : L'hôpital recommandé est affiché avec toutes les informations pertinentes
+1. **Data entry**: User selects a specialty and enters their address
+2. **Geocoding**: Address is converted to coordinates via Nominatim API
+3. **Allocation request**: Coordinates and specialty are sent to the backend API
+4. **Result**: Recommended hospital is displayed with all relevant information
 
-## 🌐 API utilisées
+## 🌐 APIs Used
 
-### API Backend (MedHead)
-- **POST /api/allocate** : Demande d'allocation d'hôpital
-- **GET /api/health** : Vérification de l'état de l'API
+### Backend API (MedHead)
+- **POST /api/allocate**: Hospital allocation request
+- **GET /api/health**: API status verification
 
-### API Externe
-- **Nominatim OpenStreetMap** : Géocodage d'adresses
-  - URL : `https://nominatim.openstreetmap.org/search`
-  - Usage : Conversion d'adresses en coordonnées latitude/longitude
+### External API
+- **Nominatim OpenStreetMap**: Address geocoding
+  - URL: `https://nominatim.openstreetmap.org/search`
+  - Usage: Converting addresses to latitude/longitude coordinates
 
-## 📱 Spécialités médicales disponibles
+## 📱 Available Medical Specialties
 
 - Cardiology
 - Neurology
@@ -105,70 +105,70 @@ frontend/
 - Internal Medicine
 - General Surgery
 
-## 🎨 Interface utilisateur
+## 🎨 User Interface
 
-L'interface propose :
-- **Formulaire intuitif** avec validation en temps réel
-- **Indicateurs de chargement** pendant les opérations
-- **Messages d'erreur/succès** clairs et informatifs
-- **Affichage des résultats** structuré et lisible
-- **Design responsive** adapté à tous les écrans
+The interface offers:
+- **Intuitive form** with real-time validation
+- **Loading indicators** during operations
+- **Clear and informative error/success messages**
+- **Structured and readable results display**
+- **Responsive design** adapted to all screens
 
 ## 🔧 Configuration
 
-### URL de l'API Backend
-L'URL de l'API backend est configurée dans `allocation.service.ts` :
+### Backend API URL
+The backend API URL is configured in `allocation.service.ts`:
 ```typescript
 private readonly API_BASE_URL = 'http://localhost:8080/api';
 ```
 
-Pour changer l'URL, modifiez cette constante.
+To change the URL, modify this constant.
 
-### Service de géocodage
-Le service utilise l'API Nominatim d'OpenStreetMap. Aucune clé API n'est requise, mais il est recommandé de respecter les conditions d'utilisation.
+### Geocoding Service
+The service uses OpenStreetMap's Nominatim API. No API key is required, but it is recommended to respect the terms of use.
 
-## 🚨 Gestion d'erreurs
+## 🚨 Error Handling
 
-L'application gère plusieurs types d'erreurs :
-- **Erreurs de validation** : Champs requis manquants
-- **Erreurs de géocodage** : Adresse introuvable
-- **Erreurs réseau** : Problèmes de connexion
-- **Erreurs API** : Problèmes côté serveur
+The application handles several types of errors:
+- **Validation errors**: Missing required fields
+- **Geocoding errors**: Address not found
+- **Network errors**: Connection problems
+- **API errors**: Server-side issues
 
-## 📊 Données affichées
+## 📊 Displayed Data
 
-Pour chaque hôpital recommandé :
-- Nom de l'hôpital
-- Spécialité demandée
-- Distance en kilomètres
-- Temps de trajet estimé
-- Nombre de lits disponibles
-- Identifiant de l'hôpital
+For each recommended hospital:
+- Hospital name
+- Requested specialty
+- Distance in kilometers
+- Estimated travel time
+- Number of available beds
+- Hospital identifier
 
 ## 🧪 Tests
 
-Pour exécuter les tests Cypress existants :
+To run existing Cypress tests:
 ```bash
-npm run cy:open  # Interface graphique
-npm run cy:run   # Tests en ligne de commande
+npm run cy:open  # Graphical interface
+npm run cy:run   # Command line tests
 ```
 
-## 📝 Scripts disponibles
+## 📝 Available Scripts
 
-- `npm start` : Démarre le serveur de développement
-- `npm build` : Compile l'application pour la production
-- `npm test` : Exécute les tests unitaires
-- `npm run cy:open` : Ouvre l'interface Cypress
-- `npm run cy:run` : Exécute les tests Cypress
+- `npm start`: Starts the development server
+- `npm build`: Compiles the application for production
+- `npm test`: Runs unit tests
+- `npm run cy:open`: Opens Cypress interface
+- `npm run cy:run`: Runs Cypress tests
 
-## 🤝 Contribution
+## 🤝 Contributing
 
-Pour contribuer au projet :
-1. Suivez les conventions de code Angular
-2. Ajoutez des tests pour les nouvelles fonctionnalités
-3. Documentez les changements importants
-4. Respectez les bonnes pratiques de sécurité
+To contribute to the project:
+1. Follow Angular code conventions
+2. Add tests for new features
+3. Document important changes
+4. Respect security best practices
 
-## 📄 Licence
+## 📄 License
 
-Ce projet fait partie du système MedHead et suit les mêmes conditions de licence.
+This project is part of the MedHead system and follows the same license conditions.

@@ -3,6 +3,9 @@
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/medhead/poc)
 [![Java](https://img.shields.io/badge/java-17-orange.svg)](https://openjdk.java.net/)
 [![Spring Boot](https://img.shields.io/badge/spring%20boot-3.5.6-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Angular](https://img.shields.io/badge/angular-16.2.12-red.svg)](https://angular.io/)
+[![Node.js](https://img.shields.io/badge/node.js-18+-green.svg)](https://nodejs.org/)
+[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://docker.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## 📋 Table of Contents
@@ -10,8 +13,10 @@
 - [Overview](#-overview)
 - [Architecture](#-architecture)
 - [Prerequisites](#-prerequisites)
-- [Installation](#-installation)
-- [Tests](#-tests)
+- [Quick Start with Docker](#-quick-start-with-docker)
+- [Manual Installation](#-manual-installation)
+- [Testing Pyramid](#-testing-pyramid)
+- [Frontend Application](#-frontend-application)
 - [CI/CD Pipeline](#-cicd-pipeline)
 - [Git Workflow](#-git-workflow)
 - [API Documentation](#-api-documentation)
@@ -25,43 +30,112 @@ MedHead is an intelligent hospital bed allocation system that recommends the mos
 ### Key Features
 
 - 🔍 **Intelligent Allocation**: Hospital recommendation based on specialty and geolocation
+- 🎨 **Modern Frontend**: Angular 16 application with responsive design
 - 🏥 **Hospital Management**: Catalog of facilities with specialties and availability
+- 🌐 **Geocoding Integration**: Automatic address-to-coordinates conversion
 - 🔐 **Security**: Authentication and role-based authorization (ADMIN, MEDICAL_STAFF)
-- 📊 **Anonymization**: Protection of patient personal data
-- 🧪 **BDD Tests**: Cucumber test scenarios for business validation
+- 📊 **Anonymization**: Protection of patient personal data with GDPR compliance
+- 🧪 **Complete Testing Pyramid**: Unit, Integration, E2E, and Stress tests
+- 🐳 **Docker Ready**: Full containerization with Docker Compose
+- 📱 **Mobile Responsive**: Optimized for all devices and screen sizes
 
 ## 🏗️ Architecture
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Frontend      │    │   Backend       │    │   Database      │
-│   (React/Vue)   │◄──►│   Spring Boot   │◄──►│   PostgreSQL    │
-└─────────────────┘    └─────────────────┘    │   (Prod)        │
-                               │               │   H2 (Test)     │
-                               │               └─────────────────┘
-                               ▼
-                      ┌─────────────────┐
-                      │   Monitoring    │
-                      │   Actuator      │
-                      └─────────────────┘
+│   Angular 16    │◄──►│   Spring Boot   │◄──►│   PostgreSQL    │
+│   (Port 4200)   │    │   (Port 8080)   │    │   (Port 5433)   │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         │                       │                       │
+         ▼                       ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Nginx Proxy   │    │   Monitoring    │    │   pgAdmin       │
+│   (Port 80)     │    │   Actuator      │    │   (Port 8082)   │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+### Docker Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     Docker Compose Stack                       │
+├─────────────────┬─────────────────┬─────────────────────────────┤
+│   Frontend      │   Backend       │   Database Services        │
+│   Container     │   Container     │                             │
+│   ├─ Angular    │   ├─ Spring Boot│   ├─ PostgreSQL (5433)     │
+│   ├─ Nginx      │   ├─ Actuator   │   ├─ pgAdmin (8082)        │
+│   └─ Port 4200  │   └─ Port 8080  │   └─ Data Persistence      │
+└─────────────────┴─────────────────┴─────────────────────────────┘
 ```
 
 ### Technical Stack
 
+- **Frontend**: Angular 16.2.12, TypeScript, CSS3
 - **Backend**: Spring Boot 3.5.6, Java 17
 - **Database**: PostgreSQL (production), H2 (development/test)
 - **Security**: Spring Security with role-based authentication
-- **Tests**: JUnit 5, Cucumber (BDD), Maven Surefire
-- **Documentation**: Spring Boot Actuator
+- **Testing**: JUnit 5, Mockito, AssertJ, Cypress (E2E), K6/JMeter (Stress)
+- **DevOps**: Docker, Docker Compose, Maven, npm
+- **Documentation**: Spring Boot Actuator, Swagger UI
+- **Geocoding**: Nominatim OpenStreetMap API
 
 ## ⚙️ Prerequisites
 
+### For Docker Setup (Recommended)
+- **Docker**: 20.10+ with Docker Compose
+- **Git**: For cloning the repository
+
+### For Manual Setup
 - **Java**: OpenJDK 17 or higher
 - **Maven**: 3.6+ (or use the included wrapper `./mvnw`)
+- **Node.js**: 18+ with npm 9+
+- **Angular CLI**: 16.2.16+
 - **Database**: PostgreSQL 12+ (for production)
 - **Tools**: Git, IDE (IntelliJ IDEA, Eclipse, VS Code)
 
-## 🚀 Installation
+## 🚀 Quick Start with Docker
+
+### 1. Clone and Start Everything
+
+```bash
+git clone https://github.com/medhead/poc.git
+cd medhead
+
+# Start the complete application stack
+cd docker
+chmod +x start-medhead.sh
+./start-medhead.sh
+```
+
+### 2. Access the Applications
+
+Once started, access the applications at:
+
+- **🎨 Frontend Angular**: http://localhost:4200
+- **🔧 Backend API**: http://localhost:8080
+- **📊 PostgreSQL DB**: localhost:5433
+- **🛠️ pgAdmin**: http://localhost:8082
+
+### 3. Test the Application
+
+```bash
+# Test API health
+curl http://localhost:8080/api/health
+
+# Test frontend
+curl http://localhost:4200
+```
+
+### 4. Stop the Application
+
+```bash
+cd docker
+docker-compose down
+```
+
+## 🔧 Manual Installation
 
 ### 1. Clone the repository
 
@@ -70,7 +144,35 @@ git clone https://github.com/medhead/poc.git
 cd medhead
 ```
 
-### 2. Database configuration
+### 2. Backend Setup
+
+```bash
+cd backend
+
+# Compilation
+./mvnw clean compile
+
+# Start in development mode
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+
+# Or start with JAR
+./mvnw clean package
+java -jar target/poc-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
+```
+
+### 3. Frontend Setup
+
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start development server
+npm start
+```
+
+### 4. Database Configuration
 
 #### Development (H2 - automatic)
 ```bash
@@ -88,101 +190,211 @@ export SPRING_DATASOURCE_USERNAME=your_username
 export SPRING_DATASOURCE_PASSWORD=your_password
 ```
 
-### 3. Compilation and startup
+The applications will be accessible at:
+- **Backend API**: http://localhost:8080
+- **Frontend**: http://localhost:4200
 
+## 🧪 Testing Pyramid
+
+MedHead implements a comprehensive testing pyramid ensuring quality, reliability, and performance at all levels.
+
+### Test Structure Overview
+
+```
+                    ┌─────────────────────────┐
+                    │    E2E Tests (Cypress)  │  ← Top Layer
+                    │    • UI Integration     │
+                    │    • User Journeys      │
+                    │    • Cross-browser      │
+                    └─────────────────────────┘
+                           ▲
+                    ┌─────────────────────────┐
+                    │  Integration Tests      │  ← Middle Layer
+                    │  • API Endpoints        │
+                    │  • Database Integration │
+                    │  • Service Layer        │
+                    └─────────────────────────┘
+                           ▲
+                    ┌─────────────────────────┐
+                    │    Unit Tests           │  ← Foundation
+                    │    • Service Logic      │
+                    │    • Component Tests    │
+                    │    • Business Rules     │
+                    └─────────────────────────┘
+                           ▲
+                    ┌─────────────────────────┐
+                    │    Stress Tests         │  ← Production Readiness
+                    │    • Load Testing       │
+                    │    • Performance        │
+                    │    • Scalability        │
+                    └─────────────────────────┘
+```
+
+### Comprehensive Test Suite
+
+#### 1. **Unit Tests** (Foundation)
+- **Backend**: JUnit 5, Mockito, AssertJ
+- **Frontend**: Angular Testing Utilities
+- **Coverage**: Business logic, services, components
+
+#### 2. **Integration Tests** (Middle Layer)
+- **API Testing**: MockMvc, Spring Boot Test
+- **Database Integration**: H2 for testing
+- **Service Integration**: Cross-component validation
+
+#### 3. **End-to-End Tests** (Top Layer)
+- **Cypress**: UI automation and user journey validation
+- **Cross-browser**: Chrome, Firefox, Edge compatibility
+- **Performance**: Frontend performance monitoring
+
+#### 4. **Stress & Load Tests** (Production Readiness)
+- **K6**: Performance and load testing
+- **JMeter**: Stress testing scenarios
+- **Custom Scripts**: API load validation
+
+### Running Tests
+
+#### Quick Test Execution
 ```bash
+# Run complete test suite
+cd scripts
+chmod +x run-all-tests.sh
+./run-all-tests.sh
+```
+
+#### Individual Test Types
+```bash
+# Backend Unit Tests
 cd backend
-
-# Compilation
-./mvnw clean compile
-
-# Start in development mode
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
-
-# Or start with JAR
-./mvnw clean package
-java -jar target/poc-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
-```
-
-The application will be accessible at: `http://localhost:8080`
-
-## 🧪 Tests
-
-### Test structure
-
-```
-src/test/java/com/medhead/poc/
-├── PocApplicationTests.java          # Spring Boot unit tests
-├── TestSuite.java                    # Test suite
-└── bdd/
-    ├── runners/
-    │   └── CucumberBddTest.java      # Cucumber BDD tests
-    └── steps/
-        ├── AllocationSteps.java      # Allocation steps
-        ├── PerformanceSteps.java     # Performance tests
-        └── ...                       # Other BDD steps
-```
-
-### Test execution
-
-#### Unit tests (recommended)
-```bash
-# Unit tests only
 ./mvnw test
 
-# Or with the optimized script
-./run-tests.sh unit
+# Frontend Unit Tests
+cd frontend
+npm test
+
+# E2E Tests
+cd frontend
+npm run cy:run
+
+# Stress Tests (K6)
+cd scripts
+./run-k6-tests.sh
+
+# Integration Tests
+cd backend
+./mvnw test -Dtest="*IntegrationTest"
 ```
 
-#### Cucumber BDD tests
-```bash
-# BDD tests separately
-./mvnw test -Pbdd-tests
+### Test Reports
 
-# Or with the script
-./run-tests.sh bdd
+All test results are generated in the `reports/` directory:
+
+```
+reports/
+├── backend/
+│   ├── unit/           # Unit test reports
+│   ├── integration/    # Integration test reports
+│   └── stress/         # Stress test reports
+├── frontend/
+│   ├── unit/           # Angular unit tests
+│   ├── e2e/            # Cypress reports
+│   └── performance/    # Performance metrics
+├── stress/
+│   ├── jmeter/         # JMeter reports
+│   ├── k6/             # K6 performance reports
+│   └── curl/           # Custom stress test results
+└── index.html          # Consolidated test dashboard
 ```
 
-#### All tests
-```bash
-# Complete tests
-./mvnw clean test
+### Test Configuration
 
-# Or with the script
-./run-tests.sh all
-```
-
-### Available test scripts
-
-| Command | Description |
-|----------|-------------|
-| `./run-tests.sh unit` | Unit tests only |
-| `./run-tests.sh bdd` | Cucumber BDD tests |
-| `./run-tests.sh all` | All tests |
-| `./run-tests.sh clean` | Test files cleanup |
-
-### Test types
-
-#### Unit tests
-- ✅ Spring Boot integration tests
-- ✅ Application context validation
-- ✅ H2 configuration tests
-
-#### BDD tests (Behavior Driven Development)
-- 🎭 **CI/CD Validation**: Automated pipeline
-- 🎭 **Hospital Allocation**: Business scenarios
-- 🎭 **Performance**: Simulated load tests
-- 🎭 **Security**: Compliance and anonymization
-- 🎭 **Availability**: Bed management
-
-### Test configuration
-
+#### Backend Test Profile
 ```properties
-# application-dev.properties
-spring.datasource.url=jdbc:h2:mem:testdb
+# application-test.properties
+spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
 spring.jpa.hibernate.ddl-auto=create-drop
 spring.jpa.show-sql=true
 ```
+
+#### Frontend Test Configuration
+```json
+// cypress.config.js
+{
+  "baseUrl": "http://localhost:4200",
+  "viewportWidth": 1280,
+  "viewportHeight": 720,
+  "video": true,
+  "screenshots": true
+}
+```
+
+## 🎨 Frontend Application
+
+The MedHead frontend is a modern Angular 16 application that provides an intuitive interface for hospital bed allocation.
+
+### Features
+
+- **🌐 Automatic Geocoding**: Converts addresses to coordinates via OpenStreetMap
+- **🏥 Specialty Selection**: Choose from 16 medical specialties
+- **📍 Location Input**: Enter any address for hospital recommendation
+- **📱 Responsive Design**: Works on desktop, tablet, and mobile
+- **⚡ Real-time Validation**: Instant feedback on form inputs
+- **🎯 Smart Results**: Displays hospital details, distance, and availability
+
+### Frontend Architecture
+
+```
+frontend/
+├── src/
+│   ├── app/
+│   │   ├── components/
+│   │   │   └── hospital-allocation.component.*  # Main component
+│   │   ├── services/
+│   │   │   ├── allocation.service.ts            # Backend API
+│   │   │   └── geocoding.service.ts             # Address geocoding
+│   │   ├── models/
+│   │   │   ├── allocation-request.ts            # Request model
+│   │   │   ├── allocation-response.ts           # Response model
+│   │   │   └── geocoding-response.ts            # Geocoding model
+│   │   └── app.module.ts                        # Angular module
+│   ├── styles.css                               # Global styles
+│   └── index.html                               # Main HTML
+├── cypress/
+│   ├── e2e/
+│   │   ├── frontend-ui.cy.js                    # UI tests
+│   │   └── performance.cy.js                    # Performance tests
+│   └── support/
+├── package.json                                 # Dependencies
+├── angular.json                                 # Angular config
+└── tsconfig.json                               # TypeScript config
+```
+
+### Available Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm start` | Start development server |
+| `npm build` | Build for production |
+| `npm test` | Run unit tests |
+| `npm run cy:open` | Open Cypress test runner |
+| `npm run cy:run` | Run E2E tests |
+
+### User Workflow
+
+1. **Select Specialty**: Choose from 16 medical specialties
+2. **Enter Location**: Type any address or location
+3. **Automatic Geocoding**: System converts address to coordinates
+4. **Hospital Search**: Backend finds nearest available hospital
+5. **View Results**: See hospital details, distance, and availability
+
+### Integration with Backend
+
+The frontend seamlessly integrates with the Spring Boot backend:
+
+- **API Endpoints**: `/api/allocate`, `/api/health`
+- **Error Handling**: Comprehensive error management
+- **Loading States**: Visual feedback during operations
+- **Data Validation**: Client-side and server-side validation
 
 ## 🔄 CI/CD Pipeline
 
@@ -191,50 +403,71 @@ spring.jpa.show-sql=true
 ```mermaid
 graph LR
     A[Git Push] --> B[Build]
-    B --> C[Unit Tests]
-    C --> D[BDD Tests]
-    D --> E[Quality Gate]
-    E --> F[Docker Build]
-    F --> G[Deployment]
+    B --> C[Backend Unit Tests]
+    B --> D[Frontend Unit Tests]
+    C --> E[Integration Tests]
+    D --> E
+    E --> F[E2E Tests]
+    F --> G[Stress Tests]
+    G --> H[Quality Gate]
+    H --> I[Docker Build]
+    I --> J[Deployment]
 ```
 
 ### Pipeline stages
 
-#### 1. **Build** (`mvn clean compile`)
-- Source code compilation
-- Dependency resolution
-- Syntax validation
+#### 1. **Build** (`mvn clean compile` + `npm install`)
+- Backend source code compilation
+- Frontend dependency resolution
+- Syntax validation for both stacks
 
-#### 2. **Unit Tests** (`mvn test`)
-- JUnit test execution
+#### 2. **Unit Tests** (Parallel execution)
+- **Backend**: JUnit test execution (`mvn test`)
+- **Frontend**: Angular unit tests (`npm test`)
 - Spring Boot context validation
-- H2 integration tests
+- Component and service testing
 
-#### 3. **BDD Tests** (`mvn test -Pbdd-tests`)
-- Business scenario validation
-- Simulated performance tests
-- Compliance verification
+#### 3. **Integration Tests**
+- API endpoint validation
+- Database integration tests
+- Service layer integration
+- Cross-component communication
 
-#### 4. **Quality Gate**
+#### 4. **E2E Tests** (`npm run cy:run`)
+- UI automation with Cypress
+- User journey validation
+- Cross-browser compatibility
+- Frontend performance monitoring
+
+#### 5. **Stress Tests** (K6/JMeter)
+- Load testing scenarios
+- Performance benchmarking
+- Scalability validation
+- Production readiness assessment
+
+#### 6. **Quality Gate**
 - Code coverage (minimum 80%)
 - Static analysis (SonarQube)
 - Security validation
+- Performance metrics
 
-#### 5. **Docker Build**
-- Docker image creation
+#### 7. **Docker Build**
+- Multi-stage Docker images
+- Frontend and backend containers
 - Push to registry
 - Deployment preparation
 
-#### 6. **Deployment**
-- Test environment deployment
-- Regression tests
+#### 8. **Deployment**
+- Docker Compose stack deployment
+- Health checks validation
+- Smoke tests
 - Production deployment (if validated)
 
 ### CI/CD Configuration
 
 #### GitHub Actions (example)
 ```yaml
-name: CI/CD Pipeline
+name: MedHead CI/CD Pipeline
 
 on:
   push:
@@ -243,7 +476,7 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  backend-tests:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -251,16 +484,68 @@ jobs:
       uses: actions/setup-java@v3
       with:
         java-version: '17'
-    - name: Run tests
-      run: ./mvnw test
-    - name: Run BDD tests
-      run: ./mvnw test -Pbdd-tests
+    - name: Cache Maven dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+    - name: Run backend tests
+      run: |
+        cd backend
+        ./mvnw test
+        ./mvnw test -Dtest="*IntegrationTest"
+    - name: Run stress tests
+      run: |
+        cd scripts
+        chmod +x run-all-tests.sh
+        ./run-all-tests.sh
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    - name: Install dependencies
+      run: |
+        cd frontend
+        npm ci
+    - name: Run frontend tests
+      run: |
+        cd frontend
+        npm test -- --watch=false
+        npm run cy:run
+
+  docker-build:
+    needs: [backend-tests, frontend-tests]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build Docker images
+      run: |
+        cd docker
+        docker-compose build
+    - name: Test Docker stack
+      run: |
+        cd docker
+        docker-compose up -d
+        sleep 30
+        curl -f http://localhost:8080/api/health
+        curl -f http://localhost:4200
+        docker-compose down
 ```
 
 ### Metrics and reports
 
-- **Code coverage**: Generated in `target/site/jacoco/`
-- **BDD reports**: Available in `target/cucumber-reports/`
+- **Backend coverage**: Generated in `backend/target/site/jacoco/`
+- **Frontend coverage**: Available in `frontend/coverage/`
+- **E2E reports**: Cypress reports in `frontend/cypress/reports/`
+- **Stress test reports**: K6/JMeter results in `reports/stress/`
+- **Consolidated dashboard**: `reports/index.html`
 - **Build logs**: Accessible via CI/CD interface
 
 ## 🌿 Git Workflow
@@ -486,32 +771,119 @@ A complete Postman collection is available: `MedHead_API_Collection.postman_coll
 
 ### Environments
 
-| Environment | URL | Database | Profile |
-|---------------|-----|-----------------|---------|
-| Development | `http://localhost:8080` | H2 (memory) | `dev` |
-| Test | `https://medhead-test.example.com` | PostgreSQL | `test` |
-| Production | `https://medhead.example.com` | PostgreSQL | `prod` |
+| Environment | Frontend URL | Backend URL | Database | Profile |
+|-------------|--------------|-------------|----------|---------|
+| Development | `http://localhost:4200` | `http://localhost:8080` | H2 (memory) | `dev` |
+| Docker | `http://localhost:4200` | `http://localhost:8080` | PostgreSQL | `docker` |
+| Test | `https://medhead-test.example.com` | `https://api-test.medhead.com` | PostgreSQL | `test` |
+| Production | `https://medhead.example.com` | `https://api.medhead.com` | PostgreSQL | `prod` |
 
-### Docker configuration
+### Docker Deployment (Recommended)
 
-```dockerfile
-FROM openjdk:17-jdk-slim
-
-COPY target/poc-0.0.1-SNAPSHOT.jar app.jar
-
-EXPOSE 8080
-
-ENTRYPOINT ["java", "-jar", "/app.jar"]
+#### Quick Start
+```bash
+# Clone and start everything
+git clone https://github.com/medhead/poc.git
+cd medhead/docker
+chmod +x start-medhead.sh
+./start-medhead.sh
 ```
 
-### Environment variables
+#### Docker Compose Services
+```yaml
+# docker-compose.yml
+services:
+  frontend:
+    build: ../frontend
+    ports: ["4200:80"]
+    
+  backend:
+    build: ../backend
+    ports: ["8080:8080"]
+    
+  postgres:
+    image: postgres:15-alpine
+    ports: ["5433:5432"]
+    
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    ports: ["8082:80"]
+```
 
+#### Docker Commands
 ```bash
-# Production
+# Build all services
+docker-compose build
+
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
+
+# Clean up volumes
+docker-compose down -v
+```
+
+### Manual Deployment
+
+#### Backend Deployment
+```dockerfile
+# Backend Dockerfile
+FROM maven:3.8.4-openjdk-17 AS build
+WORKDIR /app
+COPY pom.xml .
+COPY src src
+RUN mvn clean package -DskipTests
+
+FROM openjdk:17-jdk-slim
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
+```
+
+#### Frontend Deployment
+```dockerfile
+# Frontend Dockerfile
+FROM node:18-alpine AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM nginx:alpine
+COPY --from=build /app/dist/medhead-frontend /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/nginx.conf
+EXPOSE 80
+```
+
+### Environment Variables
+
+#### Production Configuration
+```bash
+# Backend
 SPRING_PROFILES_ACTIVE=prod
 SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/medhead
 SPRING_DATASOURCE_USERNAME=medhead_user
 SPRING_DATASOURCE_PASSWORD=secure_password
+
+# Frontend
+NODE_ENV=production
+API_BASE_URL=https://api.medhead.com
+```
+
+#### Docker Configuration
+```bash
+# Docker environment
+SPRING_PROFILES_ACTIVE=docker
+SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/medhead_db
+SPRING_DATASOURCE_USERNAME=medhead_user
+SPRING_DATASOURCE_PASSWORD=medhead_password
 ```
 
 ## 🤝 Contributing
@@ -526,18 +898,23 @@ SPRING_DATASOURCE_PASSWORD=secure_password
 
 ### Code standards
 
-- **Java**: Follow Oracle conventions
-- **Tests**: Minimum 80% coverage
-- **Documentation**: JavaDoc for public methods
+- **Backend (Java)**: Follow Oracle conventions and Spring Boot best practices
+- **Frontend (TypeScript)**: Follow Angular style guide and ESLint rules
+- **Tests**: Minimum 80% coverage for both backend and frontend
+- **Documentation**: JavaDoc for public methods, JSDoc for TypeScript
 - **Commits**: Messages in English, conventional commits format
+- **Translation**: All user-facing text in English
 
 ### Code Review
 
-- ✅ Unit and BDD tests pass
+- ✅ Unit, Integration, and E2E tests pass
 - ✅ Code reviewed by at least 1 developer
 - ✅ No duplicated code
 - ✅ Documentation updated
 - ✅ No security vulnerabilities
+- ✅ Frontend responsive design validated
+- ✅ Docker builds successfully
+- ✅ Performance tests within acceptable limits
 
 ## 📞 Support
 

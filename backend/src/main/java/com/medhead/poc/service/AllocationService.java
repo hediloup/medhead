@@ -1,5 +1,6 @@
 package com.medhead.poc.service;
 
+import com.medhead.poc.dto.RouteResult;
 import com.medhead.poc.model.AllocationRequest;
 import com.medhead.poc.model.AllocationResponse;
 import com.medhead.poc.model.Hospital;
@@ -11,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -59,26 +59,32 @@ public class AllocationService {
                                     request.getSpecialty() + "'");
         }
         
-        // Calculate distances and sort by distance
-        List<HospitalWithDistance> hospitalsWithDistance = eligibleHospitals.stream()
+        // Calculate routes with traffic optimization and sort by travel time
+        List<HospitalWithRoute> hospitalsWithRoute = eligibleHospitals.stream()
             .map(hospital -> {
-                double distance = distanceService.calculateDistanceToHospital(
+                RouteResult routeResult = distanceService.calculateOptimalRouteToHospital(
                     request.getLatitude(), 
                     request.getLongitude(), 
                     hospital
                 );
-                return new HospitalWithDistance(hospital, distance);
+                return new HospitalWithRoute(hospital, routeResult);
             })
-            .sorted(Comparator.comparingDouble(HospitalWithDistance::getDistance))
+            .filter(hwr -> !hwr.getRouteResult().isError()) // Filter out hospitals with route errors
+            .sorted(Comparator.comparingInt(hwr -> hwr.getRouteResult().getOptimalDurationMinutes()))
             .collect(Collectors.toList());
         
-        // Select the best hospital (closest)
-        HospitalWithDistance bestHospital = hospitalsWithDistance.get(0);
-        Hospital selectedHospital = bestHospital.getHospital();
-        double distance = bestHospital.getDistance();
+        if (hospitalsWithRoute.isEmpty()) {
+            throw new RuntimeException("No accessible hospital found with specialty '" + 
+                                    request.getSpecialty() + "'");
+        }
         
-        // Calculate estimated travel time
-        int estimatedTime = distanceService.estimateTravelTime(distance);
+        // Select the best hospital (fastest travel time)
+        HospitalWithRoute bestHospital = hospitalsWithRoute.get(0);
+        Hospital selectedHospital = bestHospital.getHospital();
+        RouteResult routeResult = bestHospital.getRouteResult();
+        
+        double distance = routeResult.getDistanceKm();
+        int estimatedTime = routeResult.getOptimalDurationMinutes();
         
         // Create anonymized patient
         Patient patient = patientAnonymizationService.createAnonymizedPatient(
@@ -124,23 +130,23 @@ public class AllocationService {
     }
     
     /**
-     * Internal class to store a hospital with its distance.
+     * Internal class to store a hospital with its route information.
      */
-    private static class HospitalWithDistance {
+    private static class HospitalWithRoute {
         private final Hospital hospital;
-        private final double distance;
+        private final RouteResult routeResult;
         
-        public HospitalWithDistance(Hospital hospital, double distance) {
+        public HospitalWithRoute(Hospital hospital, RouteResult routeResult) {
             this.hospital = hospital;
-            this.distance = distance;
+            this.routeResult = routeResult;
         }
         
         public Hospital getHospital() {
             return hospital;
         }
         
-        public double getDistance() {
-            return distance;
+        public RouteResult getRouteResult() {
+            return routeResult;
         }
     }
 }

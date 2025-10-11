@@ -6,7 +6,7 @@ describe('MedHead Application E2E Tests', () => {
 
   it('should load the homepage with all elements', () => {
     // Check if the main title is visible
-    cy.contains('MedHead - Allocation d\'Lits d\'Hôpital').should('be.visible')
+    cy.contains('MedHead - Hospital Bed Allocation').should('be.visible')
     
     // Check if the form elements are present
     cy.get('select[name="specialty"]').should('be.visible')
@@ -87,7 +87,7 @@ describe('MedHead Application E2E Tests', () => {
     cy.wait('@geocodingError')
 
     // Check if error message is displayed
-    cy.contains('Adresse non trouvée').should('be.visible')
+    cy.contains('Address not found').should('be.visible')
   })
 
   it('should handle API errors gracefully', () => {
@@ -121,7 +121,7 @@ describe('MedHead Application E2E Tests', () => {
     cy.wait('@allocationError')
 
     // Check if error message is displayed
-    cy.contains('Erreur lors de l\'allocation').should('be.visible')
+    cy.contains('Error during allocation').should('be.visible')
   })
 
   it('should validate required fields', () => {
@@ -154,7 +154,7 @@ describe('MedHead Application E2E Tests', () => {
     cy.get('button[type="submit"]').click()
 
     // Check if loading state is shown
-    cy.contains('Recherche en cours').should('be.visible')
+    cy.contains('Search in progress').should('be.visible')
     
     // Wait for completion
     cy.wait('@slowGeocoding')
