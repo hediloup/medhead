@@ -24,7 +24,7 @@ Le service de calcul de distance a été optimisé pour utiliser l'API Google Ma
 #### Variables d'environnement (recommandé pour la production)
 
 ```bash
-export GOOGLE_MAPS_API_KEY="votre_cle_api_ici"
+export GOOGLE_MAPS_API_KEY="AIzaSyA6EicRUZ_a2YTAuB1ZFWWXB6yOaqnKyB0"
 ```
 
 #### Fichier de propriétés (pour le développement)

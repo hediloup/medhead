@@ -24,10 +24,7 @@ export class GeocodingService {
       .set('addressdetails', '1');
 
     return this.http.get<GeocodingResponse[]>(`${this.NOMINATIM_BASE_URL}/search`, { 
-      params,
-      headers: {
-        'User-Agent': 'MedHead-App/1.0'
-      }
+      params
     });
   }
 

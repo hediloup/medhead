@@ -12,6 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 /**
@@ -20,6 +23,8 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class AllocationService {
+    
+    private final ExecutorService executorService = Executors.newFixedThreadPool(10);
     
     @Autowired
     private HospitalRepository hospitalRepository;
@@ -59,16 +64,21 @@ public class AllocationService {
                                     request.getSpecialty() + "'");
         }
         
-        // Calculate routes with traffic optimization and sort by travel time
-        List<HospitalWithRoute> hospitalsWithRoute = eligibleHospitals.stream()
-            .map(hospital -> {
+        // Calculate routes with traffic optimization in parallel and sort by travel time
+        List<CompletableFuture<HospitalWithRoute>> futures = eligibleHospitals.stream()
+            .map(hospital -> CompletableFuture.supplyAsync(() -> {
                 RouteResult routeResult = distanceService.calculateOptimalRouteToHospital(
                     request.getLatitude(), 
                     request.getLongitude(), 
                     hospital
                 );
                 return new HospitalWithRoute(hospital, routeResult);
-            })
+            }, executorService))
+            .collect(Collectors.toList());
+        
+        // Wait for all futures to complete and collect results
+        List<HospitalWithRoute> hospitalsWithRoute = futures.stream()
+            .map(CompletableFuture::join)
             .filter(hwr -> !hwr.getRouteResult().isError()) // Filter out hospitals with route errors
             .sorted(Comparator.comparingInt(hwr -> hwr.getRouteResult().getOptimalDurationMinutes()))
             .collect(Collectors.toList());
