@@ -3,9 +3,11 @@ package com.medhead.poc.service;
 import com.medhead.poc.model.AllocationRequest;
 import com.medhead.poc.model.AllocationResponse;
 import com.medhead.poc.model.Hospital;
+import com.medhead.poc.model.Patient;
 import com.medhead.poc.repository.HospitalRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
@@ -16,6 +18,7 @@ import java.util.stream.Collectors;
  * Service principal pour la logique d'allocation de lits d'hôpital.
  */
 @Service
+@Transactional
 public class AllocationService {
     
     @Autowired
@@ -24,8 +27,14 @@ public class AllocationService {
     @Autowired
     private DistanceCalculationService distanceService;
     
+    @Autowired
+    private PatientAnonymizationService patientAnonymizationService;
+    
+    @Autowired
+    private EventPublisherService eventPublisherService;
+    
     /**
-     * Trouve l'hôpital le plus approprié pour une demande d'allocation.
+     * Trouve l'hôpital le plus approprié pour une demande d'allocation et enregistre le patient.
      * 
      * @param request La demande d'allocation
      * @return La réponse avec l'hôpital recommandé
@@ -71,15 +80,47 @@ public class AllocationService {
         // Calcul du temps de trajet estimé
         int estimatedTime = distanceService.estimateTravelTime(distance);
         
+        // Création du patient anonymisé
+        Patient patient = patientAnonymizationService.createAnonymizedPatient(
+            request.getSpecialty(),
+            request.getLatitude(),
+            request.getLongitude(),
+            "MEDIUM" // Niveau de gravité par défaut
+        );
+        
+        // Association du patient à l'hôpital
+        patient.setAllocatedHospital(selectedHospital);
+        patientAnonymizationService.anonymizePatient(patient);
+        
+        // Calcul des lits disponibles après réservation
+        int availableBedsAfter = selectedHospital.getAvailableBeds() - 1;
+        
         // Création de la réponse
-        return new AllocationResponse(
+        AllocationResponse response = new AllocationResponse(
             selectedHospital.getName(),
             selectedHospital.getId(),
             Math.round(distance * 100.0) / 100.0, // Arrondi à 2 décimales
             request.getSpecialty(),
-            selectedHospital.getAvailableBeds(),
+            availableBedsAfter,
             estimatedTime
         );
+        
+        // Publication de l'événement BED_RESERVED
+        eventPublisherService.publishBedReservedEvent(
+            patient.getPatientUuid(),
+            patient.getAnonymizedName(),
+            request.getSpecialty(),
+            patient.getSeverityLevel(),
+            patient.getAgeGroup(),
+            selectedHospital.getId(),
+            selectedHospital.getName(),
+            selectedHospital.getCity(),
+            Math.round(distance * 100.0) / 100.0,
+            availableBedsAfter,
+            estimatedTime
+        );
+        
+        return response;
     }
     
     /**

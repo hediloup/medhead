@@ -17,7 +17,7 @@ public interface HospitalRepository extends JpaRepository<Hospital, Long> {
     /**
      * Trouve les hôpitaux qui ont la spécialité demandée et des lits disponibles.
      */
-    @Query("SELECT h FROM Hospital h WHERE LOWER(h.specialties) LIKE LOWER(CONCAT('%', :specialty, '%')) AND h.availableBeds > 0")
+    @Query("SELECT DISTINCT h FROM Hospital h JOIN h.specialities s WHERE LOWER(s.name) LIKE LOWER(CONCAT('%', :specialty, '%')) AND h.availableBeds > 0")
     List<Hospital> findBySpecialtyAndAvailableBeds(@Param("specialty") String specialty);
     
     /**
