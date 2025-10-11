@@ -1,7 +1,7 @@
-// Placez ici vos commandes personnalisées Cypress.
-// Vous pouvez ajouter des commandes réutilisables pour vos tests.
+// Place your custom Cypress commands here.
+// You can add reusable commands for your tests.
 
-// Exemple : commande pour sélectionner une spécialité par son label
+// Example: command to select a specialty by its label
 Cypress.Commands.add('selectSpeciality', (label) => {
   cy.get('[data-testid="speciality-select"]').select(label);
 });

@@ -1,11 +1,11 @@
 // ***********************************************************
-// Ce fichier est exécuté automatiquement avant chaque test.
-// Vous pouvez y définir des hooks globaux ou importer des commandes.
+// This file is executed automatically before each test.
+// You can define global hooks or import commands here.
 // ***********************************************************
 
 import './commands';
 
-// Exemple de hook global : avant chaque test, vider le localStorage
+// Example of global hook: before each test, clear localStorage
 beforeEach(() => {
   cy.clearLocalStorage();
 });

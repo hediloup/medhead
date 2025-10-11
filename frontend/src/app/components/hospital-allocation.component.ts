@@ -18,7 +18,7 @@ export class HospitalAllocationComponent implements OnInit {
   errorMessage = '';
   successMessage = '';
 
-  // Liste des spécialités médicales disponibles
+  // List of available medical specialties
   medicalSpecialties = [
     'Cardiology',
     'Neurology',
@@ -50,12 +50,12 @@ export class HospitalAllocationComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Vérifier la santé de l'API au démarrage
+    // Check API health on startup
     this.checkApiHealth();
   }
 
   /**
-   * Vérifie la santé de l'API backend
+   * Checks backend API health
    */
   private checkApiHealth(): void {
     this.allocationService.checkHealth().subscribe({
@@ -64,13 +64,13 @@ export class HospitalAllocationComponent implements OnInit {
       },
       error: (error) => {
         console.error('API Health Check Failed:', error);
-        this.errorMessage = 'Le service backend n\'est pas disponible. Veuillez vérifier que le serveur est démarré.';
+        this.errorMessage = 'Backend service is not available. Please check that the server is started.';
       }
     });
   }
 
   /**
-   * Soumet le formulaire pour demander une allocation d'hôpital
+   * Submits the form to request a hospital allocation
    */
   onSubmit(): void {
     if (this.allocationForm.valid) {
@@ -81,7 +81,7 @@ export class HospitalAllocationComponent implements OnInit {
 
       const formValue = this.allocationForm.value;
       
-      // Étape 1: Géocoder l'adresse
+      // Step 1: Geocode the address
       this.geocodeAddress(formValue.address, formValue.specialty);
     } else {
       this.markFormGroupTouched();
@@ -89,7 +89,7 @@ export class HospitalAllocationComponent implements OnInit {
   }
 
   /**
-   * Géocode l'adresse et lance la demande d'allocation
+   * Geocodes the address and launches the allocation request
    */
   private async geocodeAddress(address: string, specialty: string): Promise<void> {
     this.isGeocoding = true;
@@ -98,22 +98,22 @@ export class HospitalAllocationComponent implements OnInit {
       const coordinates = await this.geocodingService.geocodeAddressAsync(address);
       
       if (coordinates) {
-        // Étape 2: Demander l'allocation avec les coordonnées
+        // Step 2: Request allocation with coordinates
         this.requestAllocation(specialty, coordinates.lat, coordinates.lon);
       } else {
-        this.errorMessage = 'Impossible de trouver cette adresse. Veuillez vérifier l\'adresse et réessayer.';
+        this.errorMessage = 'Unable to find this address. Please check the address and try again.';
         this.isLoading = false;
         this.isGeocoding = false;
       }
     } catch (error) {
-      this.errorMessage = 'Erreur lors de la recherche de l\'adresse. Veuillez réessayer.';
+      this.errorMessage = 'Error while searching for the address. Please try again.';
       this.isLoading = false;
       this.isGeocoding = false;
     }
   }
 
   /**
-   * Demande l'allocation d'hôpital avec les coordonnées géographiques
+   * Requests hospital allocation with geographic coordinates
    */
   private requestAllocation(specialty: string, latitude: number, longitude: number): void {
     const request: AllocationRequest = {
@@ -125,7 +125,7 @@ export class HospitalAllocationComponent implements OnInit {
     this.allocationService.allocateHospital(request).subscribe({
       next: (response) => {
         this.allocationResult = response;
-        this.successMessage = `Hôpital recommandé trouvé: ${response.hospital_name}`;
+        this.successMessage = `Recommended hospital found: ${response.hospital_name}`;
         this.isLoading = false;
         this.isGeocoding = false;
       },
@@ -138,7 +138,7 @@ export class HospitalAllocationComponent implements OnInit {
   }
 
   /**
-   * Marque tous les champs du formulaire comme touchés pour afficher les erreurs
+   * Marks all form fields as touched to display errors
    */
   private markFormGroupTouched(): void {
     Object.keys(this.allocationForm.controls).forEach(key => {
@@ -148,7 +148,7 @@ export class HospitalAllocationComponent implements OnInit {
   }
 
   /**
-   * Remet à zéro le formulaire et les résultats
+   * Resets the form and results
    */
   resetForm(): void {
     this.allocationForm.reset();
@@ -158,7 +158,7 @@ export class HospitalAllocationComponent implements OnInit {
   }
 
   /**
-   * Vérifie si un champ du formulaire a des erreurs
+   * Checks if a form field has errors
    */
   hasFieldError(fieldName: string): boolean {
     const field = this.allocationForm.get(fieldName);
@@ -166,16 +166,16 @@ export class HospitalAllocationComponent implements OnInit {
   }
 
   /**
-   * Retourne le message d'erreur pour un champ
+   * Returns the error message for a field
    */
   getFieldError(fieldName: string): string {
     const field = this.allocationForm.get(fieldName);
     if (field && field.errors) {
       if (field.errors['required']) {
-        return 'Ce champ est obligatoire';
+        return 'This field is required';
       }
       if (field.errors['minlength']) {
-        return `Minimum ${field.errors['minlength'].requiredLength} caractères requis`;
+        return `Minimum ${field.errors['minlength'].requiredLength} characters required`;
       }
     }
     return '';

@@ -12,9 +12,9 @@ export class GeocodingService {
   constructor(private http: HttpClient) { }
 
   /**
-   * Convertit une adresse en coordonnées latitude/longitude
-   * @param address L'adresse à géocoder
-   * @returns Observable avec les coordonnées
+   * Converts an address to latitude/longitude coordinates
+   * @param address The address to geocode
+   * @returns Observable with coordinates
    */
   geocodeAddress(address: string): Observable<GeocodingResponse[]> {
     const params = new HttpParams()
@@ -32,9 +32,9 @@ export class GeocodingService {
   }
 
   /**
-   * Convertit une adresse en coordonnées avec gestion d'erreur
-   * @param address L'adresse à géocoder
-   * @returns Promise avec les coordonnées ou null si erreur
+   * Converts an address to coordinates with error handling
+   * @param address The address to geocode
+   * @returns Promise with coordinates or null if error
    */
   async geocodeAddressAsync(address: string): Promise<{lat: number, lon: number} | null> {
     try {
@@ -47,7 +47,7 @@ export class GeocodingService {
       }
       return null;
     } catch (error) {
-      console.error('Erreur lors du géocodage:', error);
+      console.error('Error during geocoding:', error);
       return null;
     }
   }
