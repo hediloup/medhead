@@ -20,7 +20,7 @@ The PostgreSQL database contains real UK hospital data with:
 
 ### Prerequisites
 - Docker and Docker Compose installed
-- Ports 4200, 5433, 8080, and 8081 available
+- Ports 4200, 5433, 8080, and 8082 available
 
 ### Starting the complete application
 
@@ -67,7 +67,7 @@ docker-compose down -v
 - **Password**: medhead_password
 
 ### pgAdmin (web administration interface)
-- **URL**: http://localhost:8081
+- **URL**: http://localhost:8082
 - **Email**: admin@medhead.com
 - **Password**: admin123
 
