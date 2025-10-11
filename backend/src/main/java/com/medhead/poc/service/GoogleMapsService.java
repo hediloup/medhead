@@ -21,7 +21,7 @@ import java.time.Instant;
 public class GoogleMapsService {
     
     private static final Logger logger = LoggerFactory.getLogger(GoogleMapsService.class);
-    private static final int REQUEST_TIMEOUT_SECONDS = 10;
+    private static final int REQUEST_TIMEOUT_SECONDS = 30;
     
     private final GoogleMapsConfig config;
     private final WebClient webClient;

@@ -1,12 +1,12 @@
 package com.medhead.poc.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
 /**
  * Configuration pour l'API Google Maps
  */
-@Configuration
+@Component
 @ConfigurationProperties(prefix = "google.maps")
 public class GoogleMapsConfig {
     

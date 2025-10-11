@@ -59,12 +59,27 @@ export class AllocationService {
         case 500:
           errorMessage = 'Server error. Please try again later.';
           break;
+        case 502:
+          errorMessage = 'Backend service temporarily unavailable. Please try again.';
+          break;
+        case 503:
+          errorMessage = 'Service temporarily unavailable. Please try again later.';
+          break;
+        case 504:
+          errorMessage = 'Request timeout. The service is taking too long to respond. Please try again.';
+          break;
         case 0:
           errorMessage = 'Unable to contact the server. Check your connection.';
           break;
         default:
           errorMessage = `Error ${error.status}: ${error.message}`;
       }
+    }
+
+    // Log error for debugging (excluding browser extension errors)
+    if (!error.message?.includes('runtime.lastError') && 
+        !error.message?.includes('message port closed')) {
+      console.error('API Error:', error);
     }
 
     return throwError(() => new Error(errorMessage));

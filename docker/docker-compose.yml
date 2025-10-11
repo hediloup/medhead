@@ -32,6 +32,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/medhead_db
       SPRING_DATASOURCE_USERNAME: medhead_user
       SPRING_DATASOURCE_PASSWORD: medhead_password
+      GOOGLE_MAPS_API_KEY: AIzaSyA6EicRUZ_a2YTAuB1ZFWWXB6yOaqnKyB0
     ports:
       - "8080:8080"
     networks:
@@ -39,6 +40,9 @@ services:
     depends_on:
       - postgres
     restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
 
   # Frontend Angular
   frontend:
