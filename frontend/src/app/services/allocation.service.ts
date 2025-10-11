@@ -14,9 +14,9 @@ export class AllocationService {
   constructor(private http: HttpClient) { }
 
   /**
-   * Demande une allocation d'hôpital via l'API backend
-   * @param request La demande d'allocation
-   * @returns Observable avec la réponse d'allocation
+   * Requests a hospital allocation via the backend API
+   * @param request The allocation request
+   * @returns Observable with the allocation response
    */
   allocateHospital(request: AllocationRequest): Observable<AllocationResponse> {
     return this.http.post<AllocationResponse>(`${this.API_BASE_URL}/allocate`, request)
@@ -26,8 +26,8 @@ export class AllocationService {
   }
 
   /**
-   * Vérifie la santé de l'API
-   * @returns Observable avec le statut de l'API
+   * Checks API health
+   * @returns Observable with API status
    */
   checkHealth(): Observable<string> {
     return this.http.get(`${this.API_BASE_URL}/health`, { responseType: 'text' })
@@ -37,33 +37,33 @@ export class AllocationService {
   }
 
   /**
-   * Gestionnaire d'erreurs pour les appels API
-   * @param error L'erreur HTTP
-   * @returns Observable d'erreur avec message utilisateur
+   * Error handler for API calls
+   * @param error The HTTP error
+   * @returns Error Observable with user message
    */
   private handleError(error: HttpErrorResponse): Observable<never> {
-    let errorMessage = 'Une erreur inattendue s\'est produite';
+    let errorMessage = 'An unexpected error occurred';
 
     if (error.error instanceof ErrorEvent) {
-      // Erreur côté client
-      errorMessage = `Erreur: ${error.error.message}`;
+      // Client-side error
+      errorMessage = `Error: ${error.error.message}`;
     } else {
-      // Erreur côté serveur
+      // Server-side error
       switch (error.status) {
         case 400:
-          errorMessage = 'Données invalides. Veuillez vérifier vos informations.';
+          errorMessage = 'Invalid data. Please check your information.';
           break;
         case 404:
-          errorMessage = 'Aucun hôpital disponible pour cette spécialité.';
+          errorMessage = 'No hospital available for this specialty.';
           break;
         case 500:
-          errorMessage = 'Erreur serveur. Veuillez réessayer plus tard.';
+          errorMessage = 'Server error. Please try again later.';
           break;
         case 0:
-          errorMessage = 'Impossible de contacter le serveur. Vérifiez votre connexion.';
+          errorMessage = 'Unable to contact the server. Check your connection.';
           break;
         default:
-          errorMessage = `Erreur ${error.status}: ${error.message}`;
+          errorMessage = `Error ${error.status}: ${error.message}`;
       }
     }
 
