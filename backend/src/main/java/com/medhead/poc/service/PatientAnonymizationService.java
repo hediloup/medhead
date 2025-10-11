@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Service pour l'anonymisation et la protection des données patients conformément au RGPD.
+ * Service for patient data anonymization and protection in accordance with GDPR.
  */
 @Service
 @Transactional
@@ -22,29 +22,29 @@ public class PatientAnonymizationService {
     private PatientRepository patientRepository;
     
     /**
-     * Anonymise un patient en remplaçant les données sensibles par des identifiants anonymes
+     * Anonymizes a patient by replacing sensitive data with anonymous identifiers
      */
     public Patient anonymizePatient(Patient patient) {
         if (patient == null) {
-            throw new IllegalArgumentException("Le patient ne peut pas être null");
+            throw new IllegalArgumentException("Patient cannot be null");
         }
         
-        // Générer un nom anonymisé si pas déjà fait
+        // Generate anonymized name if not already done
         if (patient.getAnonymizedName() == null || patient.getAnonymizedName().isEmpty()) {
             patient.generateAnonymizedName();
         }
         
-        // Marquer comme anonymisé
+        // Mark as anonymized
         patient.setIsAnonymized(true);
         
-        // Nettoyer les données sensibles supplémentaires si nécessaire
-        // (le modèle Patient ne stocke déjà que des données anonymisées)
+        // Clean additional sensitive data if necessary
+        // (the Patient model already stores only anonymized data)
         
         return patientRepository.save(patient);
     }
     
     /**
-     * Crée un patient anonymisé directement (recommandé pour l'API)
+     * Creates an anonymized patient directly (recommended for API)
      */
     public Patient createAnonymizedPatient(String requiredSpecialty, 
                                          Double latitude, 
@@ -53,24 +53,24 @@ public class PatientAnonymizationService {
         
         Patient patient = new Patient(requiredSpecialty, latitude, longitude);
         
-        // Générer immédiatement un nom anonymisé
+        // Generate anonymized name immediately
         patient.generateAnonymizedName();
         
-        // Définir le niveau de gravité
+        // Set severity level
         if (severityLevel != null) {
             patient.setSeverityLevel(severityLevel);
         } else {
-            patient.setSeverityLevel("MEDIUM"); // Valeur par défaut
+            patient.setSeverityLevel("MEDIUM"); // Default value
         }
         
-        // Marquer comme anonymisé dès la création
+        // Mark as anonymized from creation
         patient.setIsAnonymized(true);
         
         return patientRepository.save(patient);
     }
     
     /**
-     * Anonymise tous les patients non anonymisés
+     * Anonymizes all non-anonymized patients
      */
     public int anonymizeAllNonAnonymizedPatients() {
         List<Patient> nonAnonymizedPatients = patientRepository.findNonAnonymizedPatients();
@@ -85,7 +85,7 @@ public class PatientAnonymizationService {
     }
     
     /**
-     * Supprime définitivement les données expirées (conformité RGPD)
+     * Permanently deletes expired data (GDPR compliance)
      */
     public int deleteExpiredPatients() {
         LocalDateTime currentDate = LocalDateTime.now();
@@ -93,7 +93,7 @@ public class PatientAnonymizationService {
     }
     
     /**
-     * Trouve et anonymise les patients avec des données sensibles manquantes
+     * Finds and anonymizes patients with missing sensitive data
      */
     public int anonymizePatientsWithMissingData() {
         List<Patient> patientsToAnonymize = patientRepository.findPatientsWithMissingAnonymization();
@@ -108,43 +108,43 @@ public class PatientAnonymizationService {
     }
     
     /**
-     * Tâche planifiée : Nettoyage automatique des données expirées (exécutée quotidiennement à 2h du matin)
+     * Scheduled task: Automatic cleanup of expired data (executed daily at 2 AM)
      */
     @Scheduled(cron = "0 0 2 * * ?")
     public void scheduledDataCleanup() {
         try {
             int deletedCount = deleteExpiredPatients();
-            System.out.println("Nettoyage automatique : " + deletedCount + " patients expirés supprimés");
+            System.out.println("Automatic cleanup: " + deletedCount + " expired patients deleted");
             
             int anonymizedCount = anonymizePatientsWithMissingData();
-            System.out.println("Anonymisation automatique : " + anonymizedCount + " patients anonymisés");
+            System.out.println("Automatic anonymization: " + anonymizedCount + " patients anonymized");
             
         } catch (Exception e) {
-            System.err.println("Erreur lors du nettoyage automatique des données : " + e.getMessage());
+            System.err.println("Error during automatic data cleanup: " + e.getMessage());
         }
     }
     
     /**
-     * Génère un identifiant anonyme unique pour un patient
+     * Generates a unique anonymous identifier for a patient
      */
     public String generateAnonymousId() {
         return "PATIENT_" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
     
     /**
-     * Vérifie si un patient peut être consulté (pas expiré et anonymisé)
+     * Checks if a patient can be accessed (not expired and anonymized)
      */
     public boolean canAccessPatient(Patient patient) {
         if (patient == null) {
             return false;
         }
         
-        // Vérifier si les données sont expirées
+        // Check if data is expired
         if (patient.isDataExpired()) {
             return false;
         }
         
-        // Vérifier si le patient est anonymisé
+        // Check if patient is anonymized
         if (!patient.getIsAnonymized()) {
             return false;
         }
@@ -153,7 +153,7 @@ public class PatientAnonymizationService {
     }
     
     /**
-     * Obtient les statistiques anonymisées sur les patients
+     * Gets anonymized statistics about patients
      */
     public PatientStatistics getAnonymizedStatistics() {
         List<Object[]> specialtyCounts = patientRepository.countPatientsBySpecialty();
@@ -168,14 +168,14 @@ public class PatientAnonymizationService {
     }
     
     /**
-     * Classe pour les statistiques anonymisées
+     * Class for anonymized statistics
      */
     public static class PatientStatistics {
         private List<Object[]> specialtyCounts;
         private List<Object[]> ageGroupCounts;
         private LocalDateTime generatedAt;
         
-        // Getters et Setters
+        // Getters and Setters
         public List<Object[]> getSpecialtyCounts() {
             return specialtyCounts;
         }

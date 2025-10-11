@@ -3,7 +3,7 @@ package com.medhead.poc.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Modèle représentant la réponse à une demande d'allocation de lit.
+ * Model representing the response to a bed allocation request.
  */
 public class AllocationResponse {
     
@@ -25,7 +25,7 @@ public class AllocationResponse {
     @JsonProperty("estimated_time_minutes")
     private Integer estimatedTimeMinutes;
     
-    // Constructeurs
+    // Constructors
     public AllocationResponse() {}
     
     public AllocationResponse(String hospitalName, Long hospitalId, Double distanceKm, 
@@ -38,7 +38,7 @@ public class AllocationResponse {
         this.estimatedTimeMinutes = estimatedTimeMinutes;
     }
     
-    // Getters et Setters
+    // Getters and Setters
     public String getHospitalName() {
         return hospitalName;
     }

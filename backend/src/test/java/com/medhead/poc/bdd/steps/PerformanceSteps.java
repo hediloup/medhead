@@ -3,27 +3,27 @@ package com.medhead.poc.bdd.steps;
 import io.cucumber.java.en.*;
 
 /**
- * Étapes simplifiées pour les tests de performance
+ * Simplified steps for performance tests
  */
 public class PerformanceSteps {
 
-    @Given("un générateur de charge simulant {int} requêtes/s sur l'endpoint {string}")
-    public void un_générateur_de_charge_simulant_requêtes_s_sur_l_endpoint(Integer requestsPerSecond, String endpoint) {
-        System.out.println("Simulation: générateur de charge configuré pour " + requestsPerSecond + " req/s sur " + endpoint);
+    @Given("a load generator simulating {int} requests/s on endpoint {string}")
+    public void a_load_generator_simulating_requests_s_on_endpoint(Integer requestsPerSecond, String endpoint) {
+        System.out.println("Simulation: load generator configured for " + requestsPerSecond + " req/s on " + endpoint);
     }
 
-    @When("les réponses sont mesurées sur une durée de {int} minutes")
-    public void les_réponses_sont_mesurées_sur_une_durée_de_minutes(Integer duration) {
-        System.out.println("Simulation: mesure des performances sur " + duration + " minutes");
+    @When("responses are measured over a duration of {int} minutes")
+    public void responses_are_measured_over_a_duration_of_minutes(Integer duration) {
+        System.out.println("Simulation: performance measurement over " + duration + " minutes");
     }
 
-    @Then("{int}% des requêtes doivent avoir un temps de réponse < {int} ms")
-    public void pourcentage_des_requêtes_doivent_avoir_un_temps_de_réponse_inférieur_à_ms(Integer percentage, Integer maxTime) {
-        System.out.println("Simulation: " + percentage + "% des requêtes < " + maxTime + "ms");
+    @Then("{int}% of requests must have a response time < {int} ms")
+    public void percentage_of_requests_must_have_a_response_time_less_than_ms(Integer percentage, Integer maxTime) {
+        System.out.println("Simulation: " + percentage + "% of requests < " + maxTime + "ms");
     }
 
-    @Then("aucun timeout ni 5xx ne doit être observé")
-    public void aucun_timeout_ni_xx_ne_doit_être_observé() {
-        System.out.println("Simulation: aucun timeout ni erreur 5xx observé");
+    @Then("no timeout or 5xx errors should be observed")
+    public void no_timeout_or_5xx_errors_should_be_observed() {
+        System.out.println("Simulation: no timeout or 5xx errors observed");
     }
 }

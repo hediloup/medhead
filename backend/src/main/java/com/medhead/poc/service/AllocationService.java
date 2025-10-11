@@ -15,7 +15,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * Service principal pour la logique d'allocation de lits d'hôpital.
+ * Main service for hospital bed allocation logic.
  */
 @Service
 @Transactional
@@ -34,32 +34,32 @@ public class AllocationService {
     private EventPublisherService eventPublisherService;
     
     /**
-     * Trouve l'hôpital le plus approprié pour une demande d'allocation et enregistre le patient.
+     * Finds the most appropriate hospital for an allocation request and records the patient.
      * 
-     * @param request La demande d'allocation
-     * @return La réponse avec l'hôpital recommandé
-     * @throws RuntimeException si aucun hôpital approprié n'est trouvé
+     * @param request The allocation request
+     * @return The response with the recommended hospital
+     * @throws RuntimeException if no appropriate hospital is found
      */
     public AllocationResponse findBestHospital(AllocationRequest request) {
-        // Validation des paramètres
+        // Parameter validation
         if (request.getSpecialty() == null || request.getSpecialty().trim().isEmpty()) {
-            throw new IllegalArgumentException("La spécialité est obligatoire");
+            throw new IllegalArgumentException("Specialty is required");
         }
         
         if (request.getLatitude() == null || request.getLongitude() == null) {
-            throw new IllegalArgumentException("La géolocalisation est obligatoire");
+            throw new IllegalArgumentException("Geolocation is required");
         }
         
-        // Recherche des hôpitaux avec la spécialité demandée et des lits disponibles
+        // Search for hospitals with the requested specialty and available beds
         List<Hospital> eligibleHospitals = hospitalRepository
             .findBySpecialtyAndAvailableBeds(request.getSpecialty());
         
         if (eligibleHospitals.isEmpty()) {
-            throw new RuntimeException("Aucun hôpital disponible avec la spécialité '" + 
+            throw new RuntimeException("No hospital available with specialty '" + 
                                     request.getSpecialty() + "'");
         }
         
-        // Calcul des distances et tri par distance
+        // Calculate distances and sort by distance
         List<HospitalWithDistance> hospitalsWithDistance = eligibleHospitals.stream()
             .map(hospital -> {
                 double distance = distanceService.calculateDistanceToHospital(
@@ -72,40 +72,40 @@ public class AllocationService {
             .sorted(Comparator.comparingDouble(HospitalWithDistance::getDistance))
             .collect(Collectors.toList());
         
-        // Sélection du meilleur hôpital (le plus proche)
+        // Select the best hospital (closest)
         HospitalWithDistance bestHospital = hospitalsWithDistance.get(0);
         Hospital selectedHospital = bestHospital.getHospital();
         double distance = bestHospital.getDistance();
         
-        // Calcul du temps de trajet estimé
+        // Calculate estimated travel time
         int estimatedTime = distanceService.estimateTravelTime(distance);
         
-        // Création du patient anonymisé
+        // Create anonymized patient
         Patient patient = patientAnonymizationService.createAnonymizedPatient(
             request.getSpecialty(),
             request.getLatitude(),
             request.getLongitude(),
-            "MEDIUM" // Niveau de gravité par défaut
+            "MEDIUM" // Default severity level
         );
         
-        // Association du patient à l'hôpital
+        // Associate patient with hospital
         patient.setAllocatedHospital(selectedHospital);
         patientAnonymizationService.anonymizePatient(patient);
         
-        // Calcul des lits disponibles après réservation
+        // Calculate available beds after reservation
         int availableBedsAfter = selectedHospital.getAvailableBeds() - 1;
         
-        // Création de la réponse
+        // Create response
         AllocationResponse response = new AllocationResponse(
             selectedHospital.getName(),
             selectedHospital.getId(),
-            Math.round(distance * 100.0) / 100.0, // Arrondi à 2 décimales
+            Math.round(distance * 100.0) / 100.0, // Rounded to 2 decimal places
             request.getSpecialty(),
             availableBedsAfter,
             estimatedTime
         );
         
-        // Publication de l'événement BED_RESERVED
+        // Publish BED_RESERVED event
         eventPublisherService.publishBedReservedEvent(
             patient.getPatientUuid(),
             patient.getAnonymizedName(),
@@ -124,7 +124,7 @@ public class AllocationService {
     }
     
     /**
-     * Classe interne pour stocker un hôpital avec sa distance.
+     * Internal class to store a hospital with its distance.
      */
     private static class HospitalWithDistance {
         private final Hospital hospital;

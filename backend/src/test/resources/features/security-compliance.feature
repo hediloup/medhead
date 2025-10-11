@@ -1,10 +1,10 @@
-Feature: Sécurité et conformité RGPD
-  En tant qu’architecte logiciel
-  Je veux m’assurer que les données patient sont anonymisées et sécurisées
-  Afin de respecter le RGPD et les principes de l’architecture
+Feature: Security and GDPR compliance
+  As a software architect
+  I want to ensure that patient data is anonymized and secured
+  In order to comply with GDPR and architecture principles
 
-  Scenario: Anonymisation des données avant envoi
-    Given un objet Patient contenant "nom", "date_naissance", "pathologie"
-    When la requête d’allocation est envoyée
-    Then le champ "nom" doit être remplacé par un identifiant anonyme
-    And aucune donnée personnelle identifiable n’est transmise à l’API
+  Scenario: Data anonymization before sending
+    Given a Patient object containing "name", "date_of_birth", "pathology"
+    When the allocation request is sent
+    Then the field "name" must be replaced by an anonymous identifier
+    And no personally identifiable data is transmitted to the API

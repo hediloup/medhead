@@ -9,21 +9,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * Contrôleur REST pour l'API d'allocation de lits d'hôpital.
+ * REST controller for hospital bed allocation API.
  */
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "*") // Pour permettre les appels depuis le frontend
+@CrossOrigin(origins = "*") // To allow calls from frontend
 public class AllocationController {
     
     @Autowired
     private AllocationService allocationService;
     
     /**
-     * Endpoint pour obtenir une recommandation d'hôpital.
+     * Endpoint to get a hospital recommendation.
      * 
-     * @param request La demande d'allocation contenant spécialité et géolocalisation
-     * @return La réponse avec l'hôpital recommandé
+     * @param request The allocation request containing specialty and geolocation
+     * @return The response with the recommended hospital
      */
     @PostMapping("/allocate")
     public ResponseEntity<AllocationResponse> allocateHospital(@RequestBody AllocationRequest request) {
@@ -31,25 +31,25 @@ public class AllocationController {
             AllocationResponse response = allocationService.findBestHospital(request);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
-            // Erreur de validation des paramètres
+            // Parameter validation error
             return ResponseEntity.badRequest().build();
         } catch (RuntimeException e) {
-            // Aucun hôpital trouvé
+            // No hospital found
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (Exception e) {
-            // Erreur serveur
+            // Server error
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
     
     /**
-     * Endpoint GET pour tester l'API avec des paramètres en query string.
-     * Utile pour les tests et la démonstration.
+     * GET endpoint to test the API with query string parameters.
+     * Useful for testing and demonstration.
      * 
-     * @param specialty La spécialité médicale
-     * @param latitude Latitude du patient
-     * @param longitude Longitude du patient
-     * @return La réponse avec l'hôpital recommandé
+     * @param specialty The medical specialty
+     * @param latitude Patient latitude
+     * @param longitude Patient longitude
+     * @return The response with the recommended hospital
      */
     @GetMapping("/allocate")
     public ResponseEntity<AllocationResponse> allocateHospitalGet(
@@ -62,10 +62,10 @@ public class AllocationController {
     }
     
     /**
-     * Endpoint de santé pour vérifier que l'API est opérationnelle.
+     * Health endpoint to verify that the API is operational.
      */
     @GetMapping("/health")
     public ResponseEntity<String> health() {
-        return ResponseEntity.ok("API d'allocation opérationnelle");
+        return ResponseEntity.ok("Allocation API operational");
     }
 }

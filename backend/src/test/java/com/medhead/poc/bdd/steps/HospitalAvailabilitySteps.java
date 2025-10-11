@@ -4,33 +4,33 @@ import io.cucumber.java.en.*;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Définitions des étapes pour vérifier la disponibilité des lits selon les
- * spécialités. Ce scénario est basé sur un tableau d’exemples et illustre
- * comment calculer un statut en fonction du nombre de lits disponibles.
+ * Step definitions for checking bed availability by specialty.
+ * This scenario is based on an example table and illustrates
+ * how to calculate a status based on the number of available beds.
  */
 public class HospitalAvailabilitySteps {
-    private int lits;
-    private String specialite;
-    private String etat;
+    private int beds;
+    private String specialty;
+    private String status;
 
-    @Given("un hôpital nommé {string} ayant {string} lits disponibles en {string}")
-    public void un_hôpital_nommé_ayant_lits_disponibles_en(String hopital, String lits, String specialite) {
-        // On ignore le nom de l’hôpital pour le calcul, on stocke seulement le nombre de lits et la spécialité.
-        this.lits = Integer.parseInt(lits);
-        this.specialite = specialite;
+    @Given("a hospital named {string} having {string} available beds in {string}")
+    public void a_hospital_named_having_available_beds_in(String hospital, String beds, String specialty) {
+        // Ignore hospital name for calculation, only store bed count and specialty.
+        this.beds = Integer.parseInt(beds);
+        this.specialty = specialty;
     }
 
-    @When("le système vérifie la disponibilité pour {string}")
-    public void le_système_vérifie_la_disponibilité_pour(String specialiteDemandée) {
-        if (this.lits > 0 && this.specialite.equals(specialiteDemandée)) {
-            this.etat = "disponible";
+    @When("the system checks availability for {string}")
+    public void the_system_checks_availability_for(String requestedSpecialty) {
+        if (this.beds > 0 && this.specialty.equals(requestedSpecialty)) {
+            this.status = "available";
         } else {
-            this.etat = "indisponible";
+            this.status = "unavailable";
         }
     }
 
-    @Then("le statut doit être {string}")
-    public void le_statut_doit_être(String expected) {
-        assertThat(this.etat).isEqualTo(expected);
+    @Then("the status must be {string}")
+    public void the_status_must_be(String expected) {
+        assertThat(this.status).isEqualTo(expected);
     }
 }

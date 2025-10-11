@@ -1,10 +1,10 @@
-Feature: Performance et résilience sous charge
-  En tant qu’ingénieur QA
-  Je veux valider que le service répond en moins de 200 ms
-  Même sous 800 requêtes par seconde
+Feature: Performance and resilience under load
+  As a QA engineer
+  I want to validate that the service responds in less than 200 ms
+  Even under 800 requests per second
 
-  Scenario: Test de performance de l’API d’allocation
-    Given un générateur de charge simulant 800 requêtes/s sur l’endpoint "/api/allocate"
-    When les réponses sont mesurées sur une durée de 2 minutes
-    Then 95% des requêtes doivent avoir un temps de réponse < 200 ms
-    And aucun timeout ni 5xx ne doit être observé
+  Scenario: Allocation API performance test
+    Given a load generator simulating 800 requests/s on endpoint "/api/allocate"
+    When responses are measured over a duration of 2 minutes
+    Then 95% of requests must have a response time < 200 ms
+    And no timeout or 5xx errors should be observed

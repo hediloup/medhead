@@ -1,11 +1,11 @@
-Feature: Validation continue dans le pipeline CI/CD
-  En tant qu’équipe DevOps
-  Je veux que tous les tests BDD soient exécutés automatiquement à chaque push
-  Afin de garantir la qualité et la traçabilité des livraisons
+Feature: Continuous validation in CI/CD pipeline
+  As a DevOps team
+  I want all BDD tests to be executed automatically on each push
+  In order to ensure quality and traceability of deliveries
 
-  Scenario: Exécution automatisée des tests BDD
-    Given un commit est poussé sur la branche "main"
-    When le pipeline CI/CD est déclenché
-    Then les étapes "build", "test", "deploy" doivent s’exécuter avec succès
-    And un rapport de tests est généré dans /reports/cucumber.json
-    And le statut du pipeline doit être "passed"
+  Scenario: Automated BDD test execution
+    Given a commit is pushed to branch "main"
+    When the CI/CD pipeline is triggered
+    Then the "build", "test", "deploy" steps must execute successfully
+    And a test report is generated in /reports/cucumber.json
+    And the pipeline status must be "passed"

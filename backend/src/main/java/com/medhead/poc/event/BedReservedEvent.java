@@ -3,8 +3,8 @@ package com.medhead.poc.event;
 import java.time.LocalDateTime;
 
 /**
- * Événement publié lorsqu'un lit d'hôpital est réservé pour un patient.
- * Contient uniquement les données nécessaires et anonymisées.
+ * Event published when a hospital bed is reserved for a patient.
+ * Contains only necessary and anonymized data.
  */
 public class BedReservedEvent {
     
@@ -12,25 +12,25 @@ public class BedReservedEvent {
     private String eventType;
     private LocalDateTime timestamp;
     
-    // Données anonymisées du patient
+    // Anonymized patient data
     private String patientUuid;
     private String anonymizedPatientId;
     private String requiredSpecialty;
     private String severityLevel;
     private String ageGroup;
     
-    // Données de l'hôpital
+    // Hospital data
     private Long hospitalId;
     private String hospitalName;
     private String hospitalCity;
     private Double distanceKm;
     
-    // Métadonnées de l'allocation
+    // Allocation metadata
     private Integer availableBedsAfter;
     private Integer estimatedTimeMinutes;
     private String allocationStatus;
     
-    // Constructeurs
+    // Constructors
     public BedReservedEvent() {
         this.eventId = java.util.UUID.randomUUID().toString();
         this.eventType = "BED_RESERVED";
@@ -63,7 +63,7 @@ public class BedReservedEvent {
         this.allocationStatus = "CONFIRMED";
     }
     
-    // Getters et Setters
+    // Getters and Setters
     public String getEventId() {
         return eventId;
     }

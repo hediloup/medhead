@@ -4,34 +4,34 @@ import io.cucumber.java.en.*;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Étapes pour vérifier la conformité RGPD et l’anonymisation des données
- * patient. Dans ce squelette, on simule l’anonymisation en générant un
- * identifiant aléatoire et on vérifie que les champs sensibles ne sont pas
- * transmis tels quels.
+ * Steps to verify GDPR compliance and patient data anonymization.
+ * In this skeleton, anonymization is simulated by generating a
+ * random identifier and verifying that sensitive fields are not
+ * transmitted as-is.
  */
 public class SecurityComplianceSteps {
 
-    private String nom;
+    private String name;
     private String anonymised;
 
-    @Given("un objet Patient contenant {string}, {string}, {string}")
-    public void un_objet_patient_contenant(String nom, String date_naissance, String pathologie) {
-        this.nom = nom;
+    @Given("a Patient object containing {string}, {string}, {string}")
+    public void a_patient_object_containing(String name, String dateOfBirth, String pathology) {
+        this.name = name;
     }
 
-    @When("la requête d’allocation est envoyée")
-    public void la_requête_d_allocation_est_envoyée() {
-        // Dans un vrai cas, on anonymiserait avant l’envoi. Ici on simule.
+    @When("the allocation request is sent")
+    public void the_allocation_request_is_sent() {
+        // In a real case, anonymization would happen before sending. Here we simulate.
         this.anonymised = "ANON-" + System.currentTimeMillis();
     }
 
-    @Then("le champ {string} doit être remplacé par un identifiant anonyme")
-    public void le_champ_doit_être_remplacé_par_un_identifiant_anonyme(String champ) {
+    @Then("the field {string} must be replaced by an anonymous identifier")
+    public void the_field_must_be_replaced_by_an_anonymous_identifier(String field) {
         assertThat(this.anonymised).startsWith("ANON-");
     }
 
-    @Then("aucune donnée personnelle identifiable n’est transmise à l’API")
-    public void aucune_donnée_personnelle_identifiable_n_est_transmise_à_l_api() {
-        assertThat(this.nom).isNotEqualTo(this.anonymised);
+    @Then("no personally identifiable data is transmitted to the API")
+    public void no_personally_identifiable_data_is_transmitted_to_the_api() {
+        assertThat(this.name).isNotEqualTo(this.anonymised);
     }
 }

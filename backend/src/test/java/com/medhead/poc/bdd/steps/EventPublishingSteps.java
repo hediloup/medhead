@@ -6,9 +6,9 @@ import static org.assertj.core.api.Assertions.*;
 import java.util.Map;
 
 /**
- * Définitions des étapes pour la publication d’événements après l’allocation
- * d’un lit. Ce squelette illustre comment vérifier qu’un événement est
- * publié et que certaines données sont présentes dans le message.
+ * Step definitions for event publishing after bed allocation.
+ * This skeleton illustrates how to verify that an event is
+ * published and that certain data is present in the message.
  */
 public class EventPublishingSteps {
 
@@ -17,37 +17,37 @@ public class EventPublishingSteps {
     private String speciality;
     private String timestamp;
 
-    @Given("une demande de lit validée pour {string}")
-    public void une_demande_de_lit_validée_pour(String hopitalId) {
+    @Given("a validated bed request for {string}")
+    public void a_validated_bed_request_for(String hopitalId) {
         this.hospitalId = hopitalId;
     }
 
-    @When("le système confirme la réservation")
-    public void le_système_confirme_la_réservation() {
-        // Simulation de publication de l’événement
+    @When("the system confirms the reservation")
+    public void the_system_confirms_the_reservation() {
+        // Event publishing simulation
         this.eventPublished = true;
-        this.speciality = "Cardiologie";
+        this.speciality = "Cardiology";
         this.timestamp = "2025-10-10T10:10:10Z";
     }
 
-    @Then("un message avec type {string} est publié sur le topic {string}")
-    public void un_message_avec_type_est_publié_sur_le_topic(String type, String topic) {
-        assertThat(this.eventPublished).as("Vérifier que l’événement est publié").isTrue();
+    @Then("a message with type {string} is published on topic {string}")
+    public void a_message_with_type_is_published_on_topic(String type, String topic) {
+        assertThat(this.eventPublished).as("Verify that the event is published").isTrue();
     }
 
-    @Then("le message contient :")
-    public void le_message_contient(DataTable table) {
-        // Convertir la DataTable en Map pour validation
+    @Then("the message contains:")
+    public void the_message_contains(DataTable table) {
+        // Convert DataTable to Map for validation
         Map<String, String> expectedData = table.asMap(String.class, String.class);
         
-        // Vérifier les données attendues
+        // Verify expected data
         assertThat(expectedData).containsKey("hospital_id");
         assertThat(expectedData).containsKey("speciality");
         assertThat(expectedData).containsKey("timestamp");
         
-        // Vérifier les valeurs
+        // Verify values
         assertThat(expectedData.get("hospital_id")).isEqualTo(this.hospitalId);
         assertThat(expectedData.get("speciality")).isEqualTo(this.speciality);
-        assertThat(expectedData.get("timestamp")).isEqualTo("non nul");
+        assertThat(expectedData.get("timestamp")).isEqualTo("non null");
     }
 }

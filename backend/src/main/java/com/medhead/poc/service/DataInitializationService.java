@@ -10,9 +10,9 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 /**
- * Service pour initialiser les données de test au démarrage de l'application.
- * Ce service ne s'exécute que pour le profil "dev" (H2).
- * Pour le profil "prod" (PostgreSQL), les données sont initialisées via les scripts SQL.
+ * Service to initialize test data at application startup.
+ * This service only runs for the "dev" profile (H2).
+ * For the "prod" profile (PostgreSQL), data is initialized via SQL scripts.
  */
 @Service
 @Profile("dev")
@@ -26,21 +26,21 @@ public class DataInitializationService implements CommandLineRunner {
     
     @Override
     public void run(String... args) throws Exception {
-        // Vérifier si des données existent déjà
+        // Check if data already exists
         if (hospitalRepository.count() == 0) {
             initializeTestData();
         }
     }
     
     private void initializeTestData() {
-        // Créer les spécialités de test
-        Speciality cardiology = new Speciality("Cardiology", "Cardiologie et maladies cardiovasculaires");
-        Speciality neurology = new Speciality("Neurology", "Neurologie");
-        Speciality surgery = new Speciality("General Surgery", "Chirurgie générale");
-        Speciality emergency = new Speciality("Emergency Medicine", "Médecine d'urgence");
-        Speciality immunology = new Speciality("Immunology", "Immunologie");
-        Speciality oncology = new Speciality("Oncology", "Oncologie");
-        Speciality haematology = new Speciality("Haematology", "Hématologie");
+        // Create test specialties
+        Speciality cardiology = new Speciality("Cardiology", "Cardiology and cardiovascular diseases");
+        Speciality neurology = new Speciality("Neurology", "Neurology");
+        Speciality surgery = new Speciality("General Surgery", "General surgery");
+        Speciality emergency = new Speciality("Emergency Medicine", "Emergency medicine");
+        Speciality immunology = new Speciality("Immunology", "Immunology");
+        Speciality oncology = new Speciality("Oncology", "Oncology");
+        Speciality haematology = new Speciality("Haematology", "Haematology");
         
         specialityRepository.save(cardiology);
         specialityRepository.save(neurology);
@@ -50,11 +50,11 @@ public class DataInitializationService implements CommandLineRunner {
         specialityRepository.save(oncology);
         specialityRepository.save(haematology);
         
-        // Hôpitaux de test basés sur les données des scénarios BDD
+        // Test hospitals based on BDD scenario data
         
-        // Fred Brooks - Cardiologie (51.5074, -0.1278 - Londres)
+        // Fred Brooks - Cardiology (51.5074, -0.1278 - London)
         Hospital fredBrooks = new Hospital(
-            "Hôpital Fred Brooks",
+            "Fred Brooks Hospital",
             51.5074,
             -0.1278,
             "Londres",
@@ -66,22 +66,22 @@ public class DataInitializationService implements CommandLineRunner {
         fredBrooks.addSpeciality(surgery);
         hospitalRepository.save(fredBrooks);
         
-        // Julia Crusher - Cardiologie (51.5118, -0.1313 - Londres)
+        // Julia Crusher - Cardiology (51.5118, -0.1313 - London)
         Hospital juliaCrusher = new Hospital(
-            "Hôpital Julia Crusher",
+            "Julia Crusher Hospital",
             51.5118,
             -0.1313,
             "Londres",
             "456 Test Avenue, London",
-            0 // Pas de lits disponibles
+            0 // No available beds
         );
         juliaCrusher.addSpeciality(cardiology);
         juliaCrusher.addSpeciality(emergency);
         hospitalRepository.save(juliaCrusher);
         
-        // Beverly Bashir - Immunologie (51.5155, -0.0922 - Londres)
+        // Beverly Bashir - Immunology (51.5155, -0.0922 - London)
         Hospital beverlyBashir = new Hospital(
-            "Hôpital Beverly Bashir",
+            "Beverly Bashir Hospital",
             51.5155,
             -0.0922,
             "Londres",
@@ -93,9 +93,9 @@ public class DataInitializationService implements CommandLineRunner {
         beverlyBashir.addSpeciality(haematology);
         hospitalRepository.save(beverlyBashir);
         
-        // Hôpital supplémentaire pour plus de diversité
+        // Additional hospital for more diversity
         Hospital saintMary = new Hospital(
-            "Hôpital Saint Mary",
+            "Saint Mary Hospital",
             51.5154,
             -0.1754,
             "Londres",
@@ -107,6 +107,6 @@ public class DataInitializationService implements CommandLineRunner {
         saintMary.addSpeciality(surgery);
         hospitalRepository.save(saintMary);
         
-        System.out.println("Données de test initialisées avec " + hospitalRepository.count() + " hôpitaux et " + specialityRepository.count() + " spécialités");
+        System.out.println("Test data initialized with " + hospitalRepository.count() + " hospitals and " + specialityRepository.count() + " specialties");
     }
 }

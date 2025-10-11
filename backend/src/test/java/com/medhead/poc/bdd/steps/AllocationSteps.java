@@ -3,7 +3,7 @@ package com.medhead.poc.bdd.steps;
 import io.cucumber.java.en.*;
 
 /**
- * Étapes simplifiées pour l'allocation de lits sans dépendances externes
+ * Simplified steps for bed allocation without external dependencies
  */
 public class AllocationSteps {
 
@@ -11,34 +11,34 @@ public class AllocationSteps {
     private String geo;
     private String response;
 
-    @Given("un patient nécessitant des soins en {string}")
-    public void un_patient_nécessitant_des_soins_en(String spec) {
+    @Given("a patient requiring care in {string}")
+    public void a_patient_requiring_care_in(String spec) {
         this.speciality = spec;
-        System.out.println("Patient nécessitant des soins en: " + spec);
+        System.out.println("Patient requiring care in: " + spec);
     }
 
-    @Given("la localisation du patient est {string}")
-    public void la_localisation_du_patient_est(String geo) {
+    @Given("the patient location is {string}")
+    public void the_patient_location_is(String geo) {
         this.geo = geo;
-        System.out.println("Localisation du patient: " + geo);
+        System.out.println("Patient location: " + geo);
     }
 
-    @When("l'API d'allocation est appelée avec ces paramètres")
-    public void l_api_d_allocation_est_appelée_avec_ces_paramètres() {
-        // Simulation de l'appel API
-        this.response = "Hôpital Central"; // Réponse simulée
-        System.out.println("API d'allocation appelée avec spécialité: " + speciality + " et localisation: " + geo);
+    @When("the allocation API is called with these parameters")
+    public void the_allocation_api_is_called_with_these_parameters() {
+        // API call simulation
+        this.response = "Central Hospital"; // Simulated response
+        System.out.println("Allocation API called with specialty: " + speciality + " and location: " + geo);
     }
 
-    @Then("le code HTTP doit être {int}")
-    public void le_code_http_doit_être(Integer expectedStatus) {
-        System.out.println("Code HTTP attendu: " + expectedStatus + " (simulation réussie)");
-        // Simulation réussie
+    @Then("the HTTP code must be {int}")
+    public void the_http_code_must_be(Integer expectedStatus) {
+        System.out.println("Expected HTTP code: " + expectedStatus + " (simulation successful)");
+        // Successful simulation
     }
 
-    @Then("la réponse doit contenir {string}")
-    public void la_réponse_doit_contenir(String expected) {
-        System.out.println("Réponse attendue: " + expected + ", réponse simulée: " + response);
-        // Simulation réussie
+    @Then("the response must contain {string}")
+    public void the_response_must_contain(String expected) {
+        System.out.println("Expected response: " + expected + ", simulated response: " + response);
+        // Successful simulation
     }
 }

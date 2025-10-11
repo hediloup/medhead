@@ -9,8 +9,8 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import java.util.concurrent.Executor;
 
 /**
- * Configuration pour les tâches asynchrones et planifiées.
- * Utilisé pour la publication d'événements et l'anonymisation des données.
+ * Configuration for asynchronous and scheduled tasks.
+ * Used for event publishing and data anonymization.
  */
 @Configuration
 @EnableAsync

@@ -6,8 +6,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 /**
- * Service pour publier des événements dans le système.
- * Utilise le pattern Observer de Spring pour la publication d'événements.
+ * Service for publishing events in the system.
+ * Uses Spring's Observer pattern for event publishing.
  */
 @Service
 public class EventPublisherService {
@@ -16,7 +16,7 @@ public class EventPublisherService {
     private ApplicationEventPublisher eventPublisher;
     
     /**
-     * Publie un événement de lit réservé
+     * Publishes a bed reserved event
      */
     public void publishBedReservedEvent(BedReservedEvent event) {
         if (event == null) {
@@ -24,22 +24,22 @@ public class EventPublisherService {
         }
         
         try {
-            // Validation de l'événement avant publication
+            // Validate event before publishing
             validateBedReservedEvent(event);
             
-            // Publication de l'événement
+            // Publish the event
             eventPublisher.publishEvent(event);
             
-            System.out.println("Événement BED_RESERVED publié : " + event.getEventId());
+            System.out.println("BED_RESERVED event published: " + event.getEventId());
             
         } catch (Exception e) {
-            System.err.println("Erreur lors de la publication de l'événement BED_RESERVED : " + e.getMessage());
+            System.err.println("Error publishing BED_RESERVED event: " + e.getMessage());
             throw new RuntimeException("Impossible de publier l'événement", e);
         }
     }
     
     /**
-     * Crée et publie un événement de lit réservé avec les paramètres fournis
+     * Creates and publishes a bed reserved event with the provided parameters
      */
     public void publishBedReservedEvent(String patientUuid,
                                       String anonymizedPatientId,
@@ -71,36 +71,36 @@ public class EventPublisherService {
     }
     
     /**
-     * Valide un événement avant publication
+     * Validates an event before publishing
      */
     private void validateBedReservedEvent(BedReservedEvent event) {
         if (event.getPatientUuid() == null || event.getPatientUuid().trim().isEmpty()) {
-            throw new IllegalArgumentException("L'UUID du patient est requis");
+            throw new IllegalArgumentException("Patient UUID is required");
         }
         
         if (event.getAnonymizedPatientId() == null || event.getAnonymizedPatientId().trim().isEmpty()) {
-            throw new IllegalArgumentException("L'ID anonymisé du patient est requis");
+            throw new IllegalArgumentException("Anonymized patient ID is required");
         }
         
         if (event.getHospitalId() == null) {
-            throw new IllegalArgumentException("L'ID de l'hôpital est requis");
+            throw new IllegalArgumentException("Hospital ID is required");
         }
         
         if (event.getHospitalName() == null || event.getHospitalName().trim().isEmpty()) {
-            throw new IllegalArgumentException("Le nom de l'hôpital est requis");
+            throw new IllegalArgumentException("Hospital name is required");
         }
         
         if (event.getRequiredSpecialty() == null || event.getRequiredSpecialty().trim().isEmpty()) {
-            throw new IllegalArgumentException("La spécialité requise est requise");
+            throw new IllegalArgumentException("Required specialty is required");
         }
         
         if (event.getEventType() == null || !event.getEventType().equals("BED_RESERVED")) {
-            throw new IllegalArgumentException("Le type d'événement doit être BED_RESERVED");
+            throw new IllegalArgumentException("Event type must be BED_RESERVED");
         }
     }
     
     /**
-     * Publie un événement générique
+     * Publishes a generic event
      */
     public void publishEvent(Object event) {
         if (event == null) {
@@ -109,9 +109,9 @@ public class EventPublisherService {
         
         try {
             eventPublisher.publishEvent(event);
-            System.out.println("Événement publié : " + event.getClass().getSimpleName());
+            System.out.println("Event published: " + event.getClass().getSimpleName());
         } catch (Exception e) {
-            System.err.println("Erreur lors de la publication de l'événement : " + e.getMessage());
+            System.err.println("Error publishing event: " + e.getMessage());
             throw new RuntimeException("Impossible de publier l'événement", e);
         }
     }

@@ -12,112 +12,112 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Repository pour la gestion sécurisée des données patients.
- * Implémente les bonnes pratiques RGPD et de protection des données.
+ * Repository for secure patient data management.
+ * Implements GDPR and data protection best practices.
  */
 @Repository
 public interface PatientRepository extends JpaRepository<Patient, Long> {
     
     /**
-     * Trouve un patient par son UUID (identifiant anonyme)
+     * Finds a patient by their UUID (anonymous identifier)
      */
     Optional<Patient> findByPatientUuid(String patientUuid);
     
     /**
-     * Trouve tous les patients non anonymisés
+     * Finds all non-anonymized patients
      */
     @Query("SELECT p FROM Patient p WHERE p.isAnonymized = false")
     List<Patient> findNonAnonymizedPatients();
     
     /**
-     * Trouve les patients dont les données ont expiré selon la politique de rétention
+     * Finds patients whose data has expired according to retention policy
      */
     @Query("SELECT p FROM Patient p WHERE p.dataRetentionUntil < :currentDate")
     List<Patient> findExpiredPatients(@Param("currentDate") LocalDateTime currentDate);
     
     /**
-     * Trouve les patients par spécialité requise
+     * Finds patients by required specialty
      */
     @Query("SELECT p FROM Patient p WHERE p.requiredSpecialty = :specialty AND p.isAnonymized = false")
     List<Patient> findByRequiredSpecialty(@Param("specialty") String specialty);
     
     /**
-     * Trouve les patients par groupe d'âge (pour statistiques anonymisées)
+     * Finds patients by age group (for anonymized statistics)
      */
     @Query("SELECT p FROM Patient p WHERE p.ageGroup = :ageGroup")
     List<Patient> findByAgeGroup(@Param("ageGroup") String ageGroup);
     
     /**
-     * Trouve les patients par niveau de gravité
+     * Finds patients by severity level
      */
     @Query("SELECT p FROM Patient p WHERE p.severityLevel = :severity AND p.isAnonymized = false")
     List<Patient> findBySeverityLevel(@Param("severity") String severity);
     
     /**
-     * Trouve les patients par hôpital alloué
+     * Finds patients by allocated hospital
      */
     @Query("SELECT p FROM Patient p WHERE p.allocatedHospital.id = :hospitalId")
     List<Patient> findByAllocatedHospital(@Param("hospitalId") Long hospitalId);
     
     /**
-     * Trouve les patients créés dans une période donnée (pour rapports anonymisés)
+     * Finds patients created in a given period (for anonymized reports)
      */
     @Query("SELECT p FROM Patient p WHERE p.createdAt BETWEEN :startDate AND :endDate")
     List<Patient> findPatientsCreatedBetween(@Param("startDate") LocalDateTime startDate, 
                                            @Param("endDate") LocalDateTime endDate);
     
     /**
-     * Compte le nombre de patients par spécialité (pour statistiques)
+     * Counts the number of patients by specialty (for statistics)
      */
     @Query("SELECT p.requiredSpecialty, COUNT(p) FROM Patient p WHERE p.isAnonymized = false GROUP BY p.requiredSpecialty")
     List<Object[]> countPatientsBySpecialty();
     
     /**
-     * Compte le nombre de patients par groupe d'âge (pour statistiques)
+     * Counts the number of patients by age group (for statistics)
      */
     @Query("SELECT p.ageGroup, COUNT(p) FROM Patient p GROUP BY p.ageGroup")
     List<Object[]> countPatientsByAgeGroup();
     
     /**
-     * Trouve les patients par code postal (pour analyses géographiques anonymisées)
+     * Finds patients by postal code (for anonymized geographic analyses)
      */
     @Query("SELECT p FROM Patient p WHERE p.postalCode = :postalCode")
     List<Patient> findByPostalCode(@Param("postalCode") String postalCode);
     
     /**
-     * Marque un patient comme anonymisé (suppression logique)
+     * Marks a patient as anonymized (logical deletion)
      */
     @Modifying
     @Query("UPDATE Patient p SET p.isAnonymized = true, p.anonymizedName = :anonymizedName WHERE p.id = :patientId")
     int anonymizePatient(@Param("patientId") Long patientId, @Param("anonymizedName") String anonymizedName);
     
     /**
-     * Supprime définitivement les données expirées (conformité RGPD)
+     * Permanently deletes expired data (GDPR compliance)
      */
     @Modifying
     @Query("DELETE FROM Patient p WHERE p.dataRetentionUntil < :currentDate")
     int deleteExpiredPatients(@Param("currentDate") LocalDateTime currentDate);
     
     /**
-     * Met à jour la date de rétention d'un patient
+     * Updates a patient's retention date
      */
     @Modifying
     @Query("UPDATE Patient p SET p.dataRetentionUntil = :newRetentionDate WHERE p.id = :patientId")
     int updateDataRetention(@Param("patientId") Long patientId, @Param("newRetentionDate") LocalDateTime newRetentionDate);
     
     /**
-     * Trouve les patients avec des données sensibles non anonymisées
+     * Finds patients with non-anonymized sensitive data
      */
     @Query("SELECT p FROM Patient p WHERE p.isAnonymized = false AND (p.anonymizedName IS NULL OR p.anonymizedName = '')")
     List<Patient> findPatientsWithMissingAnonymization();
     
     /**
-     * Vérifie l'existence d'un patient par UUID sans exposer ses données
+     * Checks the existence of a patient by UUID without exposing their data
      */
     boolean existsByPatientUuid(String patientUuid);
     
     /**
-     * Trouve les patients par proximité géographique (pour analyses anonymisées)
+     * Finds patients by geographic proximity (for anonymized analyses)
      */
     @Query("SELECT p FROM Patient p WHERE " +
            "6371 * acos(cos(radians(:latitude)) * cos(radians(p.latitude)) * " +

@@ -4,19 +4,19 @@ import io.cucumber.java.After;
 import io.cucumber.java.Before;
 
 /**
- * Hooks exécutés avant et après chaque scénario.  
- * Vous pouvez y initialiser des ressources (base de données, serveurs) ou
- * nettoyer l’état après chaque test.
+ * Hooks executed before and after each scenario.
+ * You can initialize resources (database, servers) or
+ * clean up state after each test.
  */
 public class Hooks {
 
     @Before
     public void setUp() {
-        // Code d’initialisation global avant chaque scénario
+        // Global initialization code before each scenario
     }
 
     @After
     public void tearDown() {
-        // Code de nettoyage global après chaque scénario
+        // Global cleanup code after each scenario
     }
 }
