@@ -93,15 +93,15 @@ class AllocationStressTest {
 
         // Then
         int totalRequests = numberOfThreads * requestsPerThread;
-        assertThat(successCount.get()).isGreaterThan(totalRequests * 0.9); // 90% success rate
-        assertThat(errorCount.get()).isLessThan(totalRequests * 0.1); // Less than 10% errors
+        assertThat(successCount.get()).isGreaterThan((int)(totalRequests * 0.9)); // 90% success rate
+        assertThat(errorCount.get()).isLessThan((int)(totalRequests * 0.1)); // Less than 10% errors
         
         // Performance assertions
-        double averageResponseTime = responseTimes.stream().mapToLong(Long::longValue).average().orElse(0);
-        assertThat(averageResponseTime).isLessThan(2000); // Average response time under 2 seconds
+        double averageResponseTime = responseTimes.stream().mapToLong(Long::longValue).average().orElse(0.0);
+        assertThat(averageResponseTime).isLessThan(2000.0); // Average response time under 2 seconds
         
-        long maxResponseTime = responseTimes.stream().mapToLong(Long::longValue).max().orElse(0);
-        assertThat(maxResponseTime).isLessThan(5000); // Max response time under 5 seconds
+        long maxResponseTime = responseTimes.stream().mapToLong(Long::longValue).max().orElse(0L);
+        assertThat(maxResponseTime).isLessThan(5000L); // Max response time under 5 seconds
 
         System.out.println("Stress Test Results:");
         System.out.println("Total Requests: " + totalRequests);
@@ -169,10 +169,10 @@ class AllocationStressTest {
         assertThat(successRate).isGreaterThan(0.95); // 95% success rate
 
         double throughput = (double) numberOfRequests / (testDuration / 1000.0);
-        assertThat(throughput).isGreaterThan(50); // At least 50 requests per second
+        assertThat(throughput).isGreaterThan(50.0); // At least 50 requests per second
 
-        double averageResponseTime = responseTimes.stream().mapToLong(Long::longValue).average().orElse(0);
-        assertThat(averageResponseTime).isLessThan(1000); // Average response time under 1 second
+        double averageResponseTime = responseTimes.stream().mapToLong(Long::longValue).average().orElse(0.0);
+        assertThat(averageResponseTime).isLessThan(1000.0); // Average response time under 1 second
 
         System.out.println("High Load Test Results:");
         System.out.println("Total Requests: " + numberOfRequests);
@@ -234,7 +234,7 @@ class AllocationStressTest {
         long memoryIncrease = finalMemory - initialMemory;
         
         // Memory increase should be reasonable (less than 100MB)
-        assertThat(memoryIncrease).isLessThan(100 * 1024 * 1024);
+        assertThat(memoryIncrease).isLessThan(100L * 1024 * 1024);
 
         System.out.println("Memory Usage Test Results:");
         System.out.println("Initial Memory: " + (initialMemory / 1024 / 1024) + "MB");
