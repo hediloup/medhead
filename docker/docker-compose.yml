@@ -64,7 +64,7 @@ services:
       PGADMIN_DEFAULT_EMAIL: admin@medhead.com
       PGADMIN_DEFAULT_PASSWORD: admin123
     ports:
-      - "8081:80"
+      - "8082:80"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     networks:

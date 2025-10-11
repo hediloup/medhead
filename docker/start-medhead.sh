@@ -1,60 +1,60 @@
 #!/bin/bash
 
-# Script de démarrage pour l'application MedHead complète avec Docker
-echo "🚀 Démarrage de l'application MedHead complète avec Docker..."
+# Startup script for the complete MedHead application with Docker
+echo "🚀 Starting the complete MedHead application with Docker..."
 
-# Vérifier si Docker est installé
+# Check if Docker is installed
 if ! command -v docker &> /dev/null; then
-    echo "❌ Docker n'est pas installé. Veuillez installer Docker Desktop."
+    echo "❌ Docker is not installed. Please install Docker Desktop."
     exit 1
 fi
 
-# Vérifier si Docker Compose est installé
+# Check if Docker Compose is installed
 if ! command -v docker-compose &> /dev/null; then
-    echo "❌ Docker Compose n'est pas installé. Veuillez installer Docker Compose."
+    echo "❌ Docker Compose is not installed. Please install Docker Compose."
     exit 1
 fi
 
-# Arrêter les conteneurs existants
-echo "🛑 Arrêt des conteneurs existants..."
+# Stop existing containers
+echo "🛑 Stopping existing containers..."
 docker-compose down
 
-# Nettoyer les images existantes (optionnel)
-echo "🧹 Nettoyage des images existantes..."
+# Clean up existing images (optional)
+echo "🧹 Cleaning up existing images..."
 docker system prune -f
 
-# Construire et démarrer tous les services
-echo "🔨 Construction et démarrage de tous les services..."
-echo "   📊 PostgreSQL (base de données)"
+# Build and start all services
+echo "🔨 Building and starting all services..."
+echo "   📊 PostgreSQL (database)"
 echo "   🔧 Backend Spring Boot"
 echo "   🎨 Frontend Angular"
-echo "   🛠️  pgAdmin (optionnel)"
+echo "   🛠️  pgAdmin (optional)"
 
 docker-compose up --build -d
 
-# Attendre que les services soient prêts
-echo "⏳ Attente du démarrage des services..."
+# Wait for services to be ready
+echo "⏳ Waiting for services to start..."
 sleep 45
 
-# Vérifier le statut des services
-echo "📊 Statut des services:"
+# Check services status
+echo "📊 Services status:"
 docker-compose ps
 
-# Afficher les logs
-echo "📝 Logs des services:"
+# Display logs
+echo "📝 Services logs:"
 docker-compose logs --tail=20
 
 echo ""
-echo "✅ Application MedHead complète démarrée avec succès!"
+echo "✅ Complete MedHead application started successfully!"
 echo ""
-echo "🌐 Accès aux services:"
+echo "🌐 Service access:"
 echo "   🎨 Frontend Angular: http://localhost:4200"
 echo "   🔧 Backend API:      http://localhost:8080"
-echo "   📊 Base PostgreSQL:  localhost:5433"
-echo "   🛠️  pgAdmin:         http://localhost:8081"
+echo "   📊 PostgreSQL DB:    localhost:5433"
+echo "   🛠️  pgAdmin:         http://localhost:8082"
 echo ""
-echo "📋 Informations de connexion:"
-echo "   Base de données:"
+echo "📋 Connection information:"
+echo "   Database:"
 echo "     Host: localhost"
 echo "     Port: 5433"
 echo "     Database: medhead_db"
@@ -65,13 +65,13 @@ echo "   pgAdmin:"
 echo "     Email: admin@medhead.com"
 echo "     Password: admin123"
 echo ""
-echo "📋 Commandes utiles:"
-echo "   Voir les logs:     docker-compose logs -f"
-echo "   Arrêter:           docker-compose down"
-echo "   Redémarrer:        docker-compose restart"
-echo "   Nettoyer:          docker-compose down -v"
+echo "📋 Useful commands:"
+echo "   View logs:       docker-compose logs -f"
+echo "   Stop:            docker-compose down"
+echo "   Restart:         docker-compose restart"
+echo "   Clean up:        docker-compose down -v"
 echo ""
-echo "🧪 Tests rapides:"
-echo "   API Health:        curl http://localhost:8080/api/health"
-echo "   Frontend:          curl http://localhost:4200"
+echo "🧪 Quick tests:"
+echo "   API Health:      curl http://localhost:8080/api/health"
+echo "   Frontend:        curl http://localhost:4200"
 echo ""

@@ -171,7 +171,7 @@ INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
 
 -- University College Hospital
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(5, (SELECT id FROM specialities WHERE name = 'Oncology')),
+(5, (SELECT id FROM specialities WHERE name = 'Clinical Oncology')),
 (5, (SELECT id FROM specialities WHERE name = 'Neurology')),
 (5, (SELECT id FROM specialities WHERE name = 'Cardiology')),
 (5, (SELECT id FROM specialities WHERE name = 'General Surgery')),
@@ -217,7 +217,7 @@ INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
 -- Birmingham Children's Hospital
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
 (11, (SELECT id FROM specialities WHERE name = 'Paediatrics')),
-(11, (SELECT id FROM specialities WHERE name = 'Paediatric Surgery')),
+(11, (SELECT id FROM specialities WHERE name = 'General Surgery')),
 (11, (SELECT id FROM specialities WHERE name = 'Emergency Medicine'));
 
 -- Heartlands Hospital
@@ -237,7 +237,7 @@ INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
 
 -- St James's University Hospital Leeds
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(14, (SELECT id FROM specialities WHERE name = 'Oncology')),
+(14, (SELECT id FROM specialities WHERE name = 'Medical Oncology')),
 (14, (SELECT id FROM specialities WHERE name = 'Haematology')),
 (14, (SELECT id FROM specialities WHERE name = 'General Medicine')),
 (14, (SELECT id FROM specialities WHERE name = 'Emergency Medicine'));
@@ -253,7 +253,7 @@ INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
 -- Alder Hey Children's Hospital
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
 (16, (SELECT id FROM specialities WHERE name = 'Paediatrics')),
-(16, (SELECT id FROM specialities WHERE name = 'Paediatric Surgery')),
+(16, (SELECT id FROM specialities WHERE name = 'General Surgery')),
 (16, (SELECT id FROM specialities WHERE name = 'Emergency Medicine'));
 
 -- Royal Victoria Infirmary Newcastle
@@ -355,7 +355,7 @@ INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
 
 -- Western General Hospital Edinburgh
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(30, (SELECT id FROM specialities WHERE name = 'Oncology')),
+(30, (SELECT id FROM specialities WHERE name = 'Medical Oncology')),
 (30, (SELECT id FROM specialities WHERE name = 'Haematology')),
 (30, (SELECT id FROM specialities WHERE name = 'General Medicine')),
 (30, (SELECT id FROM specialities WHERE name = 'Emergency Medicine'));
@@ -385,7 +385,7 @@ INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
 
 -- Belfast City Hospital
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(34, (SELECT id FROM specialities WHERE name = 'Oncology')),
+(34, (SELECT id FROM specialities WHERE name = 'Medical Oncology')),
 (34, (SELECT id FROM specialities WHERE name = 'Haematology')),
 (34, (SELECT id FROM specialities WHERE name = 'General Medicine')),
 (34, (SELECT id FROM specialities WHERE name = 'Emergency Medicine'));
