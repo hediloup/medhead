@@ -9,7 +9,7 @@ on:
 env:
   JAVA_VERSION: '17'
   NODE_VERSION: '18'
-  MAVEN_OPTS: '-Xmx2048m -XX:MaxPermSize=512m'
+  MAVEN_OPTS: '-Xmx2048m -XX:MetaspaceSize=512m'
   NODE_OPTIONS: '--max-old-space-size=4096'
 
 jobs:
@@ -62,16 +62,14 @@ jobs:
       run: |
         echo "🧪 Exécution des tests unitaires..."
         mvn test -P unit-tests \
-          -Dspring.profiles.active=test \
-          -Dsurefire.reportsDirectory=../../reports/backend/unit-tests
+          -Dspring.profiles.active=test
 
     - name: 🔗 Tests d'Intégration Backend
       working-directory: ./backend
       run: |
         echo "🔗 Exécution des tests d'intégration..."
         mvn test -P integration-tests \
-          -Dspring.profiles.active=test \
-          -Dfailsafe.reportsDirectory=../../reports/backend/integration-tests
+          -Dspring.profiles.active=test
 
     - name: 📊 Upload rapports tests Backend
       uses: actions/upload-artifact@v4
@@ -79,8 +77,8 @@ jobs:
       with:
         name: backend-test-reports
         path: |
-          reports/backend/unit-tests/
-          reports/backend/integration-tests/
+          backend/target/surefire-reports/
+          backend/target/failsafe-reports/
         retention-days: 30
 
     - name: 📈 Publish Test Results
@@ -88,7 +86,7 @@ jobs:
       if: always()
       with:
         name: Backend Test Results
-        path: 'reports/backend/unit-tests/*.xml'
+        path: 'backend/target/surefire-reports/*.xml'
         reporter: java-junit
         fail-on-error: true
 
@@ -191,15 +189,14 @@ jobs:
       run: |
         echo "📋 Exécution des tests BDD..."
         mvn test -P bdd-tests \
-          -Dspring.profiles.active=test \
-          -Dcucumber.reportsDirectory=../../reports/backend/bdd-tests
+          -Dspring.profiles.active=test
 
     - name: 📊 Upload rapports BDD
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: bdd-test-reports
-        path: reports/backend/bdd-tests/
+        path: backend/target/cucumber-reports/
         retention-days: 30
 
   # Job 4: Tests E2E (Interface utilisateur complète)

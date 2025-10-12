@@ -30,6 +30,8 @@ env:
   IMAGE_NAME: ${{ github.repository }}
   JAVA_VERSION: '17'
   NODE_VERSION: '18'
+  MAVEN_OPTS: '-Xmx2048m -XX:MetaspaceSize=512m'
+  NODE_OPTIONS: '--max-old-space-size=4096'
 
 jobs:
   # Job 1: Validation de la release

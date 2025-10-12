@@ -18,6 +18,10 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  JAVA_VERSION: '17'
+  NODE_VERSION: '18'
+  MAVEN_OPTS: '-Xmx2048m -XX:MetaspaceSize=512m'
+  NODE_OPTIONS: '--max-old-space-size=4096'
 
 jobs:
   # Job 1: Tests de performance avant déploiement
@@ -59,15 +63,14 @@ jobs:
       run: |
         echo "⚡ Exécution des tests de performance..."
         mvn test -P performance-tests \
-          -Dspring.profiles.active=test \
-          -Dperformance.reportsDirectory=../../reports/performance
+          -Dspring.profiles.active=test
 
     - name: 📊 Upload rapports performance
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: performance-reports
-        path: reports/performance/
+        path: backend/target/surefire-reports/
         retention-days: 30
 
     - name: 🧹 Nettoyage
