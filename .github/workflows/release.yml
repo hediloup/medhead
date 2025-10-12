@@ -33,6 +33,11 @@ env:
   MAVEN_OPTS: '-Xmx2048m -XX:MetaspaceSize=512m'
   NODE_OPTIONS: '--max-old-space-size=4096'
 
+permissions:
+  contents: write
+  packages: write
+  deployments: write
+
 jobs:
   # Job 1: Validation de la release
   validate-release:

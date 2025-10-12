@@ -23,6 +23,11 @@ env:
   MAVEN_OPTS: '-Xmx2048m -XX:MetaspaceSize=512m'
   NODE_OPTIONS: '--max-old-space-size=4096'
 
+permissions:
+  contents: read
+  packages: write
+  deployments: write
+
 jobs:
   # Job 1: Tests de performance avant déploiement
   performance-tests:
