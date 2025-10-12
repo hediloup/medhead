@@ -125,9 +125,7 @@ jobs:
       working-directory: ./frontend
       run: |
         echo "🧪 Exécution des tests unitaires Angular..."
-        npm run test:coverage -- --watch=false --browsers=ChromeHeadless \
-          --reporters=html,coverage,junit \
-          --output-path=../reports/frontend/unit-tests
+        npm run test:coverage -- --watch=false --browsers=ChromeHeadless
 
     - name: 🏗️ Build Frontend
       working-directory: ./frontend
@@ -141,7 +139,7 @@ jobs:
       with:
         name: frontend-test-reports
         path: |
-          reports/frontend/unit-tests/
+          frontend/coverage/
           frontend/dist/
         retention-days: 30
 
@@ -149,7 +147,7 @@ jobs:
       uses: codecov/codecov-action@v4
       if: always()
       with:
-        file: ./reports/frontend/unit-tests/coverage/lcov.info
+        file: ./frontend/coverage/medhead-frontend/lcov.info
         flags: frontend
         name: frontend-coverage
 
@@ -352,7 +350,7 @@ jobs:
           -Dsonar.organization=medhead \
           -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
           -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
-          -Dsonar.javascript.lcov.reportPaths=reports/frontend/unit-tests/coverage/lcov.info
+          -Dsonar.javascript.lcov.reportPaths=frontend/coverage/medhead-frontend/lcov.info
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
