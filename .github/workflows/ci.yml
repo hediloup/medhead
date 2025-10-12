@@ -268,34 +268,50 @@ jobs:
       working-directory: ./frontend
       run: npm ci
 
-    - name: 🐳 Démarrage des services avec Docker Compose
+    - name: 🐳 Démarrage du backend avec Docker Compose
       run: |
-        echo "🐳 Démarrage des services MedHead..."
-        docker compose -f ./docker/docker-compose.yml up -d
+        echo "🐳 Démarrage du backend MedHead..."
+        # Démarrer uniquement postgres et backend
+        docker compose -f ./docker/docker-compose.yml up -d postgres backend
         
-        echo "⏳ Attente du démarrage des services..."
-        sleep 60
+        echo "⏳ Attente du démarrage du backend..."
+        sleep 45
         
-        echo "🔍 Vérification du statut des services..."
+        echo "🔍 Vérification du statut du backend..."
         docker compose -f ./docker/docker-compose.yml ps
         
-        echo "🌐 Vérification de l'accessibilité du frontend..."
-        curl -f http://localhost:4200 || echo "⚠️ Frontend pas encore accessible"
-        
         echo "🔧 Vérification de l'accessibilité du backend..."
-        curl -f http://localhost:8080/api/health || echo "⚠️ Backend pas encore accessible"
+        timeout 60s bash -c 'until curl -f http://localhost:8080/api/health > /dev/null 2>&1; do sleep 5; echo "⏳ En attente du backend..."; done'
+        echo "✅ Backend accessible"
+
+    - name: 🌐 Démarrage du frontend Angular
+      working-directory: ./frontend
+      run: |
+        echo "🌐 Démarrage de l'application Angular..."
+        # Construire l'application
+        npm run build
+        
+        # Démarrer l'application en arrière-plan
+        nohup npm start > ../reports/frontend/angular.log 2>&1 &
+        echo $! > ../reports/frontend/angular.pid
+        
+        echo "⏳ Attente du démarrage de l'application Angular..."
+        sleep 30
+        
+        echo "🌐 Vérification de l'accessibilité du frontend..."
+        timeout 60s bash -c 'until curl -f http://localhost:4200 > /dev/null 2>&1; do sleep 5; echo "⏳ En attente du frontend Angular..."; done'
+        echo "✅ Frontend Angular accessible"
 
     - name: 🌐 Tests E2E avec Cypress
       working-directory: ./frontend
       run: |
         echo "🌐 Exécution des tests E2E..."
-        echo "📋 Vérification de l'accessibilité avant les tests..."
-        
-        # Attendre que l'application soit accessible
-        timeout 120s bash -c 'until curl -f http://localhost:4200 > /dev/null 2>&1; do sleep 5; echo "⏳ En attente du frontend..."; done'
         
         # Créer le répertoire de rapports
         mkdir -p ../reports/frontend/e2e-tests
+        
+        # Vérifier que l'application est accessible
+        curl -f http://localhost:4200 || (echo "❌ Frontend non accessible" && exit 1)
         
         # Exécuter les tests E2E
         npm run e2e:ci -- --reporter junit \
@@ -303,6 +319,16 @@ jobs:
       env:
         CYPRESS_BASE_URL: http://localhost:4200
       continue-on-error: true
+
+    - name: 🛑 Arrêt du frontend Angular
+      if: always()
+      run: |
+        echo "🛑 Arrêt de l'application Angular..."
+        if [ -f ./frontend/reports/frontend/angular.pid ]; then
+          PID=$(cat ./frontend/reports/frontend/angular.pid)
+          kill $PID 2>/dev/null || echo "Processus Angular déjà arrêté"
+          rm -f ./frontend/reports/frontend/angular.pid
+        fi
 
     - name: 📊 Upload rapports E2E
       uses: actions/upload-artifact@v4
