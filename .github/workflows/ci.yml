@@ -637,7 +637,11 @@ jobs:
       with:
         status: ${{ job.status }}
         channel: '#medhead-ci'
-        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
         fields: repo,message,commit,author,action,eventName,ref,workflow
+        author_name: '8398a7@action-slack'
+        success_message: ':white_check_mark: Succeeded GitHub Actions'
+        cancelled_message: ':warning: Cancelled GitHub Actions'
+        failure_message: ':no_entry: Failed GitHub Actions'
+        github_token: ${{ secrets.GITHUB_TOKEN }}
       env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
