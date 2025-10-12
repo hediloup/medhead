@@ -248,12 +248,13 @@
 								<exclude>**/integration/**/*Test*.java</exclude>
 							</excludes>
 							<parallel>methods</parallel>
-							<threadCount>2</threadCount>
+							<threadCount>1</threadCount>
 							<forkCount>1</forkCount>
-							<reuseForks>true</reuseForks>
+							<reuseForks>false</reuseForks>
+							<timeout>600</timeout>
 							<systemPropertyVariables>
 								<spring.profiles.active>test</spring.profiles.active>
-								<cucumber.options>--plugin pretty --plugin html:target/cucumber-reports --plugin json:target/cucumber-reports/cucumber.json</cucumber.options>
+								<cucumber.options>--plugin pretty --plugin html:target/cucumber-reports --plugin json:target/cucumber-reports/cucumber.json --monochrome</cucumber.options>
 							</systemPropertyVariables>
 						</configuration>
 					</plugin>
