@@ -8,7 +8,6 @@ import io.cucumber.java.Before;
 import io.cucumber.java.After;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -16,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
  * Ils permettent d'initialiser les ressources (base de données, serveurs)
  * ou de nettoyer l'état après chaque test.
  */
-@ContextConfiguration(classes = {com.medhead.poc.PocApplication.class})
 public class Hooks {
 
     @Autowired

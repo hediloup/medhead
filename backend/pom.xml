@@ -74,6 +74,13 @@
 			<version>7.16.1</version>
 			<scope>test</scope>
 		</dependency>
+		<!-- Cucumber Spring integration -->
+		<dependency>
+			<groupId>io.cucumber</groupId>
+			<artifactId>cucumber-spring</artifactId>
+			<version>7.16.1</version>
+			<scope>test</scope>
+		</dependency>
 		<!-- AssertJ for fluent assertions -->
 		<dependency>
 			<groupId>org.assertj</groupId>

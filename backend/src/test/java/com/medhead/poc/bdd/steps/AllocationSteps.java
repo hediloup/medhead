@@ -278,4 +278,26 @@ public class AllocationSteps {
             fail("Erreur lors de la vérification des informations de route: " + e.getMessage());
         }
     }
+
+    // Étapes supplémentaires pour les tests manquants
+    @Étantdonné("^qu'il existe un hôpital \"([^\"]*)\" avec la spécialité \"([^\"]*)\"$")
+    @Transactional
+    public void qu_il_existe_un_hôpital_avec_la_spécialité(String hospitalName, String specialtyName) {
+        // Créer ou récupérer la spécialité
+        Speciality specialty = specialityRepository.findByName(specialtyName).orElse(null);
+        if (specialty == null) {
+            specialty = new Speciality();
+            specialty.setName(specialtyName);
+            specialty = specialityRepository.save(specialty);
+        }
+
+        // Créer l'hôpital avec la spécialité
+        Hospital hospital = new Hospital(hospitalName, 53.4808, -2.2426, "Manchester", "Test Address", 5);
+        Set<Speciality> specialities = new HashSet<>();
+        specialities.add(specialty);
+        hospital.setSpecialities(specialities);
+        hospitalRepository.save(hospital);
+    }
+
+
 }
