@@ -288,6 +288,11 @@ jobs:
       working-directory: ./frontend
       run: |
         echo "🌐 Démarrage de l'application Angular..."
+        
+        # Créer les répertoires de rapports nécessaires
+        mkdir -p ../reports/frontend
+        mkdir -p reports
+        
         # Construire l'application
         npm run build
         
@@ -307,8 +312,10 @@ jobs:
       run: |
         echo "🌐 Exécution des tests E2E..."
         
-        # Créer le répertoire de rapports
+        # Créer les répertoires de rapports nécessaires
         mkdir -p ../reports/frontend/e2e-tests
+        mkdir -p reports/screenshots
+        mkdir -p reports/videos
         
         # Vérifier que l'application est accessible
         curl -f http://localhost:4200 || (echo "❌ Frontend non accessible" && exit 1)
@@ -324,10 +331,10 @@ jobs:
       if: always()
       run: |
         echo "🛑 Arrêt de l'application Angular..."
-        if [ -f ./frontend/reports/frontend/angular.pid ]; then
-          PID=$(cat ./frontend/reports/frontend/angular.pid)
+        if [ -f ./reports/frontend/angular.pid ]; then
+          PID=$(cat ./reports/frontend/angular.pid)
           kill $PID 2>/dev/null || echo "Processus Angular déjà arrêté"
-          rm -f ./frontend/reports/frontend/angular.pid
+          rm -f ./reports/frontend/angular.pid
         fi
 
     - name: 📊 Upload rapports E2E
@@ -337,8 +344,9 @@ jobs:
         name: e2e-test-reports
         path: |
           reports/frontend/e2e-tests/
-          frontend/cypress/screenshots/
-          frontend/cypress/videos/
+          reports/frontend/angular.log
+          frontend/reports/screenshots/
+          frontend/reports/videos/
         retention-days: 30
 
     - name: 🧹 Nettoyage des conteneurs
