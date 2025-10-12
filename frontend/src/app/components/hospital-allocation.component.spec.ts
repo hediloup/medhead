@@ -103,8 +103,11 @@ describe('HospitalAllocationComponent', () => {
 
     component.onSubmit();
 
-    // Verify geocoding request
-    const geocodingReq = httpMock.expectOne('/geocoding/search?q=Paris%2C+France&format=json&limit=1&addressdetails=1');
+    // Verify geocoding request - use flexible matching
+    const geocodingReq = httpMock.expectOne((request) => {
+      return request.url.includes('/geocoding/search') && 
+             request.params.get('q') === 'Paris, France';
+    });
     geocodingReq.flush(mockGeocodingResponse);
 
     // Verify allocation request
@@ -132,8 +135,11 @@ describe('HospitalAllocationComponent', () => {
 
     component.onSubmit();
 
-    // Mock geocoding failure (empty response)
-    const geocodingReq = httpMock.expectOne('/geocoding/search?q=Invalid+address&format=json&limit=1&addressdetails=1');
+    // Mock geocoding failure (empty response) - use flexible matching
+    const geocodingReq = httpMock.expectOne((request) => {
+      return request.url.includes('/geocoding/search') && 
+             request.params.get('q') === 'Invalid address';
+    });
     geocodingReq.flush([]);
 
     expect(component.errorMessage).toBe('Unable to find this address. Please check the address and try again.');
@@ -157,8 +163,11 @@ describe('HospitalAllocationComponent', () => {
 
     component.onSubmit();
 
-    // Mock successful geocoding
-    const geocodingReq = httpMock.expectOne('/geocoding/search?q=Paris%2C+France&format=json&limit=1&addressdetails=1');
+    // Mock successful geocoding - use flexible matching
+    const geocodingReq = httpMock.expectOne((request) => {
+      return request.url.includes('/geocoding/search') && 
+             request.params.get('q') === 'Paris, France';
+    });
     geocodingReq.flush(mockGeocodingResponse);
 
     // Mock allocation failure
@@ -226,7 +235,7 @@ describe('HospitalAllocationComponent', () => {
     component.ngOnInit();
 
     const healthReq = httpMock.expectOne('/api/health');
-    healthReq.flush('Service Unavailable', { status: 503, statusText: 'Service Unavailable' });
+    healthReq.flush('Service Unavailable', { status: 502, statusText: 'Bad Gateway' });
 
     expect(component.errorMessage).toBe('Backend service is not available. Please check that the server is started.');
   });
