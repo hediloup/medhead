@@ -225,7 +225,7 @@
 	</build>
 
 	<profiles>
-		<!-- Profile pour exécuter tous les tests BDD -->
+		<!-- Profile to run BDD allocation tests only -->
 		<profile>
 			<id>bdd-tests</id>
 			<build>
@@ -236,16 +236,12 @@
 						<version>3.0.0</version>
 						<configuration>
 							<includes>
-								<include>**/bdd/**/*Test*.java</include>
-								<include>**/*CucumberBddTest*.java</include>
-								<include>**/*AllocationBddTest*.java</include>
-								<include>**/*AnonymisationBddTest*.java</include>
-								<include>**/*DistanceBddTest*.java</include>
-								<include>**/*PerformanceBddTest*.java</include>
+								<include>**/bdd/runners/AllocationBddTest.java</include>
 							</includes>
 							<excludes>
 								<exclude>**/unit/**/*Test*.java</exclude>
 								<exclude>**/integration/**/*Test*.java</exclude>
+								<exclude>**/PocApplicationTests.java</exclude>
 							</excludes>
 							<parallel>methods</parallel>
 							<threadCount>1</threadCount>
@@ -254,7 +250,8 @@
 							<timeout>600</timeout>
 							<systemPropertyVariables>
 								<spring.profiles.active>test</spring.profiles.active>
-								<cucumber.options>--plugin pretty --plugin html:target/cucumber-reports --plugin json:target/cucumber-reports/cucumber.json --monochrome</cucumber.options>
+								<cucumber.plugin>pretty,html:target/cucumber-reports/report.html,json:target/cucumber-reports/cucumber.json</cucumber.plugin>
+								<cucumber.monochrome>true</cucumber.monochrome>
 							</systemPropertyVariables>
 						</configuration>
 					</plugin>
@@ -262,65 +259,7 @@
 			</build>
 		</profile>
 		
-		<!-- Profile pour exécuter uniquement les tests de performance -->
-		<profile>
-			<id>performance-tests</id>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-surefire-plugin</artifactId>
-						<version>3.0.0</version>
-						<configuration>
-							<includes>
-								<include>**/*PerformanceBddTest*.java</include>
-							</includes>
-							<parallel>methods</parallel>
-							<threadCount>1</threadCount>
-							<forkCount>1</forkCount>
-							<reuseForks>false</reuseForks>
-							<systemPropertyVariables>
-								<spring.profiles.active>test</spring.profiles.active>
-								<cucumber.options>--plugin pretty --plugin html:target/cucumber-reports/performance --tags @performance</cucumber.options>
-							</systemPropertyVariables>
-						</configuration>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-		
-		<!-- Profile pour exécuter tous les tests (TDD + BDD) -->
-		<profile>
-			<id>all-tests</id>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-surefire-plugin</artifactId>
-						<version>3.0.0</version>
-						<configuration>
-							<includes>
-								<include>**/*Test*.java</include>
-								<include>**/*Tests*.java</include>
-							</includes>
-							<excludes>
-								<exclude>**/*StressTest*.java</exclude>
-								<exclude>**/*LoadTest*.java</exclude>
-							</excludes>
-							<parallel>methods</parallel>
-							<threadCount>4</threadCount>
-							<forkCount>2</forkCount>
-							<reuseForks>true</reuseForks>
-							<systemPropertyVariables>
-								<spring.profiles.active>test</spring.profiles.active>
-							</systemPropertyVariables>
-						</configuration>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-		
-		<!-- Profile pour exécuter uniquement les tests unitaires TDD -->
+		<!-- Profile to run unit tests only -->
 		<profile>
 			<id>unit-tests</id>
 			<build>
@@ -351,7 +290,7 @@
 			</build>
 		</profile>
 		
-		<!-- Profile pour exécuter uniquement les tests d'intégration TDD -->
+		<!-- Profile to run integration tests only -->
 		<profile>
 			<id>integration-tests</id>
 			<build>

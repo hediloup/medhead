@@ -5,8 +5,8 @@ import io.cucumber.junit.CucumberOptions;
 import org.junit.runner.RunWith;
 
 /**
- * Runner spécialisé pour les tests BDD d'allocation d'hôpitaux
- * Approche BDD : Behavior-Driven Development
+ * BDD test runner for hospital allocation scenarios
+ * BDD approach: Behavior-Driven Development
  */
 @RunWith(Cucumber.class)
 @CucumberOptions(
@@ -21,5 +21,5 @@ import org.junit.runner.RunWith;
         tags = "@allocation or @hospital"
 )
 public class AllocationBddTest {
-    // Cette classe est vide car elle sert uniquement de point d'entrée pour Cucumber
+    // This class serves as entry point for Cucumber
 }

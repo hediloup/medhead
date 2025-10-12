@@ -4,25 +4,25 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 /**
- * Suite de tests complète pour le projet MedHead
- * Inclut tous les types de tests : TDD unitaires, TDD d'intégration, et BDD
+ * Complete test suite for MedHead project
+ * Includes all types of tests: TDD unit tests, TDD integration tests, and BDD
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-        // Tests TDD unitaires
+        // TDD unit tests
         com.medhead.poc.unit.service.AllocationServiceTest.class,
         com.medhead.poc.unit.service.DistanceCalculationServiceTest.class,
         com.medhead.poc.unit.service.PatientAnonymizationServiceTest.class,
         com.medhead.poc.unit.controller.AllocationControllerTest.class,
         
-        // Tests TDD d'intégration
+        // TDD integration tests
         com.medhead.poc.integration.AllocationIntegrationTest.class,
         com.medhead.poc.integration.RepositoryIntegrationTest.class,
         
-        // Tests BDD avec Cucumber
-        com.medhead.poc.bdd.runners.CucumberBddTest.class
+        // BDD tests with Cucumber
+        com.medhead.poc.bdd.runners.AllocationBddTest.class
 })
 public class TestSuite {
-    // Cette classe est vide car elle sert uniquement de conteneur pour la suite de tests
-    // Tous les tests sont définis dans l'annotation @Suite.SuiteClasses
+    // This class is empty as it serves only as a container for the test suite
+    // All tests are defined in the @Suite.SuiteClasses annotation
 }

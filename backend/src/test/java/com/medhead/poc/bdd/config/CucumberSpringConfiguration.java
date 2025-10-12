@@ -6,13 +6,13 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Configuration Spring pour les tests BDD Cucumber
+ * Spring configuration for Cucumber BDD tests
  */
 @CucumberContextConfiguration
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles("test")
 @Transactional
 public class CucumberSpringConfiguration {
-    // Cette classe sert de point d'entrée pour la configuration Spring dans Cucumber
-    // WebEnvironment.NONE pour éviter le démarrage d'un serveur web complet
+    // This class serves as entry point for Spring configuration in Cucumber
+    // WebEnvironment.NONE to avoid starting a complete web server
 }
