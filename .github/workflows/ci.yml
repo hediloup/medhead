@@ -267,13 +267,13 @@ jobs:
     - name: 🐳 Démarrage des services avec Docker Compose
       run: |
         echo "🐳 Démarrage des services MedHead..."
-        docker-compose -f ./docker/docker-compose.yml up -d
+        docker compose -f ./docker/docker-compose.yml up -d
         
         echo "⏳ Attente du démarrage des services..."
         sleep 45
         
         echo "🔍 Vérification du statut des services..."
-        docker-compose -f ./docker/docker-compose.yml ps
+        docker compose -f ./docker/docker-compose.yml ps
 
     - name: 🌐 Tests E2E avec Cypress
       working-directory: ./frontend
@@ -299,7 +299,7 @@ jobs:
       if: always()
       run: |
         echo "🧹 Arrêt des services Docker..."
-        docker-compose -f ./docker/docker-compose.yml down -v
+        docker compose -f ./docker/docker-compose.yml down -v
 
   # Job 5: Analyse de qualité du code
   code-quality:
