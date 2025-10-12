@@ -12,9 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 /**
@@ -23,8 +20,6 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class AllocationService {
-    
-    private final ExecutorService executorService = Executors.newFixedThreadPool(10);
     
     @Autowired
     private HospitalRepository hospitalRepository;
@@ -64,12 +59,8 @@ public class AllocationService {
                                     request.getSpecialty() + "'");
         }
         
-        // Calculate routes with traffic optimization - sequential processing for better performance
-        List<Hospital> limitedHospitals = eligibleHospitals.stream()
-            .limit(3) // Limit to 3 hospitals for faster response
-            .collect(Collectors.toList());
-            
-        List<HospitalWithRoute> hospitalsWithRoute = limitedHospitals.stream()
+        // Calculate routes with traffic optimization for all eligible hospitals
+        List<HospitalWithRoute> hospitalsWithRoute = eligibleHospitals.stream()
             .map(hospital -> {
                 RouteResult routeResult = distanceService.calculateOptimalRouteToHospital(
                     request.getLatitude(), 

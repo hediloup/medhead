@@ -2,7 +2,9 @@ package com.medhead.poc.controller;
 
 import com.medhead.poc.model.AllocationRequest;
 import com.medhead.poc.model.AllocationResponse;
+import com.medhead.poc.model.Hospital;
 import com.medhead.poc.service.AllocationService;
+import com.medhead.poc.repository.HospitalRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,9 @@ public class AllocationController {
     
     @Autowired
     private AllocationService allocationService;
+    
+    @Autowired
+    private HospitalRepository hospitalRepository;
     
     /**
      * Endpoint to get a hospital recommendation.
@@ -81,6 +86,32 @@ public class AllocationController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Test failed: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Debug endpoint to list all hospitals with Cardiology specialty.
+     */
+    @GetMapping("/debug/hospitals")
+    public ResponseEntity<String> debugHospitals() {
+        try {
+            var hospitals = hospitalRepository.findBySpecialtyAndAvailableBeds("Cardiology");
+            StringBuilder result = new StringBuilder();
+            result.append("Hôpitaux avec spécialité Cardiology:\n");
+            for (Hospital hospital : hospitals) {
+                result.append(String.format("- %s (ID: %d) - %s, %s - Coordonnées: %.6f, %.6f - Lits: %d\n", 
+                    hospital.getName(), 
+                    hospital.getId(),
+                    hospital.getCity(),
+                    hospital.getAddress(),
+                    hospital.getLatitude(),
+                    hospital.getLongitude(),
+                    hospital.getAvailableBeds()));
+            }
+            return ResponseEntity.ok(result.toString());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error: " + e.getMessage());
         }
     }
 }
