@@ -87,6 +87,23 @@ public class AllocationResponse {
         this.estimatedTimeMinutes = estimatedTimeMinutes;
     }
     
+    // Méthodes de compatibilité pour les tests
+    public Double getDistance() {
+        return getDistanceKm();
+    }
+    
+    public void setDistance(Double distance) {
+        setDistanceKm(distance);
+    }
+    
+    public Integer getAvailableBedsAfterAllocation() {
+        return getAvailableBeds();
+    }
+    
+    public void setAvailableBedsAfterAllocation(Integer availableBedsAfterAllocation) {
+        setAvailableBeds(availableBedsAfterAllocation);
+    }
+    
     @Override
     public String toString() {
         return "AllocationResponse{" +

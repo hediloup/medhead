@@ -5,22 +5,21 @@ import io.cucumber.junit.CucumberOptions;
 import org.junit.runner.RunWith;
 
 /**
- * Runner principal pour les tests BDD avec Cucumber
+ * Runner spécialisé pour les tests BDD d'anonymisation des patients
  * Approche BDD : Behavior-Driven Development
  */
 @RunWith(Cucumber.class)
 @CucumberOptions(
-        features = "src/test/resources/features",
+        features = "src/test/resources/features/anonymisation-patient.feature",
         glue = "com.medhead.poc.bdd.steps",
         plugin = {
                 "pretty",
-                "html:target/cucumber-reports/cucumber.html",
-                "json:target/cucumber-reports/cucumber.json",
-                "junit:target/cucumber-reports/cucumber.xml"
+                "html:target/cucumber-reports/anonymisation.html",
+                "json:target/cucumber-reports/anonymisation.json"
         },
         monochrome = true,
-        tags = "not @ignore"
+        tags = "@anonymisation or @patient"
 )
-public class CucumberBddTest {
+public class AnonymisationBddTest {
     // Cette classe est vide car elle sert uniquement de point d'entrée pour Cucumber
 }
