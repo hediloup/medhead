@@ -157,6 +157,10 @@ jobs:
         file: ./frontend/coverage/medhead-frontend/lcov.info
         flags: frontend
         name: frontend-coverage
+        fail_ci_if_error: false
+        verbose: true
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   # Job 3: Tests BDD (Scénarios métier)
   bdd-tests:
