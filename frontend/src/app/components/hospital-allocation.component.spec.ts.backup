@@ -31,8 +31,6 @@ describe('HospitalAllocationComponent', () => {
 
   afterEach(() => {
     httpMock.verify();
-    httpMock.reset();
-    httpMock.verify();
   });
 
   it('should create', () => {

@@ -42,12 +42,13 @@ describe('GeocodingService', () => {
         expect(response).toEqual(mockResponse);
       });
 
-      // Utiliser une approche plus flexible pour matcher les requêtes
-      const req = httpMock.expectOne((request) => {
-        return request.url.includes('/geocoding/search') && 
-               request.params.get('q') === address;
-      });
-      
+      const req = httpMock.expectOne(req => 
+        req.url === '/geocoding/search' &&
+        req.params.get('q') === address &&
+        req.params.get('format') === 'json' &&
+        req.params.get('limit') === '1' &&
+        req.params.get('addressdetails') === '1'
+      );
       expect(req.request.method).toBe('GET');
       req.flush(mockResponse);
     });
@@ -57,34 +58,25 @@ describe('GeocodingService', () => {
       const mockResponse: GeocodingResponse[] = [];
 
       service.geocodeAddress(address).subscribe(response => {
-        expect(response).toEqual(mockResponse);
+        expect(response).toEqual([]);
       });
 
-      const req = httpMock.expectOne((request) => {
-        return request.url.includes('/geocoding/search') && 
-               request.params.get('q') === address;
-      });
-      
+      const req = httpMock.expectOne('/geocoding/search?q=Non-existent+place&format=json&limit=1&addressdetails=1');
       req.flush(mockResponse);
     });
 
     it('should handle HTTP errors', () => {
       const address = 'Paris, France';
-      const errorMessage = 'Server error';
 
       service.geocodeAddress(address).subscribe({
-        next: () => fail('Expected error'),
+        next: () => fail('should have failed'),
         error: (error) => {
-          expect(error.message).toBe(errorMessage);
+          expect(error).toBeTruthy();
         }
       });
 
-      const req = httpMock.expectOne((request) => {
-        return request.url.includes('/geocoding/search') && 
-               request.params.get('q') === address;
-      });
-      
-      req.flush(errorMessage, { status: 500, statusText: 'Server Error' });
+      const req = httpMock.expectOne('/geocoding/search?q=Paris%2C+France&format=json&limit=1&addressdetails=1');
+      req.flush('Not Found', { status: 404, statusText: 'Not Found' });
     });
   });
 
@@ -94,84 +86,60 @@ describe('GeocodingService', () => {
       const mockResponse: GeocodingResponse[] = [{
         lat: 48.8566,
         lon: 2.3522,
-        display_name: 'Paris, Île-de-France, France',
-        address: {
-          city: 'Paris',
-          country: 'France',
-          postcode: '75001'
-        }
+        display_name: 'Paris, France'
       }];
 
-      const result = service.geocodeAddressAsync(address);
-
-      const req = httpMock.expectOne((request) => {
-        return request.url.includes('/geocoding/search') && 
-               request.params.get('q') === address;
-      });
+      const promise = service.geocodeAddressAsync(address);
       
+      const req = httpMock.expectOne('/geocoding/search?q=Paris%2C+France&format=json&limit=1&addressdetails=1');
       req.flush(mockResponse);
 
-      const coordinates = await result;
-      expect(coordinates).toEqual({ lat: 48.8566, lon: 2.3522 });
+      const result = await promise;
+      expect(result).toEqual({ lat: 48.8566, lon: 2.3522 });
     });
 
     it('should return null when no results found', async () => {
       const address = 'Non-existent place';
       const mockResponse: GeocodingResponse[] = [];
 
-      const result = service.geocodeAddressAsync(address);
-
-      const req = httpMock.expectOne((request) => {
-        return request.url.includes('/geocoding/search') && 
-               request.params.get('q') === address;
-      });
+      const promise = service.geocodeAddressAsync(address);
       
+      const req = httpMock.expectOne('/geocoding/search?q=Non-existent+place&format=json&limit=1&addressdetails=1');
       req.flush(mockResponse);
 
-      const coordinates = await result;
-      expect(coordinates).toBeNull();
+      const result = await promise;
+      expect(result).toBeNull();
     });
 
     it('should return null when HTTP error occurs', async () => {
       const address = 'Paris, France';
 
-      const result = service.geocodeAddressAsync(address);
-
-      const req = httpMock.expectOne((request) => {
-        return request.url.includes('/geocoding/search') && 
-               request.params.get('q') === address;
-      });
+      const promise = service.geocodeAddressAsync(address);
       
-      req.flush('Server error', { status: 500, statusText: 'Server Error' });
+      const req = httpMock.expectOne('/geocoding/search?q=Paris%2C+France&format=json&limit=1&addressdetails=1');
+      req.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
 
-      const coordinates = await result;
-      expect(coordinates).toBeNull();
+      const result = await promise;
+      expect(result).toBeNull();
     });
 
     it('should parse string coordinates to numbers', async () => {
       const address = 'New York, USA';
       const mockResponse: GeocodingResponse[] = [{
-        lat: '40.7128' as any,
-        lon: '-74.0060' as any,
-        display_name: 'New York, NY, USA',
-        address: {
-          city: 'New York',
-          country: 'USA',
-          postcode: '10001'
-        }
+        lat: '40.7128' as any, // Simulate string from API
+        lon: '-74.0060' as any, // Simulate string from API
+        display_name: 'New York, USA'
       }];
 
-      const result = service.geocodeAddressAsync(address);
-
-      const req = httpMock.expectOne((request) => {
-        return request.url.includes('/geocoding/search') && 
-               request.params.get('q') === address;
-      });
+      const promise = service.geocodeAddressAsync(address);
       
+      const req = httpMock.expectOne('/geocoding/search?q=New+York%2C+USA&format=json&limit=1&addressdetails=1');
       req.flush(mockResponse);
 
-      const coordinates = await result;
-      expect(coordinates).toEqual({ lat: 40.7128, lon: -74.0060 });
+      const result = await promise;
+      expect(result).toEqual({ lat: 40.7128, lon: -74.0060 });
+      expect(typeof result?.lat).toBe('number');
+      expect(typeof result?.lon).toBe('number');
     });
   });
 });
