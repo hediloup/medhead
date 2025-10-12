@@ -74,4 +74,26 @@ public class RouteResult {
     public int getOptimalDurationMinutes() {
         return hasTrafficData ? durationWithTrafficMinutes : durationMinutes;
     }
+    
+    /**
+     * Définit le temps de trajet optimal
+     */
+    public void setOptimalDurationMinutes(int optimalDurationMinutes) {
+        if (hasTrafficData) {
+            this.durationWithTrafficMinutes = optimalDurationMinutes;
+        } else {
+            this.durationMinutes = optimalDurationMinutes;
+        }
+    }
+    
+    /**
+     * Définit si il y a une erreur
+     */
+    public void setError(boolean error) {
+        if (error && this.errorMessage == null) {
+            this.errorMessage = "Unknown error";
+        } else if (!error) {
+            this.errorMessage = null;
+        }
+    }
 }

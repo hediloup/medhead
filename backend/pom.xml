@@ -115,13 +115,6 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-		<!-- JUnit 4 for simpler testing -->
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.13.2</version>
-			<scope>test</scope>
-		</dependency>
 		<!-- Spring Security Test -->
 		<dependency>
 			<groupId>org.springframework.security</groupId>
@@ -150,27 +143,61 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.22.2</version>
+				<version>3.0.0</version>
 				<configuration>
 					<includes>
-						<!-- Exécute les tests unitaires -->
-						<include>**/*Test*.java</include>
-						<include>**/*Tests*.java</include>
+						<!-- Exécute les tests TDD unitaires et d'intégration -->
+						<include>**/unit/**/*Test*.java</include>
+						<include>**/integration/**/*Test*.java</include>
+						<include>**/PocApplicationTests.java</include>
+						<include>**/TestSuite.java</include>
 					</includes>
 					<excludes>
-						<!-- Exclut les tests Cucumber pour l'instant -->
-						<exclude>**/*CucumberTest*.java</exclude>
+						<!-- Exclut les tests BDD par défaut -->
+						<exclude>**/bdd/**/*Test*.java</exclude>
 						<exclude>**/*CucumberBddTest*.java</exclude>
-						<!-- Exclut les tests de stress par défaut -->
-						<exclude>**/*StressTest*.java</exclude>
-						<exclude>**/*LoadTest*.java</exclude>
+						<exclude>**/*AllocationBddTest*.java</exclude>
+						<exclude>**/*AnonymisationBddTest*.java</exclude>
+						<exclude>**/*DistanceBddTest*.java</exclude>
+						<exclude>**/*PerformanceBddTest*.java</exclude>
 					</excludes>
+					<parallel>methods</parallel>
+					<threadCount>4</threadCount>
+					<forkCount>1</forkCount>
+					<reuseForks>true</reuseForks>
+					<systemPropertyVariables>
+						<spring.profiles.active>test</spring.profiles.active>
+					</systemPropertyVariables>
 				</configuration>
+			</plugin>
+			
+			<!-- Maven Failsafe plugin pour les tests d'intégration -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<version>3.0.0</version>
+				<configuration>
+					<includes>
+						<include>**/integration/**/*Test*.java</include>
+					</includes>
+					<systemPropertyVariables>
+						<spring.profiles.active>test</spring.profiles.active>
+					</systemPropertyVariables>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>integration-test</goal>
+							<goal>verify</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>
 
 	<profiles>
+		<!-- Profile pour exécuter tous les tests BDD -->
 		<profile>
 			<id>bdd-tests</id>
 			<build>
@@ -178,29 +205,147 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-surefire-plugin</artifactId>
-						<version>2.22.2</version>
+						<version>3.0.0</version>
 						<configuration>
 							<includes>
+								<include>**/bdd/**/*Test*.java</include>
 								<include>**/*CucumberBddTest*.java</include>
+								<include>**/*AllocationBddTest*.java</include>
+								<include>**/*AnonymisationBddTest*.java</include>
+								<include>**/*DistanceBddTest*.java</include>
+								<include>**/*PerformanceBddTest*.java</include>
 							</includes>
+							<excludes>
+								<exclude>**/unit/**/*Test*.java</exclude>
+								<exclude>**/integration/**/*Test*.java</exclude>
+							</excludes>
+							<parallel>methods</parallel>
+							<threadCount>2</threadCount>
+							<forkCount>1</forkCount>
+							<reuseForks>true</reuseForks>
+							<systemPropertyVariables>
+								<spring.profiles.active>test</spring.profiles.active>
+								<cucumber.options>--plugin pretty --plugin html:target/cucumber-reports --plugin json:target/cucumber-reports/cucumber.json</cucumber.options>
+							</systemPropertyVariables>
 						</configuration>
 					</plugin>
 				</plugins>
 			</build>
 		</profile>
+		
+		<!-- Profile pour exécuter uniquement les tests de performance -->
 		<profile>
-			<id>stress-tests</id>
+			<id>performance-tests</id>
 			<build>
 				<plugins>
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-surefire-plugin</artifactId>
-						<version>2.22.2</version>
+						<version>3.0.0</version>
 						<configuration>
 							<includes>
-								<include>**/*StressTest*.java</include>
-								<include>**/*LoadTest*.java</include>
+								<include>**/*PerformanceBddTest*.java</include>
 							</includes>
+							<parallel>methods</parallel>
+							<threadCount>1</threadCount>
+							<forkCount>1</forkCount>
+							<reuseForks>false</reuseForks>
+							<systemPropertyVariables>
+								<spring.profiles.active>test</spring.profiles.active>
+								<cucumber.options>--plugin pretty --plugin html:target/cucumber-reports/performance --tags @performance</cucumber.options>
+							</systemPropertyVariables>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		
+		<!-- Profile pour exécuter tous les tests (TDD + BDD) -->
+		<profile>
+			<id>all-tests</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<version>3.0.0</version>
+						<configuration>
+							<includes>
+								<include>**/*Test*.java</include>
+								<include>**/*Tests*.java</include>
+							</includes>
+							<excludes>
+								<exclude>**/*StressTest*.java</exclude>
+								<exclude>**/*LoadTest*.java</exclude>
+							</excludes>
+							<parallel>methods</parallel>
+							<threadCount>4</threadCount>
+							<forkCount>2</forkCount>
+							<reuseForks>true</reuseForks>
+							<systemPropertyVariables>
+								<spring.profiles.active>test</spring.profiles.active>
+							</systemPropertyVariables>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		
+		<!-- Profile pour exécuter uniquement les tests unitaires TDD -->
+		<profile>
+			<id>unit-tests</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<version>3.0.0</version>
+						<configuration>
+							<includes>
+								<include>**/unit/**/*Test*.java</include>
+								<include>**/PocApplicationTests.java</include>
+							</includes>
+							<excludes>
+								<exclude>**/integration/**/*Test*.java</exclude>
+								<exclude>**/bdd/**/*Test*.java</exclude>
+							</excludes>
+							<parallel>methods</parallel>
+							<threadCount>4</threadCount>
+							<forkCount>1</forkCount>
+							<reuseForks>true</reuseForks>
+							<systemPropertyVariables>
+								<spring.profiles.active>test</spring.profiles.active>
+							</systemPropertyVariables>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		
+		<!-- Profile pour exécuter uniquement les tests d'intégration TDD -->
+		<profile>
+			<id>integration-tests</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<version>3.0.0</version>
+						<configuration>
+							<includes>
+								<include>**/integration/**/*Test*.java</include>
+							</includes>
+							<excludes>
+								<exclude>**/unit/**/*Test*.java</exclude>
+								<exclude>**/bdd/**/*Test*.java</exclude>
+							</excludes>
+							<parallel>methods</parallel>
+							<threadCount>2</threadCount>
+							<forkCount>1</forkCount>
+							<reuseForks>true</reuseForks>
+							<systemPropertyVariables>
+								<spring.profiles.active>test</spring.profiles.active>
+							</systemPropertyVariables>
 						</configuration>
 					</plugin>
 				</plugins>

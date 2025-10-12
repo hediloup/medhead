@@ -5,22 +5,21 @@ import io.cucumber.junit.CucumberOptions;
 import org.junit.runner.RunWith;
 
 /**
- * Runner principal pour les tests BDD avec Cucumber
+ * Runner spécialisé pour les tests BDD de performance
  * Approche BDD : Behavior-Driven Development
  */
 @RunWith(Cucumber.class)
 @CucumberOptions(
-        features = "src/test/resources/features",
+        features = "src/test/resources/features/performance-api.feature",
         glue = "com.medhead.poc.bdd.steps",
         plugin = {
                 "pretty",
-                "html:target/cucumber-reports/cucumber.html",
-                "json:target/cucumber-reports/cucumber.json",
-                "junit:target/cucumber-reports/cucumber.xml"
+                "html:target/cucumber-reports/performance.html",
+                "json:target/cucumber-reports/performance.json"
         },
         monochrome = true,
-        tags = "not @ignore"
+        tags = "@performance or @load or @stress"
 )
-public class CucumberBddTest {
+public class PerformanceBddTest {
     // Cette classe est vide car elle sert uniquement de point d'entrée pour Cucumber
 }

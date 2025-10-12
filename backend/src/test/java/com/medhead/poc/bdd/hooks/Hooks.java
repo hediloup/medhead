@@ -1,22 +1,293 @@
 package com.medhead.poc.bdd.hooks;
 
-import io.cucumber.java.After;
+import com.medhead.poc.repository.HospitalRepository;
+import com.medhead.poc.repository.PatientRepository;
+import com.medhead.poc.repository.SpecialityRepository;
+import io.cucumber.java.fr.*;
 import io.cucumber.java.Before;
+import io.cucumber.java.After;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Hooks executed before and after each scenario.
- * You can initialize resources (database, servers) or
- * clean up state after each test.
+ * Hooks exécutés avant et après chaque scénario BDD.
+ * Ils permettent d'initialiser les ressources (base de données, serveurs)
+ * ou de nettoyer l'état après chaque test.
  */
+@ContextConfiguration(classes = {com.medhead.poc.PocApplication.class})
 public class Hooks {
 
+    @Autowired
+    private HospitalRepository hospitalRepository;
+
+    @Autowired
+    private PatientRepository patientRepository;
+
+    @Autowired
+    private SpecialityRepository specialityRepository;
+
+    @Autowired
+    private TestRestTemplate restTemplate;
+
+    /**
+     * Hook exécuté avant chaque scénario.
+     * Nettoie la base de données et initialise l'état de base.
+     */
     @Before
+    @Transactional
     public void setUp() {
-        // Global initialization code before each scenario
+        // Nettoyer toutes les données de test
+        patientRepository.deleteAll();
+        hospitalRepository.deleteAll();
+        specialityRepository.deleteAll();
+        
+        // Vérifier que l'API est opérationnelle
+        try {
+            restTemplate.getForEntity("/api/health", String.class);
+        } catch (Exception e) {
+            System.err.println("Avertissement: L'API n'est pas accessible: " + e.getMessage());
+        }
     }
 
+    /**
+     * Hook exécuté après chaque scénario.
+     * Effectue le nettoyage final et les vérifications post-test.
+     */
     @After
+    @Transactional
     public void tearDown() {
-        // Global cleanup code after each scenario
+        // Nettoyer toutes les données de test après chaque scénario
+        patientRepository.deleteAll();
+        hospitalRepository.deleteAll();
+        specialityRepository.deleteAll();
+        
+        // Vérifier que l'API est toujours opérationnelle
+        try {
+            restTemplate.getForEntity("/api/health", String.class);
+        } catch (Exception e) {
+            System.err.println("Avertissement: L'API n'est plus accessible après le test: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Hook exécuté avant chaque scénario d'allocation d'hôpitaux.
+     * Initialise des données de base pour les tests d'allocation.
+     */
+    @Before("@allocation")
+    @Transactional
+    public void setUpAllocationTests() {
+        // Créer des spécialités de base
+        createBaseSpecialties();
+        
+        // Vérifier que l'endpoint d'allocation est accessible
+        try {
+            restTemplate.getForEntity("/api/allocate?specialty=Cardiology&latitude=53.3976314&longitude=-2.1829641", String.class);
+        } catch (Exception e) {
+            System.err.println("Avertissement: L'endpoint d'allocation n'est pas accessible: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Hook exécuté après chaque scénario d'allocation d'hôpitaux.
+     * Nettoie spécifiquement les données d'allocation.
+     */
+    @After("@allocation")
+    @Transactional
+    public void tearDownAllocationTests() {
+        // Nettoyer les données d'allocation
+        patientRepository.deleteAll();
+        hospitalRepository.deleteAll();
+        specialityRepository.deleteAll();
+    }
+
+    /**
+     * Hook exécuté avant chaque scénario d'anonymisation.
+     * Initialise des données de base pour les tests d'anonymisation.
+     */
+    @Before("@anonymisation")
+    @Transactional
+    public void setUpAnonymisationTests() {
+        // Créer des spécialités de base
+        createBaseSpecialties();
+        
+        // Vérifier que les services d'anonymisation sont disponibles
+        System.out.println("Initialisation des tests d'anonymisation...");
+    }
+
+    /**
+     * Hook exécuté après chaque scénario d'anonymisation.
+     * Nettoie spécifiquement les données d'anonymisation.
+     */
+    @After("@anonymisation")
+    @Transactional
+    public void tearDownAnonymisationTests() {
+        // Nettoyer les données d'anonymisation
+        patientRepository.deleteAll();
+        System.out.println("Nettoyage des tests d'anonymisation terminé.");
+    }
+
+    /**
+     * Hook exécuté avant chaque scénario de performance.
+     * Initialise l'environnement pour les tests de performance.
+     */
+    @Before("@performance")
+    @Transactional
+    public void setUpPerformanceTests() {
+        // Créer des données de base pour les tests de performance
+        createBaseSpecialties();
+        createPerformanceTestData();
+        
+        System.out.println("Initialisation des tests de performance...");
+    }
+
+    /**
+     * Hook exécuté après chaque scénario de performance.
+     * Nettoie l'environnement après les tests de performance.
+     */
+    @After("@performance")
+    @Transactional
+    public void tearDownPerformanceTests() {
+        // Nettoyer les données de performance
+        patientRepository.deleteAll();
+        hospitalRepository.deleteAll();
+        specialityRepository.deleteAll();
+        
+        System.out.println("Nettoyage des tests de performance terminé.");
+    }
+
+    /**
+     * Hook exécuté avant chaque scénario de calcul de distance.
+     * Initialise l'environnement pour les tests de distance.
+     */
+    @Before("@distance")
+    @Transactional
+    public void setUpDistanceTests() {
+        // Créer des données de base pour les tests de distance
+        createBaseSpecialties();
+        
+        System.out.println("Initialisation des tests de distance...");
+    }
+
+    /**
+     * Hook exécuté après chaque scénario de calcul de distance.
+     * Nettoie l'environnement après les tests de distance.
+     */
+    @After("@distance")
+    @Transactional
+    public void tearDownDistanceTests() {
+        // Nettoyer les données de distance
+        patientRepository.deleteAll();
+        hospitalRepository.deleteAll();
+        specialityRepository.deleteAll();
+        
+        System.out.println("Nettoyage des tests de distance terminé.");
+    }
+
+    /**
+     * Crée les spécialités de base nécessaires aux tests.
+     */
+    private void createBaseSpecialties() {
+        String[] baseSpecialties = {"Cardiology", "Neurology", "Pediatrics", "Emergency", "Surgery"};
+        
+        for (String specialtyName : baseSpecialties) {
+            if (specialityRepository.findByName(specialtyName) == null) {
+                com.medhead.poc.model.Speciality specialty = new com.medhead.poc.model.Speciality();
+                specialty.setName(specialtyName);
+                specialityRepository.save(specialty);
+            }
+        }
+    }
+
+    /**
+     * Crée des données de test spécifiques pour les tests de performance.
+     */
+    private void createPerformanceTestData() {
+        // Créer des hôpitaux de test pour les tests de performance
+        com.medhead.poc.model.Speciality cardiology = specialityRepository.findByName("Cardiology").orElse(null);
+        if (cardiology != null) {
+            for (int i = 0; i < 5; i++) {
+                com.medhead.poc.model.Hospital hospital = new com.medhead.poc.model.Hospital(
+                        "Performance Test Hospital " + i,
+                        53.3976314 + (i * 0.01),
+                        -2.1829641 + (i * 0.01),
+                        "Manchester",
+                        "Test Address " + i,
+                        10
+                );
+                
+                java.util.Set<com.medhead.poc.model.Speciality> specialties = new java.util.HashSet<>();
+                specialties.add(cardiology);
+                hospital.setSpecialities(specialties);
+                hospitalRepository.save(hospital);
+            }
+        }
+    }
+
+    /**
+     * Hook exécuté avant tous les tests (une seule fois).
+     * Initialise l'environnement global des tests BDD.
+     */
+    @Before
+    public void globalSetUp() {
+        System.out.println("=== Début de l'exécution des tests BDD ===");
+        System.out.println("Timestamp: " + java.time.LocalDateTime.now());
+    }
+
+    /**
+     * Hook exécuté après tous les tests (une seule fois).
+     * Nettoie l'environnement global des tests BDD.
+     */
+    @After
+    public void globalTearDown() {
+        System.out.println("=== Fin de l'exécution des tests BDD ===");
+        System.out.println("Timestamp: " + java.time.LocalDateTime.now());
+    }
+
+    /**
+     * Hook exécuté avant chaque scénario marqué comme critique.
+     * Effectue des vérifications supplémentaires pour les scénarios critiques.
+     */
+    @Before("@critical")
+    @Transactional
+    public void setUpCriticalTests() {
+        System.out.println("⚠️  Exécution d'un scénario critique - Vérifications supplémentaires...");
+        
+        // Vérifier que tous les services sont opérationnels
+        try {
+            restTemplate.getForEntity("/api/health", String.class);
+            restTemplate.getForEntity("/api/test", String.class);
+        } catch (Exception e) {
+            System.err.println("❌ ERREUR: Services non opérationnels pour le scénario critique: " + e.getMessage());
+            throw new RuntimeException("Services non opérationnels pour le scénario critique", e);
+        }
+        
+        // S'assurer que la base de données est propre
+        patientRepository.deleteAll();
+        hospitalRepository.deleteAll();
+        specialityRepository.deleteAll();
+    }
+
+    /**
+     * Hook exécuté après chaque scénario marqué comme critique.
+     * Effectue des vérifications post-scénario critique.
+     */
+    @After("@critical")
+    @Transactional
+    public void tearDownCriticalTests() {
+        System.out.println("✅ Scénario critique terminé - Vérifications post-test...");
+        
+        // Vérifier que les services sont toujours opérationnels
+        try {
+            restTemplate.getForEntity("/api/health", String.class);
+        } catch (Exception e) {
+            System.err.println("❌ ERREUR: Services non opérationnels après le scénario critique: " + e.getMessage());
+        }
+        
+        // Nettoyer les données
+        patientRepository.deleteAll();
+        hospitalRepository.deleteAll();
+        specialityRepository.deleteAll();
     }
 }
