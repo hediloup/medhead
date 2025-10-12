@@ -8,7 +8,7 @@ WORKDIR /app
 COPY ../frontend/package*.json ./
 
 # Installer les dépendances
-RUN npm ci --only=production=false
+RUN npm install
 
 # Installer Angular CLI globalement
 RUN npm install -g @angular/cli@16.2.16

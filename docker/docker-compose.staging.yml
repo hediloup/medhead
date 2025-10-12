@@ -1,0 +1,205 @@
+version: '3.8'
+
+services:
+  # Base de données PostgreSQL
+  medhead-postgres:
+    image: postgres:15
+    container_name: medhead-postgres-staging
+    environment:
+      POSTGRES_DB: medhead_db
+      POSTGRES_USER: medhead_user
+      POSTGRES_PASSWORD: medhead_password
+    volumes:
+      - postgres_data_staging:/var/lib/postgresql/data
+      - ./postgres.conf:/etc/postgresql/postgresql.conf
+    ports:
+      - "5434:5432"
+    networks:
+      - medhead-network-staging
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medhead_user -d medhead_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Backend Spring Boot
+  medhead-backend:
+    image: ${BACKEND_IMAGE:-ghcr.io/medhead/medhead-backend:latest}
+    container_name: medhead-backend-staging
+    environment:
+      SPRING_PROFILES_ACTIVE: staging
+      SPRING_DATASOURCE_URL: jdbc:postgresql://medhead-postgres:5432/medhead_db
+      SPRING_DATASOURCE_USERNAME: medhead_user
+      SPRING_DATASOURCE_PASSWORD: medhead_password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_SHOW_SQL: false
+      SERVER_PORT: 8080
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,metrics
+      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: always
+      LOGGING_LEVEL_COM_MEDHEAD: INFO
+      # Configuration spécifique staging
+      CORS_ALLOWED_ORIGINS: https://staging.medhead.com
+      CACHE_TTL: 300
+      RATE_LIMIT_REQUESTS: 1000
+    ports:
+      - "8081:8080"
+    networks:
+      - medhead-network-staging
+    depends_on:
+      medhead-postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+
+  # Frontend Angular
+  medhead-frontend:
+    image: ${FRONTEND_IMAGE:-ghcr.io/medhead/medhead-frontend:latest}
+    container_name: medhead-frontend-staging
+    ports:
+      - "4201:80"
+    networks:
+      - medhead-network-staging
+    depends_on:
+      medhead-backend:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.25'
+        reservations:
+          memory: 256M
+          cpus: '0.1'
+
+  # pgAdmin pour administration de la base de données
+  medhead-pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: medhead-pgadmin-staging
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@medhead.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "8083:80"
+    networks:
+      - medhead-network-staging
+    depends_on:
+      - medhead-postgres
+    restart: unless-stopped
+    volumes:
+      - pgadmin_data_staging:/var/lib/pgadmin
+
+  # Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: medhead-nginx-staging
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.staging.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    networks:
+      - medhead-network-staging
+    depends_on:
+      - medhead-frontend
+      - medhead-backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis pour le cache
+  redis:
+    image: redis:7-alpine
+    container_name: medhead-redis-staging
+    ports:
+      - "6379:6379"
+    networks:
+      - medhead-network-staging
+    restart: unless-stopped
+    volumes:
+      - redis_data_staging:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Monitoring avec Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: medhead-prometheus-staging
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.staging.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data_staging:/prometheus
+    networks:
+      - medhead-network-staging
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=7d'
+      - '--web.enable-lifecycle'
+
+  # Grafana pour les dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: medhead-grafana-staging
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin123
+      GF_USERS_ALLOW_SIGN_UP: false
+    volumes:
+      - grafana_data_staging:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - medhead-network-staging
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  postgres_data_staging:
+    driver: local
+  pgadmin_data_staging:
+    driver: local
+  redis_data_staging:
+    driver: local
+  prometheus_data_staging:
+    driver: local
+  grafana_data_staging:
+    driver: local
+
+networks:
+  medhead-network-staging:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

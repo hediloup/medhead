@@ -1,0 +1,483 @@
+name: 🚀 CD - Livraison Continue
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environnement de déploiement'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Job 1: Tests de performance avant déploiement
+  performance-tests:
+    name: ⚡ Tests Performance
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+    - name: 📥 Checkout du code
+      uses: actions/checkout@v4
+
+    - name: ☕ Configuration Java 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: 📦 Configuration Node.js 18
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: './frontend/package-lock.json'
+
+    - name: 🐳 Démarrage des services
+      run: |
+        echo "🐳 Démarrage des services pour tests de performance..."
+        docker-compose -f ./docker/docker-compose.yml up -d
+        
+        echo "⏳ Attente du démarrage complet..."
+        sleep 60
+        
+        echo "🔍 Vérification des services..."
+        docker-compose -f ./docker/docker-compose.yml ps
+
+    - name: ⚡ Tests de Performance Backend
+      working-directory: ./backend
+      run: |
+        echo "⚡ Exécution des tests de performance..."
+        mvn test -P performance-tests \
+          -Dspring.profiles.active=test \
+          -Dperformance.reportsDirectory=../../reports/performance
+
+    - name: 📊 Upload rapports performance
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: performance-reports
+        path: reports/performance/
+        retention-days: 30
+
+    - name: 🧹 Nettoyage
+      if: always()
+      run: docker-compose -f ./docker/docker-compose.yml down -v
+
+  # Job 2: Déploiement Staging
+  deploy-staging:
+    name: 🚀 Déploiement Staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: performance-tests
+    environment: staging
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    
+    steps:
+    - name: 📥 Checkout du code
+      uses: actions/checkout@v4
+
+    - name: ☕ Configuration Java 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: 📦 Configuration Node.js 18
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: './frontend/package-lock.json'
+
+    - name: 🏗️ Build Backend
+      working-directory: ./backend
+      run: mvn clean package -DskipTests
+
+    - name: 🏗️ Build Frontend
+      working-directory: ./frontend
+      run: |
+        npm ci
+        npm run build --configuration=production
+
+    - name: 🐳 Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 🐳 Build et Push Images Staging
+      run: |
+        # Backend
+        docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-backend:staging-${{ github.sha }} ./backend
+        docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-backend:staging-${{ github.sha }}
+        
+        # Frontend
+        docker build -f ./docker/Dockerfile.frontend -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:staging-${{ github.sha }} ./docker
+        docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:staging-${{ github.sha }}
+
+    - name: 🚀 Déploiement sur Staging
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.STAGING_HOST }}
+        username: ${{ secrets.STAGING_USER }}
+        key: ${{ secrets.STAGING_SSH_KEY }}
+        script: |
+          # Mise à jour des images Docker
+          echo "🔄 Mise à jour des images sur staging..."
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-backend:staging-${{ github.sha }}
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:staging-${{ github.sha }}
+          
+          # Mise à jour des services
+          export BACKEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-backend:staging-${{ github.sha }}
+          export FRONTEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:staging-${{ github.sha }}
+          
+          # Redémarrage des services
+          docker-compose -f /opt/medhead/docker-compose.staging.yml down
+          docker-compose -f /opt/medhead/docker-compose.staging.yml up -d
+          
+          # Vérification du déploiement
+          sleep 30
+          curl -f http://staging.medhead.com/api/health || exit 1
+          curl -f http://staging.medhead.com/ || exit 1
+          
+          echo "✅ Déploiement staging réussi !"
+
+    - name: 🔍 Tests de validation Staging
+      run: |
+        echo "🔍 Validation du déploiement staging..."
+        
+        # Tests de santé des services
+        curl -f https://staging.medhead.com/api/health
+        curl -f https://staging.medhead.com/
+        
+        # Tests fonctionnels rapides
+        curl -f https://staging.medhead.com/api/hospitals
+        curl -f https://staging.medhead.com/api/specialties
+        
+        echo "✅ Validation staging réussie !"
+
+    - name: 📢 Notification Slack Staging
+      if: always()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#medhead-deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        fields: repo,message,commit,author,action,eventName,ref,workflow
+        custom_payload: |
+          {
+            "text": "🚀 Déploiement Staging MedHead",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*🚀 Déploiement Staging MedHead*\n\n*Status:* ${{ job.status }}\n*Commit:* `${{ github.sha }}`\n*Environment:* Staging\n*URL:* https://staging.medhead.com"
+                }
+              }
+            ]
+          }
+
+  # Job 3: Tests de régression sur Staging
+  regression-tests:
+    name: 🔄 Tests de Régression
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: deploy-staging
+    if: always() && needs.deploy-staging.result == 'success'
+    
+    steps:
+    - name: 📥 Checkout du code
+      uses: actions/checkout@v4
+
+    - name: 📦 Configuration Node.js 18
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: './frontend/package-lock.json'
+
+    - name: 📥 Installation dépendances Frontend
+      working-directory: ./frontend
+      run: npm ci
+
+    - name: 🔄 Tests de régression E2E
+      working-directory: ./frontend
+      run: |
+        echo "🔄 Exécution des tests de régression sur staging..."
+        npm run e2e:ci -- --config baseUrl=https://staging.medhead.com \
+          --reporter junit \
+          --reporter-options "mochaFile=../reports/regression-tests/results-[hash].xml"
+      env:
+        CYPRESS_BASE_URL: https://staging.medhead.com
+
+    - name: 📊 Upload rapports régression
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: regression-test-reports
+        path: reports/regression-tests/
+        retention-days: 30
+
+  # Job 4: Déploiement Production
+  deploy-production:
+    name: 🌟 Déploiement Production
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: [deploy-staging, regression-tests]
+    environment: production
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production') ||
+      (startsWith(github.ref, 'refs/tags/v'))
+    
+    steps:
+    - name: 📥 Checkout du code
+      uses: actions/checkout@v4
+
+    - name: ☕ Configuration Java 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: 📦 Configuration Node.js 18
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: './frontend/package-lock.json'
+
+    - name: 🏗️ Build Backend Production
+      working-directory: ./backend
+      run: mvn clean package -DskipTests -P production
+
+    - name: 🏗️ Build Frontend Production
+      working-directory: ./frontend
+      run: |
+        npm ci
+        npm run build --configuration=production
+
+    - name: 🐳 Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 🐳 Build et Push Images Production
+      run: |
+        # Déterminer la version
+        if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+          VERSION=${{ github.ref_name }}
+        else
+          VERSION=latest
+        fi
+        
+        # Backend
+        docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-backend:$VERSION ./backend
+        docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-backend:${{ github.sha }} ./backend
+        docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-backend:$VERSION
+        docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-backend:${{ github.sha }}
+        
+        # Frontend
+        docker build -f ./docker/Dockerfile.frontend -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:$VERSION ./docker
+        docker build -f ./docker/Dockerfile.frontend -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:${{ github.sha }} ./docker
+        docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:$VERSION
+        docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:${{ github.sha }}
+
+    - name: 🚀 Déploiement Production (Blue-Green)
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.PRODUCTION_HOST }}
+        username: ${{ secrets.PRODUCTION_USER }}
+        key: ${{ secrets.PRODUCTION_SSH_KEY }}
+        script: |
+          # Déterminer la version
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION=${{ github.ref_name }}
+          else
+            VERSION=latest
+          fi
+          
+          echo "🚀 Déploiement production version $VERSION..."
+          
+          # Mise à jour des images
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-backend:$VERSION
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:$VERSION
+          
+          # Déploiement Blue-Green
+          export BACKEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-backend:$VERSION
+          export FRONTEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:$VERSION
+          
+          # Démarrage du nouveau environnement (Green)
+          docker-compose -f /opt/medhead/docker-compose.green.yml up -d
+          
+          # Attente de la stabilisation
+          echo "⏳ Attente de la stabilisation..."
+          sleep 60
+          
+          # Tests de santé sur le nouvel environnement
+          echo "🔍 Tests de santé..."
+          curl -f http://localhost:8081/api/health || exit 1
+          curl -f http://localhost:4201/ || exit 1
+          
+          # Basculement du trafic (Blue -> Green)
+          echo "🔄 Basculement du trafic..."
+          docker-compose -f /opt/medhead/docker-compose.production.yml down
+          docker-compose -f /opt/medhead/docker-compose.green.yml -f /opt/medhead/docker-compose.production.yml up -d
+          
+          # Arrêt de l'ancien environnement
+          docker-compose -f /opt/medhead/docker-compose.blue.yml down
+          
+          # Renommage pour le prochain déploiement
+          mv /opt/medhead/docker-compose.green.yml /opt/medhead/docker-compose.blue.yml
+          
+          echo "✅ Déploiement production réussi !"
+
+    - name: 🔍 Tests de validation Production
+      run: |
+        echo "🔍 Validation du déploiement production..."
+        
+        # Tests de santé
+        curl -f https://medhead.com/api/health
+        curl -f https://medhead.com/
+        
+        # Tests fonctionnels critiques
+        curl -f https://medhead.com/api/hospitals
+        curl -f https://medhead.com/api/specialties
+        
+        # Tests de performance
+        curl -f https://medhead.com/api/health --max-time 5
+        
+        echo "✅ Validation production réussie !"
+
+    - name: 🏷️ Création Release GitHub
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name }}
+        release_name: Release ${{ github.ref_name }}
+        body: |
+          ## 🚀 Release ${{ github.ref_name }}
+          
+          ### 🆕 Nouvelles fonctionnalités
+          - Améliorations de l'allocation d'hôpitaux
+          - Optimisations de performance
+          - Corrections de bugs
+          
+          ### 🐳 Images Docker
+          - Backend: `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-backend:${{ github.ref_name }}`
+          - Frontend: `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:${{ github.ref_name }}`
+          
+          ### 🔗 Liens
+          - [Production](https://medhead.com)
+          - [Documentation](https://docs.medhead.com)
+        draft: false
+        prerelease: false
+
+    - name: 📢 Notification Slack Production
+      if: always()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#medhead-deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        custom_payload: |
+          {
+            "text": "🌟 Déploiement Production MedHead",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*🌟 Déploiement Production MedHead*\n\n*Status:* ${{ job.status }}\n*Version:* ${{ github.ref_name || 'latest' }}\n*Commit:* `${{ github.sha }}`\n*Environment:* Production\n*URL:* https://medhead.com"
+                }
+              }
+            ]
+          }
+
+  # Job 5: Monitoring post-déploiement
+  post-deployment-monitoring:
+    name: 📊 Monitoring Post-Déploiement
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: deploy-production
+    if: always() && needs.deploy-production.result == 'success'
+    
+    steps:
+    - name: 📥 Checkout du code
+      uses: actions/checkout@v4
+
+    - name: 📊 Monitoring des métriques
+      run: |
+        echo "📊 Monitoring post-déploiement..."
+        
+        # Tests de charge légère
+        for i in {1..10}; do
+          echo "Test $i/10"
+          curl -f https://medhead.com/api/health --max-time 10
+          sleep 2
+        done
+        
+        # Vérification des endpoints critiques
+        curl -f https://medhead.com/api/hospitals --max-time 10
+        curl -f https://medhead.com/api/specialties --max-time 10
+        
+        echo "✅ Monitoring post-déploiement réussi !"
+
+    - name: 📈 Envoi métriques vers monitoring
+      run: |
+        echo "📈 Envoi des métriques vers le système de monitoring..."
+        
+        # Simulation d'envoi vers Prometheus/Grafana
+        curl -X POST "${{ secrets.MONITORING_WEBHOOK }}" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "deployment": {
+              "version": "${{ github.ref_name || 'latest' }}",
+              "commit": "${{ github.sha }}",
+              "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'",
+              "environment": "production"
+            },
+            "status": "success"
+          }'
+
+    - name: 📧 Notification Email
+      if: always()
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 587
+        username: ${{ secrets.EMAIL_USERNAME }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        subject: "MedHead - Déploiement Production ${{ job.status }}"
+        to: ${{ secrets.NOTIFICATION_EMAIL }}
+        from: MedHead CI/CD
+        body: |
+          Bonjour,
+          
+          Le déploiement production de MedHead est ${{ job.status }}.
+          
+          Détails:
+          - Version: ${{ github.ref_name || 'latest' }}
+          - Commit: ${{ github.sha }}
+          - Timestamp: $(date -u)
+          - URL: https://medhead.com
+          
+          Cordialement,
+          L'équipe MedHead
