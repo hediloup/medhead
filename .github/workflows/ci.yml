@@ -631,17 +631,18 @@ jobs:
         path: reports/ci-summary/
         retention-days: 30
 
-    - name: 📢 Notification Slack
-      if: always() && secrets.SLACK_WEBHOOK_URL
-      uses: 8398a7/action-slack@v3
-      with:
-        status: ${{ job.status }}
-        channel: '#medhead-ci'
-        fields: repo,message,commit,author,action,eventName,ref,workflow
-        author_name: '8398a7@action-slack'
-        success_message: ':white_check_mark: Succeeded GitHub Actions'
-        cancelled_message: ':warning: Cancelled GitHub Actions'
-        failure_message: ':no_entry: Failed GitHub Actions'
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-      env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    # - name: 📢 Notification Slack
+    #   if: always()
+    #   uses: 8398a7/action-slack@v3
+    #   continue-on-error: true
+    #   with:
+    #     status: ${{ job.status }}
+    #     channel: '#medhead-ci'
+    #     fields: repo,message,commit,author,action,eventName,ref,workflow
+    #     author_name: '8398a7@action-slack'
+    #     success_message: ':white_check_mark: Succeeded GitHub Actions'
+    #     cancelled_message: ':warning: Cancelled GitHub Actions'
+    #     failure_message: ':no_entry: Failed GitHub Actions'
+    #     github_token: ${{ secrets.GITHUB_TOKEN }}
+    #   env:
+    #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
