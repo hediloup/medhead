@@ -1,0 +1,231 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { ReactiveFormsModule } from '@angular/forms';
+import { HospitalAllocationComponent } from './hospital-allocation.component';
+import { AllocationService } from '../services/allocation.service';
+import { GeocodingService } from '../services/geocoding.service';
+import { AllocationRequest } from '../models/allocation-request';
+import { AllocationResponse } from '../models/allocation-response';
+import { GeocodingResponse } from '../models/geocoding-response';
+
+describe('HospitalAllocationComponent', () => {
+  let component: HospitalAllocationComponent;
+  let fixture: ComponentFixture<HospitalAllocationComponent>;
+  let allocationService: AllocationService;
+  let geocodingService: GeocodingService;
+  let httpMock: HttpTestingController;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      declarations: [HospitalAllocationComponent],
+      imports: [HttpClientTestingModule, ReactiveFormsModule],
+      providers: [AllocationService, GeocodingService]
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(HospitalAllocationComponent);
+    component = fixture.componentInstance;
+    allocationService = TestBed.inject(AllocationService);
+    geocodingService = TestBed.inject(GeocodingService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+
+  it('should initialize form with required validators', () => {
+    fixture.detectChanges();
+    
+    const form = component.allocationForm;
+    expect(form.get('specialty')?.hasError('required')).toBeTruthy();
+    expect(form.get('address')?.hasError('required')).toBeTruthy();
+  });
+
+  it('should have medical specialties list', () => {
+    expect(component.medicalSpecialties).toBeTruthy();
+    expect(component.medicalSpecialties.length).toBeGreaterThan(0);
+    expect(component.medicalSpecialties).toContain('Cardiology');
+    expect(component.medicalSpecialties).toContain('Neurology');
+    expect(component.medicalSpecialties).toContain('Emergency Medicine');
+  });
+
+  it('should check API health on initialization', () => {
+    spyOn(component as any, 'checkApiHealth');
+    component.ngOnInit();
+    expect((component as any).checkApiHealth).toHaveBeenCalled();
+  });
+
+  it('should validate form correctly', () => {
+    fixture.detectChanges();
+    
+    // Test invalid form
+    component.onSubmit();
+    expect(component.allocationForm.invalid).toBeTruthy();
+    
+    // Test valid form
+    component.allocationForm.patchValue({
+      specialty: 'Cardiology',
+      address: 'Paris, France'
+    });
+    expect(component.allocationForm.valid).toBeTruthy();
+  });
+
+  it('should handle form submission with valid data', () => {
+    fixture.detectChanges();
+    
+    // Mock geocoding response
+    const mockGeocodingResponse: GeocodingResponse[] = [{
+      lat: 48.8566,
+      lon: 2.3522,
+      display_name: 'Paris, France'
+    }];
+
+    // Mock allocation response
+    const mockAllocationResponse: AllocationResponse = {
+      hospital_name: 'Hôpital Saint-Antoine',
+      hospital_id: 1,
+      distance_km: 5.2,
+      specialty: 'Cardiology',
+      available_beds: 3,
+      estimated_time_minutes: 12
+    };
+
+    component.allocationForm.patchValue({
+      specialty: 'Cardiology',
+      address: 'Paris, France'
+    });
+
+    component.onSubmit();
+
+    // Verify geocoding request
+    const geocodingReq = httpMock.expectOne('/geocoding/search?q=Paris%2C+France&format=json&limit=1&addressdetails=1');
+    geocodingReq.flush(mockGeocodingResponse);
+
+    // Verify allocation request
+    const allocationReq = httpMock.expectOne('/api/allocate');
+    expect(allocationReq.request.body).toEqual({
+      specialty: 'Cardiology',
+      latitude: 48.8566,
+      longitude: 2.3522
+    });
+    allocationReq.flush(mockAllocationResponse);
+
+    expect(component.allocationResult).toEqual(mockAllocationResponse);
+    expect(component.successMessage).toBe('Recommended hospital found: Hôpital Saint-Antoine');
+    expect(component.isLoading).toBeFalsy();
+    expect(component.isGeocoding).toBeFalsy();
+  });
+
+  it('should handle geocoding failure', () => {
+    fixture.detectChanges();
+    
+    component.allocationForm.patchValue({
+      specialty: 'Cardiology',
+      address: 'Invalid address'
+    });
+
+    component.onSubmit();
+
+    // Mock geocoding failure (empty response)
+    const geocodingReq = httpMock.expectOne('/geocoding/search?q=Invalid+address&format=json&limit=1&addressdetails=1');
+    geocodingReq.flush([]);
+
+    expect(component.errorMessage).toBe('Unable to find this address. Please check the address and try again.');
+    expect(component.isLoading).toBeFalsy();
+    expect(component.isGeocoding).toBeFalsy();
+  });
+
+  it('should handle allocation service error', () => {
+    fixture.detectChanges();
+    
+    const mockGeocodingResponse: GeocodingResponse[] = [{
+      lat: 48.8566,
+      lon: 2.3522,
+      display_name: 'Paris, France'
+    }];
+
+    component.allocationForm.patchValue({
+      specialty: 'Cardiology',
+      address: 'Paris, France'
+    });
+
+    component.onSubmit();
+
+    // Mock successful geocoding
+    const geocodingReq = httpMock.expectOne('/geocoding/search?q=Paris%2C+France&format=json&limit=1&addressdetails=1');
+    geocodingReq.flush(mockGeocodingResponse);
+
+    // Mock allocation failure
+    const allocationReq = httpMock.expectOne('/api/allocate');
+    allocationReq.flush('No hospital available', { status: 404, statusText: 'Not Found' });
+
+    expect(component.errorMessage).toBe('No hospital available for this specialty.');
+    expect(component.isLoading).toBeFalsy();
+    expect(component.isGeocoding).toBeFalsy();
+  });
+
+  it('should reset form correctly', () => {
+    fixture.detectChanges();
+    
+    // Set some data
+    component.allocationForm.patchValue({
+      specialty: 'Cardiology',
+      address: 'Paris, France'
+    });
+    component.allocationResult = {
+      hospital_name: 'Test Hospital',
+      hospital_id: 1,
+      distance_km: 5.0,
+      specialty: 'Cardiology',
+      available_beds: 2,
+      estimated_time_minutes: 10
+    };
+    component.errorMessage = 'Some error';
+    component.successMessage = 'Some success';
+
+    component.resetForm();
+
+    expect(component.allocationForm.get('specialty')?.value).toBeNull();
+    expect(component.allocationForm.get('address')?.value).toBeNull();
+    expect(component.allocationResult).toBeNull();
+    expect(component.errorMessage).toBe('');
+    expect(component.successMessage).toBe('');
+  });
+
+  it('should check field errors correctly', () => {
+    fixture.detectChanges();
+    
+    const addressControl = component.allocationForm.get('address');
+    addressControl?.markAsTouched();
+    addressControl?.setValue('');
+    
+    expect(component.hasFieldError('address')).toBeTruthy();
+    expect(component.getFieldError('address')).toBe('This field is required');
+  });
+
+  it('should validate minimum length for address', () => {
+    fixture.detectChanges();
+    
+    const addressControl = component.allocationForm.get('address');
+    addressControl?.setValue('abc'); // Less than 5 characters
+    addressControl?.markAsTouched();
+    
+    expect(component.hasFieldError('address')).toBeTruthy();
+    expect(component.getFieldError('address')).toBe('Minimum 5 characters required');
+  });
+
+  it('should handle API health check failure', () => {
+    fixture.detectChanges();
+    
+    component.ngOnInit();
+
+    const healthReq = httpMock.expectOne('/api/health');
+    healthReq.flush('Service Unavailable', { status: 503, statusText: 'Service Unavailable' });
+
+    expect(component.errorMessage).toBe('Backend service is not available. Please check that the server is started.');
+  });
+});

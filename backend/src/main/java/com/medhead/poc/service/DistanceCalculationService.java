@@ -105,4 +105,16 @@ public class DistanceCalculationService {
         double timeHours = distanceKm / averageSpeedKmh;
         return (int) Math.round(timeHours * 60);
     }
+    
+    /**
+     * Estimates travel time in minutes based on distance and custom speed.
+     * 
+     * @param distanceKm Distance in kilometers
+     * @param speedKmh Speed in kilometers per hour
+     * @return Estimated time in minutes
+     */
+    public int estimateTravelTime(double distanceKm, int speedKmh) {
+        double timeHours = distanceKm / speedKmh;
+        return (int) Math.round(timeHours * 60);
+    }
 }

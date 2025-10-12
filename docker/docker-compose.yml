@@ -60,6 +60,91 @@ services:
       - backend
     restart: unless-stopped
 
+  # Frontend pour les tests (développement)
+  frontend-dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend.test
+    container_name: medhead-frontend-dev
+    ports:
+      - "4200:4200"
+    environment:
+      - NODE_ENV=development
+      - CHROME_BIN=/usr/bin/chromium-browser
+      - DISPLAY=:99
+    volumes:
+      - ../frontend/src:/app/src
+      - ../frontend/cypress:/app/cypress
+      - ../frontend/reports:/app/reports
+    networks:
+      - medhead-network
+    depends_on:
+      - backend
+    command: npm start
+    profiles:
+      - dev
+      - test
+
+  # Tests unitaires frontend
+  frontend-unit-tests:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend.test
+    container_name: medhead-frontend-unit-tests
+    environment:
+      - NODE_ENV=test
+      - CHROME_BIN=/usr/bin/chromium-browser
+      - CI=true
+    volumes:
+      - ../frontend/reports:/app/reports
+    networks:
+      - medhead-network
+    command: npm run test:coverage -- --watch=false --browsers=ChromeHeadless
+    profiles:
+      - test
+
+  # Tests E2E frontend
+  frontend-e2e-tests:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend.test
+    container_name: medhead-frontend-e2e-tests
+    environment:
+      - NODE_ENV=test
+      - CHROME_BIN=/usr/bin/chromium-browser
+      - DISPLAY=:99
+      - CI=true
+    volumes:
+      - ../frontend/reports:/app/reports
+    networks:
+      - medhead-network
+    depends_on:
+      - frontend
+    command: ./run-tests.sh e2e
+    profiles:
+      - test
+
+  # Tests complets frontend
+  frontend-all-tests:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend.test
+    container_name: medhead-frontend-all-tests
+    environment:
+      - NODE_ENV=test
+      - CHROME_BIN=/usr/bin/chromium-browser
+      - DISPLAY=:99
+      - CI=true
+    volumes:
+      - ../frontend/reports:/app/reports
+    networks:
+      - medhead-network
+    depends_on:
+      - frontend
+    command: ./run-tests-ci.sh
+    profiles:
+      - test
+
   # Optionnel: pgAdmin pour administration
   pgadmin:
     image: dpage/pgadmin4:latest

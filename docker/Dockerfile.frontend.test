@@ -1,0 +1,55 @@
+# Dockerfile pour les tests frontend MedHead
+FROM node:18-alpine
+
+# Installer les dépendances système nécessaires pour les tests
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    freetype-dev \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    curl \
+    bash \
+    && rm -rf /var/cache/apk/*
+
+# Définir les variables d'environnement pour Chrome
+ENV CHROME_BIN=/usr/bin/chromium-browser
+ENV CHROME_PATH=/usr/bin/chromium-browser
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+ENV DISPLAY=:99
+
+# Créer le répertoire de travail
+WORKDIR /app
+
+# Copier les fichiers de configuration des dépendances
+COPY ../frontend/package*.json ./
+COPY ../frontend/angular.json ./
+COPY ../frontend/tsconfig*.json ./
+COPY ../frontend/karma.conf.js ./
+COPY ../frontend/cypress.config.js ./
+
+# Installer les dépendances
+RUN npm install
+
+# Installer Angular CLI globalement
+RUN npm install -g @angular/cli@16.2.16
+
+# Copier le code source
+COPY ../frontend/src/ ./src/
+COPY ../frontend/cypress/ ./cypress/
+
+# Copier les scripts de test
+COPY ../frontend/run-tests.sh ./
+COPY ../frontend/run-tests-ci.sh ./
+
+# Rendre les scripts exécutables
+RUN chmod +x run-tests.sh run-tests-ci.sh
+
+# Créer le répertoire pour les rapports
+RUN mkdir -p reports
+
+# Commande par défaut pour les tests
+CMD ["./run-tests-ci.sh"]
