@@ -293,24 +293,32 @@ jobs:
         mkdir -p ../reports/frontend
         mkdir -p reports
         
-        # Démarrer ng serve en arrière-plan avec configuration optimisée
-        echo "🚀 Démarrage de ng serve..."
-        nohup npx ng serve --host 0.0.0.0 --port 4200 --disable-host-check --live-reload=false --poll=2000 > ../reports/frontend/angular.log 2>&1 &
+        # Construire l'application d'abord
+        echo "🔨 Construction de l'application Angular..."
+        npm run build --configuration development
+        
+        # Installer un serveur HTTP simple
+        echo "📦 Installation de http-server..."
+        npm install -g http-server
+        
+        # Démarrer le serveur HTTP en arrière-plan
+        echo "🚀 Démarrage du serveur HTTP..."
+        nohup http-server dist/medhead-frontend -p 4200 -a 0.0.0.0 --cors --gzip > ../reports/frontend/angular.log 2>&1 &
         echo $! > ../reports/frontend/angular.pid
         
-        echo "⏳ Attente du démarrage de ng serve..."
-        sleep 15
+        echo "⏳ Attente du démarrage du serveur HTTP..."
+        sleep 10
         
         # Vérifier que le processus est toujours en cours
         if ! kill -0 $(cat ../reports/frontend/angular.pid) 2>/dev/null; then
-          echo "❌ Le processus Angular s'est arrêté. Vérifiant les logs..."
+          echo "❌ Le serveur HTTP s'est arrêté. Vérifiant les logs..."
           cat ../reports/frontend/angular.log || echo "Aucun log disponible"
           exit 1
         fi
         
         echo "🌐 Vérification de l'accessibilité du frontend..."
-        timeout 45s bash -c 'until curl -f http://localhost:4200 > /dev/null 2>&1; do sleep 3; echo "⏳ En attente de ng serve..."; done'
-        echo "✅ Frontend Angular accessible via ng serve"
+        timeout 30s bash -c 'until curl -f http://localhost:4200 > /dev/null 2>&1; do sleep 2; echo "⏳ En attente du serveur HTTP..."; done'
+        echo "✅ Frontend Angular accessible via serveur HTTP"
 
     - name: 🌐 Tests E2E avec Cypress
       working-directory: ./frontend
