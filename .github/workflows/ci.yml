@@ -293,19 +293,24 @@ jobs:
         mkdir -p ../reports/frontend
         mkdir -p reports
         
-        # Construire l'application
-        npm run build
-        
-        # Démarrer l'application en arrière-plan
-        nohup npm start > ../reports/frontend/angular.log 2>&1 &
+        # Démarrer ng serve en arrière-plan avec configuration optimisée
+        echo "🚀 Démarrage de ng serve..."
+        nohup npx ng serve --host 0.0.0.0 --port 4200 --disable-host-check --live-reload=false --poll=2000 > ../reports/frontend/angular.log 2>&1 &
         echo $! > ../reports/frontend/angular.pid
         
-        echo "⏳ Attente du démarrage de l'application Angular..."
-        sleep 30
+        echo "⏳ Attente du démarrage de ng serve..."
+        sleep 15
+        
+        # Vérifier que le processus est toujours en cours
+        if ! kill -0 $(cat ../reports/frontend/angular.pid) 2>/dev/null; then
+          echo "❌ Le processus Angular s'est arrêté. Vérifiant les logs..."
+          cat ../reports/frontend/angular.log || echo "Aucun log disponible"
+          exit 1
+        fi
         
         echo "🌐 Vérification de l'accessibilité du frontend..."
-        timeout 60s bash -c 'until curl -f http://localhost:4200 > /dev/null 2>&1; do sleep 5; echo "⏳ En attente du frontend Angular..."; done'
-        echo "✅ Frontend Angular accessible"
+        timeout 45s bash -c 'until curl -f http://localhost:4200 > /dev/null 2>&1; do sleep 3; echo "⏳ En attente de ng serve..."; done'
+        echo "✅ Frontend Angular accessible via ng serve"
 
     - name: 🌐 Tests E2E avec Cypress
       working-directory: ./frontend
@@ -333,8 +338,17 @@ jobs:
         echo "🛑 Arrêt de l'application Angular..."
         if [ -f ./reports/frontend/angular.pid ]; then
           PID=$(cat ./reports/frontend/angular.pid)
+          echo "🔍 PID du processus Angular: $PID"
           kill $PID 2>/dev/null || echo "Processus Angular déjà arrêté"
           rm -f ./reports/frontend/angular.pid
+        fi
+        
+        # Afficher les logs pour debugging
+        echo "📋 Logs Angular (dernières 20 lignes):"
+        if [ -f ./reports/frontend/angular.log ]; then
+          tail -20 ./reports/frontend/angular.log || echo "Impossible de lire les logs"
+        else
+          echo "Aucun fichier de log trouvé"
         fi
 
     - name: 📊 Upload rapports E2E
