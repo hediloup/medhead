@@ -295,7 +295,7 @@ jobs:
         
         # Construire l'application d'abord
         echo "🔨 Construction de l'application Angular..."
-        npm run build --configuration development
+        npx ng build --configuration development
         
         # Installer un serveur HTTP simple
         echo "📦 Installation de http-server..."
