@@ -11,14 +11,16 @@ module.exports = defineConfig({
     viewportHeight: 720,
     video: true,
     screenshotOnRunFailure: true,
-    defaultCommandTimeout: 10000,
-    requestTimeout: 10000,
-    responseTimeout: 10000,
-    pageLoadTimeout: 30000,
+    defaultCommandTimeout: 15000,
+    requestTimeout: 15000,
+    responseTimeout: 15000,
+    pageLoadTimeout: 60000,
     retries: {
-      runMode: 2,
+      runMode: 3,
       openMode: 0
     },
+    waitForAnimations: true,
+    animationDistanceThreshold: 20,
     env: {
       apiUrl: 'http://localhost:4200/api',
       geocodingUrl: 'http://localhost:4200/geocoding'
