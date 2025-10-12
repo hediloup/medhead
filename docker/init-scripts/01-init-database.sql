@@ -82,10 +82,13 @@ INSERT INTO hospitals (name, latitude, longitude, city, address, available_beds)
 ('University College Hospital', 51.5245, -0.1347, 'Londres', '235 Euston Rd, London NW1 2BU', 26),
 ('St George''s Hospital', 51.4253, -0.1780, 'Londres', 'Blackshaw Rd, London SW17 0QT', 24),
 
--- Manchester
+-- Manchester et région de Stockport
 ('Manchester Royal Infirmary', 53.4592, -2.2264, 'Manchester', 'Oxford Rd, Manchester M13 9WL', 35),
 ('Salford Royal Hospital', 53.4858, -2.2964, 'Salford', 'Stott Ln, Salford M6 8HD', 28),
 ('Wythenshawe Hospital', 53.3867, -2.2698, 'Manchester', 'Southmoor Rd, Manchester M23 9LT', 20),
+('Stepping Hill Hospital', 53.3969, -2.1333, 'Stockport', 'Poplar Grove, Stockport SK2 7JE', 32),
+('North Manchester General Hospital', 53.5264, -2.2144, 'Manchester', 'Delaunays Rd, Crumpsall, Manchester M8 5RB', 25),
+('Tameside General Hospital', 53.4925, -2.0589, 'Ashton-under-Lyne', 'Fountain St, Ashton-under-Lyne OL6 9RW', 22),
 
 -- Birmingham
 ('Queen Elizabeth Hospital', 52.4504, -1.9378, 'Birmingham', 'Mindelsohn Way, Birmingham B15 2WB', 32),
@@ -206,28 +209,30 @@ INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
 (9, (SELECT id FROM specialities WHERE name = 'General Surgery')),
 (9, (SELECT id FROM specialities WHERE name = 'Emergency Medicine'));
 
--- Queen Elizabeth Hospital Birmingham
+-- Stepping Hill Hospital (Stockport) - ID 10
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
 (10, (SELECT id FROM specialities WHERE name = 'Cardiology')),
-(10, (SELECT id FROM specialities WHERE name = 'Neurology')),
+(10, (SELECT id FROM specialities WHERE name = 'General Medicine')),
 (10, (SELECT id FROM specialities WHERE name = 'General Surgery')),
 (10, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
 (10, (SELECT id FROM specialities WHERE name = 'Intensive Care Medicine'));
 
--- Birmingham Children's Hospital
+-- North Manchester General Hospital - ID 11
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(11, (SELECT id FROM specialities WHERE name = 'Paediatrics')),
+(11, (SELECT id FROM specialities WHERE name = 'Cardiology')),
+(11, (SELECT id FROM specialities WHERE name = 'General Medicine')),
 (11, (SELECT id FROM specialities WHERE name = 'General Surgery')),
-(11, (SELECT id FROM specialities WHERE name = 'Emergency Medicine'));
+(11, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
+(11, (SELECT id FROM specialities WHERE name = 'Intensive Care Medicine'));
 
--- Heartlands Hospital
+-- Tameside General Hospital - ID 12
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
 (12, (SELECT id FROM specialities WHERE name = 'General Medicine')),
 (12, (SELECT id FROM specialities WHERE name = 'General Surgery')),
 (12, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
 (12, (SELECT id FROM specialities WHERE name = 'Orthopaedic Surgery'));
 
--- Leeds General Infirmary
+-- Queen Elizabeth Hospital Birmingham
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
 (13, (SELECT id FROM specialities WHERE name = 'Cardiology')),
 (13, (SELECT id FROM specialities WHERE name = 'Neurology')),
@@ -235,160 +240,181 @@ INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
 (13, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
 (13, (SELECT id FROM specialities WHERE name = 'Intensive Care Medicine'));
 
+-- Birmingham Children's Hospital
+INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
+(14, (SELECT id FROM specialities WHERE name = 'Paediatrics')),
+(14, (SELECT id FROM specialities WHERE name = 'General Surgery')),
+(14, (SELECT id FROM specialities WHERE name = 'Emergency Medicine'));
+
+-- Heartlands Hospital
+INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
+(15, (SELECT id FROM specialities WHERE name = 'General Medicine')),
+(15, (SELECT id FROM specialities WHERE name = 'General Surgery')),
+(15, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
+(15, (SELECT id FROM specialities WHERE name = 'Orthopaedic Surgery'));
+
+-- Leeds General Infirmary
+INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
+(16, (SELECT id FROM specialities WHERE name = 'Cardiology')),
+(16, (SELECT id FROM specialities WHERE name = 'Neurology')),
+(16, (SELECT id FROM specialities WHERE name = 'General Surgery')),
+(16, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
+(16, (SELECT id FROM specialities WHERE name = 'Intensive Care Medicine'));
+
 -- St James's University Hospital Leeds
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(14, (SELECT id FROM specialities WHERE name = 'Medical Oncology')),
-(14, (SELECT id FROM specialities WHERE name = 'Haematology')),
-(14, (SELECT id FROM specialities WHERE name = 'General Medicine')),
-(14, (SELECT id FROM specialities WHERE name = 'Emergency Medicine'));
+(17, (SELECT id FROM specialities WHERE name = 'Medical Oncology')),
+(17, (SELECT id FROM specialities WHERE name = 'Haematology')),
+(17, (SELECT id FROM specialities WHERE name = 'General Medicine')),
+(17, (SELECT id FROM specialities WHERE name = 'Emergency Medicine'));
 
 -- Royal Liverpool University Hospital
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(15, (SELECT id FROM specialities WHERE name = 'Cardiology')),
-(15, (SELECT id FROM specialities WHERE name = 'Neurology')),
-(15, (SELECT id FROM specialities WHERE name = 'General Surgery')),
-(15, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
-(15, (SELECT id FROM specialities WHERE name = 'Intensive Care Medicine'));
+(18, (SELECT id FROM specialities WHERE name = 'Cardiology')),
+(18, (SELECT id FROM specialities WHERE name = 'Neurology')),
+(18, (SELECT id FROM specialities WHERE name = 'General Surgery')),
+(18, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
+(18, (SELECT id FROM specialities WHERE name = 'Intensive Care Medicine'));
 
 -- Alder Hey Children's Hospital
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(16, (SELECT id FROM specialities WHERE name = 'Paediatrics')),
-(16, (SELECT id FROM specialities WHERE name = 'General Surgery')),
-(16, (SELECT id FROM specialities WHERE name = 'Emergency Medicine'));
+(19, (SELECT id FROM specialities WHERE name = 'Paediatrics')),
+(19, (SELECT id FROM specialities WHERE name = 'General Surgery')),
+(19, (SELECT id FROM specialities WHERE name = 'Emergency Medicine'));
 
 -- Royal Victoria Infirmary Newcastle
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(17, (SELECT id FROM specialities WHERE name = 'Cardiology')),
-(17, (SELECT id FROM specialities WHERE name = 'Neurology')),
-(17, (SELECT id FROM specialities WHERE name = 'General Surgery')),
-(17, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
-(17, (SELECT id FROM specialities WHERE name = 'Intensive Care Medicine'));
+(20, (SELECT id FROM specialities WHERE name = 'Cardiology')),
+(20, (SELECT id FROM specialities WHERE name = 'Neurology')),
+(20, (SELECT id FROM specialities WHERE name = 'General Surgery')),
+(20, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
+(20, (SELECT id FROM specialities WHERE name = 'Intensive Care Medicine'));
 
 -- Freeman Hospital Newcastle
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(18, (SELECT id FROM specialities WHERE name = 'Cardiothoracic Surgery')),
-(18, (SELECT id FROM specialities WHERE name = 'Respiratory Medicine')),
-(18, (SELECT id FROM specialities WHERE name = 'General Surgery')),
-(18, (SELECT id FROM specialities WHERE name = 'Emergency Medicine'));
+(21, (SELECT id FROM specialities WHERE name = 'Cardiothoracic Surgery')),
+(21, (SELECT id FROM specialities WHERE name = 'Respiratory Medicine')),
+(21, (SELECT id FROM specialities WHERE name = 'General Surgery')),
+(21, (SELECT id FROM specialities WHERE name = 'Emergency Medicine'));
 
 -- Bristol Royal Infirmary
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(19, (SELECT id FROM specialities WHERE name = 'Cardiology')),
-(19, (SELECT id FROM specialities WHERE name = 'Neurology')),
-(19, (SELECT id FROM specialities WHERE name = 'General Surgery')),
-(19, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
-(19, (SELECT id FROM specialities WHERE name = 'Intensive Care Medicine'));
+(22, (SELECT id FROM specialities WHERE name = 'Cardiology')),
+(22, (SELECT id FROM specialities WHERE name = 'Neurology')),
+(22, (SELECT id FROM specialities WHERE name = 'General Surgery')),
+(22, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
+(22, (SELECT id FROM specialities WHERE name = 'Intensive Care Medicine'));
 
 -- Southmead Hospital Bristol
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(20, (SELECT id FROM specialities WHERE name = 'General Medicine')),
-(20, (SELECT id FROM specialities WHERE name = 'General Surgery')),
-(20, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
-(20, (SELECT id FROM specialities WHERE name = 'Orthopaedic Surgery'));
+(23, (SELECT id FROM specialities WHERE name = 'General Medicine')),
+(23, (SELECT id FROM specialities WHERE name = 'General Surgery')),
+(23, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
+(23, (SELECT id FROM specialities WHERE name = 'Orthopaedic Surgery'));
 
 -- Royal Hallamshire Hospital Sheffield
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(21, (SELECT id FROM specialities WHERE name = 'Neurology')),
-(21, (SELECT id FROM specialities WHERE name = 'Neurosurgery')),
-(21, (SELECT id FROM specialities WHERE name = 'General Medicine')),
-(21, (SELECT id FROM specialities WHERE name = 'Emergency Medicine'));
+(24, (SELECT id FROM specialities WHERE name = 'Neurology')),
+(24, (SELECT id FROM specialities WHERE name = 'Neurosurgery')),
+(24, (SELECT id FROM specialities WHERE name = 'General Medicine')),
+(24, (SELECT id FROM specialities WHERE name = 'Emergency Medicine'));
 
 -- Northern General Hospital Sheffield
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(22, (SELECT id FROM specialities WHERE name = 'General Medicine')),
-(22, (SELECT id FROM specialities WHERE name = 'General Surgery')),
-(22, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
-(22, (SELECT id FROM specialities WHERE name = 'Orthopaedic Surgery'));
+(25, (SELECT id FROM specialities WHERE name = 'General Medicine')),
+(25, (SELECT id FROM specialities WHERE name = 'General Surgery')),
+(25, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
+(25, (SELECT id FROM specialities WHERE name = 'Orthopaedic Surgery'));
 
 -- Queen's Medical Centre Nottingham
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(23, (SELECT id FROM specialities WHERE name = 'Cardiology')),
-(23, (SELECT id FROM specialities WHERE name = 'Neurology')),
-(23, (SELECT id FROM specialities WHERE name = 'General Surgery')),
-(23, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
-(23, (SELECT id FROM specialities WHERE name = 'Intensive Care Medicine'));
+(26, (SELECT id FROM specialities WHERE name = 'Cardiology')),
+(26, (SELECT id FROM specialities WHERE name = 'Neurology')),
+(26, (SELECT id FROM specialities WHERE name = 'General Surgery')),
+(26, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
+(26, (SELECT id FROM specialities WHERE name = 'Intensive Care Medicine'));
 
 -- City Hospital Nottingham
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(24, (SELECT id FROM specialities WHERE name = 'General Medicine')),
-(24, (SELECT id FROM specialities WHERE name = 'General Surgery')),
-(24, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
-(24, (SELECT id FROM specialities WHERE name = 'Orthopaedic Surgery'));
+(27, (SELECT id FROM specialities WHERE name = 'General Medicine')),
+(27, (SELECT id FROM specialities WHERE name = 'General Surgery')),
+(27, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
+(27, (SELECT id FROM specialities WHERE name = 'Orthopaedic Surgery'));
 
 -- Leicester Royal Infirmary
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(25, (SELECT id FROM specialities WHERE name = 'Cardiology')),
-(25, (SELECT id FROM specialities WHERE name = 'Neurology')),
-(25, (SELECT id FROM specialities WHERE name = 'General Surgery')),
-(25, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
-(25, (SELECT id FROM specialities WHERE name = 'Intensive Care Medicine'));
+(28, (SELECT id FROM specialities WHERE name = 'Cardiology')),
+(28, (SELECT id FROM specialities WHERE name = 'Neurology')),
+(28, (SELECT id FROM specialities WHERE name = 'General Surgery')),
+(28, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
+(28, (SELECT id FROM specialities WHERE name = 'Intensive Care Medicine'));
 
 -- Glenfield Hospital Leicester
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(26, (SELECT id FROM specialities WHERE name = 'Cardiothoracic Surgery')),
-(26, (SELECT id FROM specialities WHERE name = 'Respiratory Medicine')),
-(26, (SELECT id FROM specialities WHERE name = 'General Surgery')),
-(26, (SELECT id FROM specialities WHERE name = 'Emergency Medicine'));
+(29, (SELECT id FROM specialities WHERE name = 'Cardiothoracic Surgery')),
+(29, (SELECT id FROM specialities WHERE name = 'Respiratory Medicine')),
+(29, (SELECT id FROM specialities WHERE name = 'General Surgery')),
+(29, (SELECT id FROM specialities WHERE name = 'Emergency Medicine'));
 
 -- University Hospital of Wales Cardiff
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(27, (SELECT id FROM specialities WHERE name = 'Cardiology')),
-(27, (SELECT id FROM specialities WHERE name = 'Neurology')),
-(27, (SELECT id FROM specialities WHERE name = 'General Surgery')),
-(27, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
-(27, (SELECT id FROM specialities WHERE name = 'Intensive Care Medicine'));
+(30, (SELECT id FROM specialities WHERE name = 'Cardiology')),
+(30, (SELECT id FROM specialities WHERE name = 'Neurology')),
+(30, (SELECT id FROM specialities WHERE name = 'General Surgery')),
+(30, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
+(30, (SELECT id FROM specialities WHERE name = 'Intensive Care Medicine'));
 
 -- Cardiff Royal Infirmary
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(28, (SELECT id FROM specialities WHERE name = 'General Medicine')),
-(28, (SELECT id FROM specialities WHERE name = 'General Surgery')),
-(28, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
-(28, (SELECT id FROM specialities WHERE name = 'Orthopaedic Surgery'));
+(31, (SELECT id FROM specialities WHERE name = 'General Medicine')),
+(31, (SELECT id FROM specialities WHERE name = 'General Surgery')),
+(31, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
+(31, (SELECT id FROM specialities WHERE name = 'Orthopaedic Surgery'));
 
 -- Royal Infirmary of Edinburgh
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(29, (SELECT id FROM specialities WHERE name = 'Cardiology')),
-(29, (SELECT id FROM specialities WHERE name = 'Neurology')),
-(29, (SELECT id FROM specialities WHERE name = 'General Surgery')),
-(29, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
-(29, (SELECT id FROM specialities WHERE name = 'Intensive Care Medicine'));
+(32, (SELECT id FROM specialities WHERE name = 'Cardiology')),
+(32, (SELECT id FROM specialities WHERE name = 'Neurology')),
+(32, (SELECT id FROM specialities WHERE name = 'General Surgery')),
+(32, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
+(32, (SELECT id FROM specialities WHERE name = 'Intensive Care Medicine'));
 
 -- Western General Hospital Edinburgh
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(30, (SELECT id FROM specialities WHERE name = 'Medical Oncology')),
-(30, (SELECT id FROM specialities WHERE name = 'Haematology')),
-(30, (SELECT id FROM specialities WHERE name = 'General Medicine')),
-(30, (SELECT id FROM specialities WHERE name = 'Emergency Medicine'));
+(33, (SELECT id FROM specialities WHERE name = 'Medical Oncology')),
+(33, (SELECT id FROM specialities WHERE name = 'Haematology')),
+(33, (SELECT id FROM specialities WHERE name = 'General Medicine')),
+(33, (SELECT id FROM specialities WHERE name = 'Emergency Medicine'));
 
 -- Queen Elizabeth University Hospital Glasgow
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(31, (SELECT id FROM specialities WHERE name = 'Cardiology')),
-(31, (SELECT id FROM specialities WHERE name = 'Neurology')),
-(31, (SELECT id FROM specialities WHERE name = 'General Surgery')),
-(31, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
-(31, (SELECT id FROM specialities WHERE name = 'Intensive Care Medicine'));
+(34, (SELECT id FROM specialities WHERE name = 'Cardiology')),
+(34, (SELECT id FROM specialities WHERE name = 'Neurology')),
+(34, (SELECT id FROM specialities WHERE name = 'General Surgery')),
+(34, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
+(34, (SELECT id FROM specialities WHERE name = 'Intensive Care Medicine'));
 
 -- Glasgow Royal Infirmary
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(32, (SELECT id FROM specialities WHERE name = 'General Medicine')),
-(32, (SELECT id FROM specialities WHERE name = 'General Surgery')),
-(32, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
-(32, (SELECT id FROM specialities WHERE name = 'Orthopaedic Surgery'));
+(35, (SELECT id FROM specialities WHERE name = 'General Medicine')),
+(35, (SELECT id FROM specialities WHERE name = 'General Surgery')),
+(35, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
+(35, (SELECT id FROM specialities WHERE name = 'Orthopaedic Surgery'));
 
 -- Royal Victoria Hospital Belfast
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(33, (SELECT id FROM specialities WHERE name = 'Cardiology')),
-(33, (SELECT id FROM specialities WHERE name = 'Neurology')),
-(33, (SELECT id FROM specialities WHERE name = 'General Surgery')),
-(33, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
-(33, (SELECT id FROM specialities WHERE name = 'Intensive Care Medicine'));
+(36, (SELECT id FROM specialities WHERE name = 'Cardiology')),
+(36, (SELECT id FROM specialities WHERE name = 'Neurology')),
+(36, (SELECT id FROM specialities WHERE name = 'General Surgery')),
+(36, (SELECT id FROM specialities WHERE name = 'Emergency Medicine')),
+(36, (SELECT id FROM specialities WHERE name = 'Intensive Care Medicine'));
 
 -- Belfast City Hospital
 INSERT INTO hospital_specialities (hospital_id, speciality_id) VALUES
-(34, (SELECT id FROM specialities WHERE name = 'Medical Oncology')),
-(34, (SELECT id FROM specialities WHERE name = 'Haematology')),
-(34, (SELECT id FROM specialities WHERE name = 'General Medicine')),
-(34, (SELECT id FROM specialities WHERE name = 'Emergency Medicine'));
+(37, (SELECT id FROM specialities WHERE name = 'Medical Oncology')),
+(37, (SELECT id FROM specialities WHERE name = 'Haematology')),
+(37, (SELECT id FROM specialities WHERE name = 'General Medicine')),
+(37, (SELECT id FROM specialities WHERE name = 'Emergency Medicine'));
 
 -- Création d'une fonction pour mettre à jour automatiquement updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()

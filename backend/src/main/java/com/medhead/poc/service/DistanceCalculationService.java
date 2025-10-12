@@ -83,11 +83,13 @@ public class DistanceCalculationService {
      * @return Informations de route avec distance, durée et trafic
      */
     public RouteResult calculateOptimalRouteToHospital(double latitude, double longitude, Hospital hospital) {
-        // Utilise directement le calcul de distance simple pour éviter les timeouts
-        double distanceKm = calculateDistance(latitude, longitude, hospital.getLatitude(), hospital.getLongitude());
-        int durationMinutes = estimateTravelTime(distanceKm);
-        
-        return new RouteResult(distanceKm, durationMinutes, durationMinutes, false);
+        // Utilise l'API Google Maps pour un calcul précis avec trafic
+        return googleMapsService.calculateRouteWithTraffic(
+            latitude, 
+            longitude, 
+            hospital.getLatitude(), 
+            hospital.getLongitude()
+        );
     }
     
     /**

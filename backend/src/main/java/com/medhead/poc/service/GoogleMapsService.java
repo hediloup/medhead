@@ -58,9 +58,48 @@ public class GoogleMapsService {
             return cachedResult;
         }
         
-        // Temporairement désactivé pour éviter les timeouts
-        logger.debug("Utilisation du calcul de distance de fallback pour éviter les timeouts");
-        return createFallbackResult(originLat, originLon, destinationLat, destinationLon);
+        // Vérifier si l'API key est configurée
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+            logger.warn("Clé API Google Maps non configurée, utilisation du mode fallback");
+            return createFallbackResult(originLat, originLon, destinationLat, destinationLon);
+        }
+        
+        try {
+            String origin = originLat + "," + originLon;
+            String destination = destinationLat + "," + destinationLon;
+            String url = buildDirectionsUrl(origin, destination);
+            
+            logger.debug("Appel API Google Maps Directions: {}", url.replace(apiKey, "***"));
+            
+            String response = webClient.get()
+                .uri(url)
+                .retrieve()
+                .bodyToMono(String.class)
+                .timeout(Duration.ofSeconds(REQUEST_TIMEOUT_SECONDS))
+                .block();
+            
+            if (response != null) {
+                RouteInfo routeInfo = objectMapper.readValue(response, RouteInfo.class);
+                RouteResult result = parseRouteResponse(routeInfo);
+                
+                // Mettre en cache si succès
+                if (!result.isError()) {
+                    routeCache.put(cacheKey, result);
+                }
+                
+                return result;
+            } else {
+                logger.warn("Réponse vide de l'API Google Maps, utilisation du fallback");
+                return createFallbackResult(originLat, originLon, destinationLat, destinationLon);
+            }
+            
+        } catch (WebClientResponseException e) {
+            logger.error("Erreur HTTP lors de l'appel à l'API Google Maps: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
+            return createFallbackResult(originLat, originLon, destinationLat, destinationLon);
+        } catch (Exception e) {
+            logger.error("Erreur lors de l'appel à l'API Google Maps: {}", e.getMessage());
+            return createFallbackResult(originLat, originLon, destinationLat, destinationLon);
+        }
     }
     
     private String buildDirectionsUrl(String origin, String destination) {
