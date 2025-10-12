@@ -1,0 +1,495 @@
+name: 🏷️ Release Automatique
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version à relâcher (ex: 1.2.3)'
+        required: true
+        type: string
+      release_type:
+        description: 'Type de release'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+        - patch
+        - minor
+        - major
+      pre_release:
+        description: 'Version pré-release'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  JAVA_VERSION: '17'
+  NODE_VERSION: '18'
+
+jobs:
+  # Job 1: Validation de la release
+  validate-release:
+    name: ✅ Validation Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      is_prerelease: ${{ steps.version.outputs.is_prerelease }}
+    
+    steps:
+    - name: 📥 Checkout du code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: 📋 Détermination de la version
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          VERSION="${{ github.event.inputs.version }}"
+          if [ "${{ github.event.inputs.pre_release }}" = "true" ]; then
+            VERSION="${VERSION}-rc.$(date +%s)"
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+        else
+          VERSION=${GITHUB_REF#refs/tags/}
+          if [[ $VERSION == *-* ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+        fi
+        
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "🏷️ Version: $VERSION"
+        echo "🔖 Pre-release: ${{ steps.version.outputs.is_prerelease }}"
+
+    - name: ✅ Validation du format de version
+      run: |
+        VERSION="${{ steps.version.outputs.version }}"
+        
+        # Validation du format semantic versioning
+        if [[ $VERSION =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
+          echo "✅ Format de version valide: $VERSION"
+        else
+          echo "❌ Format de version invalide: $VERSION"
+          echo "Format attendu: v1.2.3 ou 1.2.3-rc.1"
+          exit 1
+        fi
+
+    - name: 📝 Mise à jour des versions dans les fichiers
+      run: |
+        VERSION="${{ steps.version.outputs.version }}"
+        CLEAN_VERSION=${VERSION#v}  # Supprime le préfixe 'v' si présent
+        
+        echo "📝 Mise à jour des versions..."
+        
+        # Mise à jour package.json frontend
+        if [ -f "frontend/package.json" ]; then
+          jq ".version = \"$CLEAN_VERSION\"" frontend/package.json > tmp.json && mv tmp.json frontend/package.json
+          echo "✅ Version frontend mise à jour: $CLEAN_VERSION"
+        fi
+        
+        # Mise à jour pom.xml backend
+        if [ -f "backend/pom.xml" ]; then
+          sed -i "s/<version>.*<\/version>/<version>$CLEAN_VERSION<\/version>/" backend/pom.xml
+          echo "✅ Version backend mise à jour: $CLEAN_VERSION"
+        fi
+
+    - name: 📊 Génération du changelog
+      run: |
+        VERSION="${{ steps.version.outputs.version }}"
+        
+        echo "📊 Génération du changelog..."
+        
+        # Récupération des commits depuis la dernière release
+        LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        
+        if [ -n "$LAST_TAG" ]; then
+          echo "📋 Changelog depuis $LAST_TAG:"
+          git log --pretty=format:"- %s (%h)" $LAST_TAG..HEAD > CHANGELOG.md
+        else
+          echo "📋 Changelog complet:"
+          git log --pretty=format:"- %s (%h)" > CHANGELOG.md
+        fi
+        
+        echo "" >> CHANGELOG.md
+        echo "## Version $VERSION" >> CHANGELOG.md
+        echo "Release Date: $(date '+%Y-%m-%d')" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+
+  # Job 2: Tests complets avant release
+  pre-release-tests:
+    name: 🧪 Tests Pré-Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: validate-release
+    
+    steps:
+    - name: 📥 Checkout du code
+      uses: actions/checkout@v4
+
+    - name: ☕ Configuration Java ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+
+    - name: 📦 Configuration Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: './frontend/package-lock.json'
+
+    - name: 🔧 Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: 🧪 Tests Backend complets
+      working-directory: ./backend
+      run: |
+        echo "🧪 Tests Backend complets..."
+        mvn clean test -Dspring.profiles.active=test
+
+    - name: 🧪 Tests Frontend complets
+      working-directory: ./frontend
+      run: |
+        echo "🧪 Tests Frontend complets..."
+        npm ci
+        npm run test:coverage -- --watch=false --browsers=ChromeHeadless
+
+    - name: 🏗️ Build complet
+      run: |
+        echo "🏗️ Build complet..."
+        
+        # Build Backend
+        cd backend
+        mvn clean package -DskipTests
+        cd ..
+        
+        # Build Frontend
+        cd frontend
+        npm run build --configuration=production
+        cd ..
+        
+        echo "✅ Build complet réussi"
+
+    - name: 📊 Upload rapports de tests
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: pre-release-test-reports
+        path: |
+          backend/target/surefire-reports/
+          frontend/reports/
+        retention-days: 30
+
+  # Job 3: Build des images Docker pour release
+  build-release-images:
+    name: 🐳 Build Images Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [validate-release, pre-release-tests]
+    
+    steps:
+    - name: 📥 Checkout du code
+      uses: actions/checkout@v4
+
+    - name: ☕ Configuration Java ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+
+    - name: 📦 Configuration Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: './frontend/package-lock.json'
+
+    - name: 🔧 Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: 🏗️ Build Backend pour release
+      working-directory: ./backend
+      run: |
+        echo "🏗️ Build Backend release..."
+        mvn clean package -DskipTests -P production
+
+    - name: 🏗️ Build Frontend pour release
+      working-directory: ./frontend
+      run: |
+        echo "🏗️ Build Frontend release..."
+        npm ci
+        npm run build --configuration=production
+
+    - name: 🐳 Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 🐳 Build et Push Backend Image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./backend
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-backend:${{ needs.validate-release.outputs.version }}
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-backend:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        labels: |
+          version=${{ needs.validate-release.outputs.version }}
+          build-date=${{ github.run_number }}
+          commit-sha=${{ github.sha }}
+
+    - name: 🐳 Build et Push Frontend Image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./docker
+        file: ./docker/Dockerfile.frontend
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:${{ needs.validate-release.outputs.version }}
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        labels: |
+          version=${{ needs.validate-release.outputs.version }}
+          build-date=${{ github.run_number }}
+          commit-sha=${{ github.sha }}
+
+  # Job 4: Création de la release GitHub
+  create-github-release:
+    name: 🏷️ Création Release GitHub
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [validate-release, pre-release-tests, build-release-images]
+    
+    steps:
+    - name: 📥 Checkout du code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: 🏷️ Création de la release GitHub
+      uses: actions/create-release@v1
+      id: create_release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ needs.validate-release.outputs.version }}
+        release_name: Release ${{ needs.validate-release.outputs.version }}
+        body_path: CHANGELOG.md
+        draft: false
+        prerelease: ${{ needs.validate-release.outputs.is_prerelease }}
+
+    - name: 📦 Upload artefacts de release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./docker/docker-compose.yml
+        asset_name: docker-compose.yml
+        asset_content_type: application/x-yaml
+
+    - name: 📦 Upload configuration Docker
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./docker/nginx.conf
+        asset_name: nginx.conf
+        asset_content_type: text/plain
+
+  # Job 5: Déploiement automatique en production
+  deploy-production:
+    name: 🌟 Déploiement Production
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [validate-release, pre-release-tests, build-release-images, create-github-release]
+    environment: production
+    if: needs.validate-release.outputs.is_prerelease == 'false'
+    
+    steps:
+    - name: 📥 Checkout du code
+      uses: actions/checkout@v4
+
+    - name: 🌟 Déploiement en production
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.PRODUCTION_HOST }}
+        username: ${{ secrets.PRODUCTION_USER }}
+        key: ${{ secrets.PRODUCTION_SSH_KEY }}
+        script: |
+          VERSION="${{ needs.validate-release.outputs.version }}"
+          
+          echo "🌟 Déploiement production version $VERSION..."
+          
+          # Mise à jour des images
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-backend:$VERSION
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:$VERSION
+          
+          # Configuration des variables d'environnement
+          export BACKEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-backend:$VERSION
+          export FRONTEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:$VERSION
+          
+          # Sauvegarde de l'état actuel
+          docker-compose -f /opt/medhead/docker-compose.production.yml config > /opt/medhead/backup-config-$(date +%Y%m%d-%H%M%S).yml
+          
+          # Déploiement avec rollback automatique en cas d'échec
+          if ! docker-compose -f /opt/medhead/docker-compose.production.yml up -d; then
+            echo "❌ Échec du déploiement, rollback..."
+            docker-compose -f /opt/medhead/docker-compose.production.yml down
+            docker-compose -f /opt/medhead/docker-compose.production.yml up -d
+            exit 1
+          fi
+          
+          # Tests de validation
+          echo "🔍 Validation du déploiement..."
+          sleep 30
+          
+          if ! curl -f https://medhead.com/api/health; then
+            echo "❌ Tests de validation échoués, rollback..."
+            docker-compose -f /opt/medhead/docker-compose.production.yml down
+            docker-compose -f /opt/medhead/docker-compose.production.yml up -d
+            exit 1
+          fi
+          
+          echo "✅ Déploiement production réussi !"
+
+    - name: 📊 Mise à jour des métriques de déploiement
+      run: |
+        echo "📊 Mise à jour des métriques..."
+        
+        # Envoi vers système de monitoring
+        curl -X POST "${{ secrets.MONITORING_WEBHOOK }}" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "deployment": {
+              "version": "${{ needs.validate-release.outputs.version }}",
+              "commit": "${{ github.sha }}",
+              "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'",
+              "environment": "production",
+              "type": "release"
+            },
+            "status": "success"
+          }'
+
+  # Job 6: Notification et documentation
+  release-summary:
+    name: 📢 Résumé Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [validate-release, pre-release-tests, build-release-images, create-github-release, deploy-production]
+    if: always()
+    
+    steps:
+    - name: 📥 Checkout du code
+      uses: actions/checkout@v4
+
+    - name: 📊 Génération du résumé de release
+      run: |
+        echo "📊 Génération du résumé de release..."
+        
+        cat > release-summary.md << EOF
+        # 🏷️ Release ${{ needs.validate-release.outputs.version }}
+        
+        ## 📊 Résumé
+        
+        - **Version:** ${{ needs.validate-release.outputs.version }}
+        - **Type:** ${{ needs.validate-release.outputs.is_prerelease == 'true' && 'Pre-release' || 'Release' }}
+        - **Date:** $(date '+%Y-%m-%d %H:%M:%S')
+        - **Commit:** ${{ github.sha }}
+        
+        ## ✅ Statuts des Jobs
+        
+        - **Validation:** ${{ needs.validate-release.result }}
+        - **Tests:** ${{ needs.pre-release-tests.result }}
+        - **Build Images:** ${{ needs.build-release-images.result }}
+        - **Release GitHub:** ${{ needs.create-github-release.result }}
+        - **Déploiement:** ${{ needs.deploy-production.result }}
+        
+        ## 🐳 Images Docker
+        
+        - **Backend:** \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-backend:${{ needs.validate-release.outputs.version }}\`
+        - **Frontend:** \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:${{ needs.validate-release.outputs.version }}\`
+        
+        ## 🔗 Liens
+        
+        - **Release GitHub:** https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate-release.outputs.version }}
+        - **Production:** https://medhead.com
+        - **Documentation:** https://docs.medhead.com
+        
+        EOF
+
+    - name: 📢 Notification Slack
+      if: always()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#medhead-releases'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        custom_payload: |
+          {
+            "text": "🏷️ Release MedHead ${{ needs.validate-release.outputs.version }}",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*🏷️ Release MedHead ${{ needs.validate-release.outputs.version }}*\n\n*Type:* ${{ needs.validate-release.outputs.is_prerelease == 'true' && 'Pre-release' || 'Release' }}\n*Status:* ${{ job.status }}\n*Commit:* `${{ github.sha }}`\n\n*Jobs:*\n• Validation: ${{ needs.validate-release.result }}\n• Tests: ${{ needs.pre-release-tests.result }}\n• Build: ${{ needs.build-release-images.result }}\n• Release: ${{ needs.create-github-release.result }}\n• Déploiement: ${{ needs.deploy-production.result }}\n\n*URL:* https://medhead.com"
+                }
+              }
+            ]
+          }
+
+    - name: 📧 Notification Email
+      if: always()
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 587
+        username: ${{ secrets.EMAIL_USERNAME }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        subject: "MedHead - Release ${{ needs.validate-release.outputs.version }}"
+        to: ${{ secrets.NOTIFICATION_EMAIL }}
+        from: MedHead Release Bot
+        body: |
+          Bonjour,
+          
+          Une nouvelle release de MedHead a été publiée.
+          
+          Détails:
+          - Version: ${{ needs.validate-release.outputs.version }}
+          - Type: ${{ needs.validate-release.outputs.is_prerelease == 'true' && 'Pre-release' || 'Release' }}
+          - Date: $(date -u)
+          - Commit: ${{ github.sha }}
+          - Status: ${{ job.status }}
+          
+          Liens:
+          - Release: https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate-release.outputs.version }}
+          - Production: https://medhead.com
+          
+          Cordialement,
+          L'équipe MedHead

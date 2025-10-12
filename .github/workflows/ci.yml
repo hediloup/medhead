@@ -1,0 +1,516 @@
+name: 🚀 CI - Intégration Continue
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  JAVA_VERSION: '17'
+  NODE_VERSION: '18'
+  MAVEN_OPTS: '-Xmx2048m -XX:MaxPermSize=512m'
+  NODE_OPTIONS: '--max-old-space-size=4096'
+
+jobs:
+  # Job 1: Tests Backend (TDD - Unitaires + Intégration)
+  backend-tests:
+    name: 🧪 Tests Backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: medhead_test
+          POSTGRES_USER: medhead_user
+          POSTGRES_PASSWORD: medhead_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: 📥 Checkout du code
+      uses: actions/checkout@v4
+
+    - name: ☕ Configuration Java ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+
+    - name: 🔧 Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: 🏗️ Compilation Backend
+      working-directory: ./backend
+      run: |
+        echo "🔨 Compilation du backend avec Maven..."
+        mvn clean compile -DskipTests
+
+    - name: 🧪 Tests Unitaires Backend
+      working-directory: ./backend
+      run: |
+        echo "🧪 Exécution des tests unitaires..."
+        mvn test -P unit-tests \
+          -Dspring.profiles.active=test \
+          -Dsurefire.reportsDirectory=../../reports/backend/unit-tests
+
+    - name: 🔗 Tests d'Intégration Backend
+      working-directory: ./backend
+      run: |
+        echo "🔗 Exécution des tests d'intégration..."
+        mvn test -P integration-tests \
+          -Dspring.profiles.active=test \
+          -Dfailsafe.reportsDirectory=../../reports/backend/integration-tests
+
+    - name: 📊 Upload rapports tests Backend
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: backend-test-reports
+        path: |
+          reports/backend/unit-tests/
+          reports/backend/integration-tests/
+        retention-days: 30
+
+    - name: 📈 Publish Test Results
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Backend Test Results
+        path: 'reports/backend/unit-tests/*.xml'
+        reporter: java-junit
+        fail-on-error: true
+
+  # Job 2: Tests Frontend (Unitaires + E2E)
+  frontend-tests:
+    name: 🎨 Tests Frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+    - name: 📥 Checkout du code
+      uses: actions/checkout@v4
+
+    - name: 📦 Configuration Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: './frontend/package-lock.json'
+
+    - name: 📥 Installation dépendances Frontend
+      working-directory: ./frontend
+      run: |
+        echo "📦 Installation des dépendances npm..."
+        npm ci
+
+    - name: 🧪 Tests Unitaires Frontend
+      working-directory: ./frontend
+      run: |
+        echo "🧪 Exécution des tests unitaires Angular..."
+        npm run test:coverage -- --watch=false --browsers=ChromeHeadless \
+          --reporters=html,coverage,junit \
+          --output-path=../reports/frontend/unit-tests
+
+    - name: 🏗️ Build Frontend
+      working-directory: ./frontend
+      run: |
+        echo "🏗️ Build de l'application Angular..."
+        npm run build --configuration=production
+
+    - name: 📊 Upload rapports tests Frontend
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: frontend-test-reports
+        path: |
+          reports/frontend/unit-tests/
+          frontend/dist/
+        retention-days: 30
+
+    - name: 📈 Publish Coverage Reports
+      uses: codecov/codecov-action@v4
+      if: always()
+      with:
+        file: ./reports/frontend/unit-tests/coverage/lcov.info
+        flags: frontend
+        name: frontend-coverage
+
+  # Job 3: Tests BDD (Scénarios métier)
+  bdd-tests:
+    name: 📋 Tests BDD
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: [backend-tests]
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: medhead_test
+          POSTGRES_USER: medhead_user
+          POSTGRES_PASSWORD: medhead_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: 📥 Checkout du code
+      uses: actions/checkout@v4
+
+    - name: ☕ Configuration Java ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+
+    - name: 🔧 Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: 📋 Tests BDD avec Cucumber
+      working-directory: ./backend
+      run: |
+        echo "📋 Exécution des tests BDD..."
+        mvn test -P bdd-tests \
+          -Dspring.profiles.active=test \
+          -Dcucumber.reportsDirectory=../../reports/backend/bdd-tests
+
+    - name: 📊 Upload rapports BDD
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: bdd-test-reports
+        path: reports/backend/bdd-tests/
+        retention-days: 30
+
+  # Job 4: Tests E2E (Interface utilisateur complète)
+  e2e-tests:
+    name: 🌐 Tests E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    needs: [backend-tests, frontend-tests]
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: medhead_db
+          POSTGRES_USER: medhead_user
+          POSTGRES_PASSWORD: medhead_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: 📥 Checkout du code
+      uses: actions/checkout@v4
+
+    - name: ☕ Configuration Java ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+
+    - name: 📦 Configuration Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: './frontend/package-lock.json'
+
+    - name: 🔧 Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: 📥 Installation dépendances Frontend
+      working-directory: ./frontend
+      run: npm ci
+
+    - name: 🐳 Démarrage des services avec Docker Compose
+      run: |
+        echo "🐳 Démarrage des services MedHead..."
+        docker-compose -f ./docker/docker-compose.yml up -d
+        
+        echo "⏳ Attente du démarrage des services..."
+        sleep 45
+        
+        echo "🔍 Vérification du statut des services..."
+        docker-compose -f ./docker/docker-compose.yml ps
+
+    - name: 🌐 Tests E2E avec Cypress
+      working-directory: ./frontend
+      run: |
+        echo "🌐 Exécution des tests E2E..."
+        npm run e2e:ci -- --reporter junit \
+          --reporter-options "mochaFile=../reports/frontend/e2e-tests/results-[hash].xml"
+      env:
+        CYPRESS_BASE_URL: http://localhost:4200
+
+    - name: 📊 Upload rapports E2E
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: e2e-test-reports
+        path: |
+          reports/frontend/e2e-tests/
+          frontend/cypress/screenshots/
+          frontend/cypress/videos/
+        retention-days: 30
+
+    - name: 🧹 Nettoyage des conteneurs
+      if: always()
+      run: |
+        echo "🧹 Arrêt des services Docker..."
+        docker-compose -f ./docker/docker-compose.yml down -v
+
+  # Job 5: Analyse de qualité du code
+  code-quality:
+    name: 🔍 Analyse Qualité Code
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+    - name: 📥 Checkout du code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: ☕ Configuration Java ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+
+    - name: 📦 Configuration Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: './frontend/package-lock.json'
+
+    - name: 🔧 Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: 📥 Installation dépendances Frontend
+      working-directory: ./frontend
+      run: npm ci
+
+    - name: 🔍 Analyse SonarQube Backend
+      working-directory: ./backend
+      run: |
+        echo "🔍 Analyse SonarQube du backend..."
+        mvn sonar:sonar \
+          -Dsonar.projectKey=medhead-backend \
+          -Dsonar.organization=medhead \
+          -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+          -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 🔍 Analyse SonarQube Frontend
+      working-directory: ./frontend
+      run: |
+        echo "🔍 Analyse SonarQube du frontend..."
+        npx sonar-scanner \
+          -Dsonar.projectKey=medhead-frontend \
+          -Dsonar.organization=medhead \
+          -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+          -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+          -Dsonar.javascript.lcov.reportPaths=reports/frontend/unit-tests/coverage/lcov.info
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Job 6: Build et Push des images Docker
+  docker-build:
+    name: 🐳 Build Images Docker
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [backend-tests, frontend-tests]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: 📥 Checkout du code
+      uses: actions/checkout@v4
+
+    - name: ☕ Configuration Java ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+
+    - name: 📦 Configuration Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: './frontend/package-lock.json'
+
+    - name: 🔧 Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: 📥 Installation dépendances Frontend
+      working-directory: ./frontend
+      run: npm ci
+
+    - name: 🏗️ Build Frontend
+      working-directory: ./frontend
+      run: npm run build --configuration=production
+
+    - name: 🐳 Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 🐳 Build et Push Backend Image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./backend
+        push: true
+        tags: |
+          ghcr.io/${{ github.repository }}/medhead-backend:latest
+          ghcr.io/${{ github.repository }}/medhead-backend:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: 🐳 Build et Push Frontend Image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./docker
+        file: ./docker/Dockerfile.frontend
+        push: true
+        tags: |
+          ghcr.io/${{ github.repository }}/medhead-frontend:latest
+          ghcr.io/${{ github.repository }}/medhead-frontend:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  # Job 7: Rapport consolidé et notifications
+  ci-summary:
+    name: 📊 Résumé CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [backend-tests, frontend-tests, bdd-tests, e2e-tests, code-quality]
+    if: always()
+    
+    steps:
+    - name: 📥 Checkout du code
+      uses: actions/checkout@v4
+
+    - name: 📊 Download all test reports
+      uses: actions/download-artifact@v4
+      if: always()
+
+    - name: 📊 Génération rapport consolidé
+      run: |
+        echo "📊 Génération du rapport consolidé CI..."
+        mkdir -p reports/ci-summary
+        
+        cat > reports/ci-summary/ci-report.html << 'EOF'
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Rapport CI - MedHead</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
+                .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+                .header { text-align: center; color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 20px; margin-bottom: 30px; }
+                .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+                .card { background: #ecf0f1; padding: 20px; border-radius: 8px; text-align: center; }
+                .success { color: #27ae60; }
+                .error { color: #e74c3c; }
+                .info { color: #3498db; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>🚀 Rapport CI - MedHead</h1>
+                    <p>Pipeline d'Intégration Continue - ${{ github.run_number }}</p>
+                    <p>Commit: ${{ github.sha }}</p>
+                    <p>Branche: ${{ github.ref_name }}</p>
+                </div>
+                
+                <div class="summary">
+                    <div class="card">
+                        <h3>🧪 Tests Backend</h3>
+                        <div class="${{ needs.backend-tests.result == 'success' && 'success' || 'error' }}">${{ needs.backend-tests.result }}</div>
+                    </div>
+                    <div class="card">
+                        <h3>🎨 Tests Frontend</h3>
+                        <div class="${{ needs.frontend-tests.result == 'success' && 'success' || 'error' }}">${{ needs.frontend-tests.result }}</div>
+                    </div>
+                    <div class="card">
+                        <h3>📋 Tests BDD</h3>
+                        <div class="${{ needs.bdd-tests.result == 'success' && 'success' || 'error' }}">${{ needs.bdd-tests.result }}</div>
+                    </div>
+                    <div class="card">
+                        <h3>🌐 Tests E2E</h3>
+                        <div class="${{ needs.e2e-tests.result == 'success' && 'success' || 'error' }}">${{ needs.e2e-tests.result }}</div>
+                    </div>
+                    <div class="card">
+                        <h3>🔍 Qualité Code</h3>
+                        <div class="${{ needs.code-quality.result == 'success' && 'success' || 'error' }}">${{ needs.code-quality.result }}</div>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        EOF
+
+    - name: 📊 Upload rapport CI
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: ci-summary-report
+        path: reports/ci-summary/
+        retention-days: 30
+
+    - name: 📢 Notification Slack
+      if: always()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#medhead-ci'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        fields: repo,message,commit,author,action,eventName,ref,workflow
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
