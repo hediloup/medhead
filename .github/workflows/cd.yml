@@ -132,7 +132,7 @@ jobs:
         docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-backend:staging-${{ github.sha }}
         
         # Frontend
-        docker build -f ./docker/Dockerfile.frontend -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:staging-${{ github.sha }} ./docker
+        docker build -f ./docker/Dockerfile.frontend -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:staging-${{ github.sha }} .
         docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:staging-${{ github.sha }}
 
     - name: 🚀 Déploiement sur Staging
@@ -176,27 +176,27 @@ jobs:
         
         echo "✅ Validation staging réussie !"
 
-    - name: 📢 Notification Slack Staging
-      if: always()
-      uses: 8398a7/action-slack@v3
-      with:
-        status: ${{ job.status }}
-        channel: '#medhead-deployments'
-        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-        fields: repo,message,commit,author,action,eventName,ref,workflow
-        custom_payload: |
-          {
-            "text": "🚀 Déploiement Staging MedHead",
-            "blocks": [
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "*🚀 Déploiement Staging MedHead*\n\n*Status:* ${{ job.status }}\n*Commit:* `${{ github.sha }}`\n*Environment:* Staging\n*URL:* https://staging.medhead.com"
-                }
-              }
-            ]
-          }
+    # - name: 📢 Notification Slack Staging
+    #   if: always()
+    #   uses: 8398a7/action-slack@v3
+    #   with:
+    #     status: ${{ job.status }}
+    #     channel: '#medhead-deployments'
+    #     webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+    #     fields: repo,message,commit,author,action,eventName,ref,workflow
+    #     custom_payload: |
+    #       {
+    #         "text": "🚀 Déploiement Staging MedHead",
+    #         "blocks": [
+    #           {
+    #             "type": "section",
+    #             "text": {
+    #               "type": "mrkdwn",
+    #               "text": "*🚀 Déploiement Staging MedHead*\n\n*Status:* ${{ job.status }}\n*Commit:* `${{ github.sha }}`\n*Environment:* Staging\n*URL:* https://staging.medhead.com"
+    #             }
+    #           }
+    #         ]
+    #       }
 
   # Job 3: Tests de régression sur Staging
   regression-tests:
@@ -301,8 +301,8 @@ jobs:
         docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-backend:${{ github.sha }}
         
         # Frontend
-        docker build -f ./docker/Dockerfile.frontend -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:$VERSION ./docker
-        docker build -f ./docker/Dockerfile.frontend -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:${{ github.sha }} ./docker
+        docker build -f ./docker/Dockerfile.frontend -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:$VERSION .
+        docker build -f ./docker/Dockerfile.frontend -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:${{ github.sha }} .
         docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:$VERSION
         docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:${{ github.sha }}
 
@@ -398,26 +398,26 @@ jobs:
         draft: false
         prerelease: false
 
-    - name: 📢 Notification Slack Production
-      if: always()
-      uses: 8398a7/action-slack@v3
-      with:
-        status: ${{ job.status }}
-        channel: '#medhead-deployments'
-        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-        custom_payload: |
-          {
-            "text": "🌟 Déploiement Production MedHead",
-            "blocks": [
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "*🌟 Déploiement Production MedHead*\n\n*Status:* ${{ job.status }}\n*Version:* ${{ github.ref_name || 'latest' }}\n*Commit:* `${{ github.sha }}`\n*Environment:* Production\n*URL:* https://medhead.com"
-                }
-              }
-            ]
-          }
+    # - name: 📢 Notification Slack Production
+    #   if: always()
+    #   uses: 8398a7/action-slack@v3
+    #   with:
+    #     status: ${{ job.status }}
+    #     channel: '#medhead-deployments'
+    #     webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+    #     custom_payload: |
+    #       {
+    #         "text": "🌟 Déploiement Production MedHead",
+    #         "blocks": [
+    #           {
+    #             "type": "section",
+    #             "text": {
+    #               "type": "mrkdwn",
+    #               "text": "*🌟 Déploiement Production MedHead*\n\n*Status:* ${{ job.status }}\n*Version:* ${{ github.ref_name || 'latest' }}\n*Commit:* `${{ github.sha }}`\n*Environment:* Production\n*URL:* https://medhead.com"
+    #             }
+    #           }
+    #         ]
+    #       }
 
   # Job 5: Monitoring post-déploiement
   post-deployment-monitoring:

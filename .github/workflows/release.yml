@@ -450,26 +450,26 @@ jobs:
         
         EOF
 
-    - name: 📢 Notification Slack
-      if: always()
-      uses: 8398a7/action-slack@v3
-      with:
-        status: ${{ job.status }}
-        channel: '#medhead-releases'
-        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-        custom_payload: |
-          {
-            "text": "🏷️ Release MedHead ${{ needs.validate-release.outputs.version }}",
-            "blocks": [
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "*🏷️ Release MedHead ${{ needs.validate-release.outputs.version }}*\n\n*Type:* ${{ needs.validate-release.outputs.is_prerelease == 'true' && 'Pre-release' || 'Release' }}\n*Status:* ${{ job.status }}\n*Commit:* `${{ github.sha }}`\n\n*Jobs:*\n• Validation: ${{ needs.validate-release.result }}\n• Tests: ${{ needs.pre-release-tests.result }}\n• Build: ${{ needs.build-release-images.result }}\n• Release: ${{ needs.create-github-release.result }}\n• Déploiement: ${{ needs.deploy-production.result }}\n\n*URL:* https://medhead.com"
-                }
-              }
-            ]
-          }
+    # - name: 📢 Notification Slack
+    #   if: always()
+    #   uses: 8398a7/action-slack@v3
+    #   with:
+    #     status: ${{ job.status }}
+    #     channel: '#medhead-releases'
+    #     webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+    #     custom_payload: |
+    #       {
+    #         "text": "🏷️ Release MedHead ${{ needs.validate-release.outputs.version }}",
+    #         "blocks": [
+    #           {
+    #             "type": "section",
+    #             "text": {
+    #               "type": "mrkdwn",
+    #               "text": "*🏷️ Release MedHead ${{ needs.validate-release.outputs.version }}*\n\n*Type:* ${{ needs.validate-release.outputs.is_prerelease == 'true' && 'Pre-release' || 'Release' }}\n*Status:* ${{ job.status }}\n*Commit:* `${{ github.sha }}`\n\n*Jobs:*\n• Validation: ${{ needs.validate-release.result }}\n• Tests: ${{ needs.pre-release-tests.result }}\n• Build: ${{ needs.build-release-images.result }}\n• Release: ${{ needs.create-github-release.result }}\n• Déploiement: ${{ needs.deploy-production.result }}\n\n*URL:* https://medhead.com"
+    #             }
+    #           }
+    #         ]
+    #       }
 
     - name: 📧 Notification Email
       if: always()
