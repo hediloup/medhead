@@ -58,13 +58,17 @@ public class AllocationService {
             return allocationTimer.recordCallable(() -> {
                 try {
                     return performAllocation(request);
+                } catch (RuntimeException e) {
+                    allocationErrorCounter.increment();
+                    throw e;  // Re-throw RuntimeException as-is
                 } catch (Exception e) {
                     allocationErrorCounter.increment();
                     throw new RuntimeException(e);
                 }
             });
+        } catch (RuntimeException e) {
+            throw e;  // Re-throw RuntimeException as-is
         } catch (Exception e) {
-            allocationErrorCounter.increment();
             throw new RuntimeException("Failed to allocate hospital", e);
         }
     }

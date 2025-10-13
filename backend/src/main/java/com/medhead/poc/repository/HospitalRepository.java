@@ -30,6 +30,13 @@ public interface HospitalRepository extends JpaRepository<Hospital, Long> {
     List<HospitalProjection> findAvailableHospitalsBySpecialtyOptimized(@Param("specialty") String specialty);
     
     /**
+     * Alias for findAvailableHospitalsBySpecialtyOptimized - for consistency with new code
+     */
+    @Query("SELECT h.id as id, h.name as name, s.name as specialty, h.latitude as latitude, h.longitude as longitude, h.availableBeds as availableBeds " +
+           "FROM Hospital h JOIN h.specialities s WHERE LOWER(s.name) LIKE LOWER(CONCAT('%', :specialty, '%')) AND h.availableBeds > 0")
+    List<HospitalProjection> findBySpecialtyAndAvailableBedsProjection(@Param("specialty") String specialty);
+    
+    /**
      * Finds all hospitals with available beds.
      */
     List<Hospital> findByAvailableBedsGreaterThan(Integer minBeds);

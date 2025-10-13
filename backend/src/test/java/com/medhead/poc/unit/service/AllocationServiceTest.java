@@ -1,5 +1,6 @@
 package com.medhead.poc.unit.service;
 
+import com.medhead.poc.dto.HospitalProjection;
 import com.medhead.poc.dto.RouteResult;
 import com.medhead.poc.model.AllocationRequest;
 import com.medhead.poc.model.AllocationResponse;
@@ -11,6 +12,8 @@ import com.medhead.poc.service.AllocationService;
 import com.medhead.poc.service.DistanceCalculationService;
 import com.medhead.poc.service.EventPublisherService;
 import com.medhead.poc.service.PatientAnonymizationService;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Timer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,6 +48,15 @@ public class AllocationServiceTest {
 
     @Mock
     private EventPublisherService eventPublisherService;
+
+    @Mock
+    private Counter allocationCounter;
+
+    @Mock
+    private Counter allocationErrorCounter;
+
+    @Mock
+    private Timer allocationTimer;
 
     @InjectMocks
     private AllocationService allocationService;
@@ -85,14 +97,77 @@ public class AllocationServiceTest {
                 .thenReturn(mockPatient);
         when(patientAnonymizationService.anonymizePatient(any(Patient.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0)); // Return the same patient
+
+        // Configuration des mocks pour les métriques Micrometer
+        try {
+            when(allocationTimer.recordCallable(any())).thenAnswer(invocation -> {
+                java.util.concurrent.Callable<?> callable = invocation.getArgument(0);
+                try {
+                    return callable.call();
+                } catch (RuntimeException e) {
+                    // Re-throw RuntimeException as-is (including IllegalArgumentException)
+                    throw e;
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Helper method to create a HospitalProjection mock from a Hospital
+     */
+    private HospitalProjection createProjection(final Hospital hospital) {
+        return new HospitalProjection() {
+            @Override
+            public Long getId() {
+                return hospital.getId();
+            }
+
+            @Override
+            public String getName() {
+                return hospital.getName();
+            }
+
+            @Override
+            public String getSpecialty() {
+                // Return the first specialty name (if any)
+                return hospital.getSpecialities().stream()
+                    .findFirst()
+                    .map(s -> s.getName())
+                    .orElse("");
+            }
+
+            @Override
+            public Double getLatitude() {
+                return hospital.getLatitude();
+            }
+
+            @Override
+            public Double getLongitude() {
+                return hospital.getLongitude();
+            }
+
+            @Override
+            public Integer getAvailableBeds() {
+                return hospital.getAvailableBeds();
+            }
+        };
     }
 
     @Test
     public void testFindBestHospital_Success() {
         // Given - Configuration des mocks
-        List<Hospital> eligibleHospitals = Arrays.asList(hospital1, hospital2);
-        when(hospitalRepository.findBySpecialtyAndAvailableBeds("Cardiology"))
-                .thenReturn(eligibleHospitals);
+        HospitalProjection projection1 = createProjection(hospital1);
+        HospitalProjection projection2 = createProjection(hospital2);
+        List<HospitalProjection> eligibleProjections = Arrays.asList(projection1, projection2);
+        
+        when(hospitalRepository.findBySpecialtyAndAvailableBedsProjection("Cardiology"))
+                .thenReturn(eligibleProjections);
+        when(hospitalRepository.findById(1L)).thenReturn(java.util.Optional.of(hospital1));
+        when(hospitalRepository.findById(2L)).thenReturn(java.util.Optional.of(hospital2));
 
         RouteResult routeResult1 = new RouteResult();
         routeResult1.setDistanceKm(5.2);
@@ -121,7 +196,8 @@ public class AllocationServiceTest {
         assertEquals("Le nombre de lits disponibles doit être correct", Integer.valueOf(4), response.getAvailableBedsAfterAllocation());
 
         // Vérification des interactions avec les mocks
-        verify(hospitalRepository).findBySpecialtyAndAvailableBeds("Cardiology");
+        verify(hospitalRepository).findBySpecialtyAndAvailableBedsProjection("Cardiology");
+        verify(hospitalRepository).findById(1L);
         verify(distanceService).calculateOptimalRouteToHospital(anyDouble(), anyDouble(), eq(hospital1));
         verify(distanceService).calculateOptimalRouteToHospital(anyDouble(), anyDouble(), eq(hospital2));
         verify(patientAnonymizationService).createAnonymizedPatient(anyString(), anyDouble(), anyDouble(), anyString());
@@ -176,7 +252,7 @@ public class AllocationServiceTest {
     @Test(expected = RuntimeException.class)
     public void testFindBestHospital_NoEligibleHospitals() {
         // Given
-        when(hospitalRepository.findBySpecialtyAndAvailableBeds("Cardiology"))
+        when(hospitalRepository.findBySpecialtyAndAvailableBedsProjection("Cardiology"))
                 .thenReturn(Arrays.asList());
 
         // When
@@ -188,9 +264,11 @@ public class AllocationServiceTest {
     @Test(expected = RuntimeException.class)
     public void testFindBestHospital_NoAccessibleHospitals() {
         // Given
-        List<Hospital> eligibleHospitals = Arrays.asList(hospital1);
-        when(hospitalRepository.findBySpecialtyAndAvailableBeds("Cardiology"))
-                .thenReturn(eligibleHospitals);
+        HospitalProjection projection1 = createProjection(hospital1);
+        List<HospitalProjection> eligibleProjections = Arrays.asList(projection1);
+        when(hospitalRepository.findBySpecialtyAndAvailableBedsProjection("Cardiology"))
+                .thenReturn(eligibleProjections);
+        when(hospitalRepository.findById(1L)).thenReturn(java.util.Optional.of(hospital1));
 
         RouteResult errorRouteResult = new RouteResult();
         errorRouteResult.setError(true);
@@ -206,9 +284,13 @@ public class AllocationServiceTest {
     @Test
     public void testFindBestHospital_SelectsFastestHospital() {
         // Given - Configuration pour que hospital2 soit plus rapide
-        List<Hospital> eligibleHospitals = Arrays.asList(hospital1, hospital2);
-        when(hospitalRepository.findBySpecialtyAndAvailableBeds("Cardiology"))
-                .thenReturn(eligibleHospitals);
+        HospitalProjection projection1 = createProjection(hospital1);
+        HospitalProjection projection2 = createProjection(hospital2);
+        List<HospitalProjection> eligibleProjections = Arrays.asList(projection1, projection2);
+        when(hospitalRepository.findBySpecialtyAndAvailableBedsProjection("Cardiology"))
+                .thenReturn(eligibleProjections);
+        when(hospitalRepository.findById(1L)).thenReturn(java.util.Optional.of(hospital1));
+        when(hospitalRepository.findById(2L)).thenReturn(java.util.Optional.of(hospital2));
 
         RouteResult routeResult1 = new RouteResult();
         routeResult1.setDistanceKm(5.2);
