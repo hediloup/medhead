@@ -484,23 +484,23 @@ jobs:
         path: reports/security-summary/
         retention-days: 90
 
-    - name: 📢 Notification sécurité
-      if: always()
-      uses: 8398a7/action-slack@v3
-      with:
-        status: ${{ job.status }}
-        channel: '#medhead-security'
-        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-        custom_payload: |
-          {
-            "text": "🔒 Rapport Sécurité MedHead",
-            "blocks": [
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "*🔒 Rapport Sécurité MedHead*\n\n*Status:* ${{ job.status }}\n*Commit:* `${{ github.sha }}`\n*Branch:* ${{ github.ref_name }}\n\n*Analyses:*\n• Dépendances: ${{ needs.dependency-security.result }}\n• Code: ${{ needs.code-analysis.result }}\n• Vulnérabilités: ${{ needs.vulnerability-scan.result }}\n• SAST: ${{ needs.sast-analysis.result }}\n• Secrets: ${{ needs.secrets-scan.result }}\n• Conformité: ${{ needs.compliance-check.result }}"
-                }
-              }
-            ]
-          }
+    # - name: 📢 Notification sécurité
+    #   if: always()
+    #   uses: 8398a7/action-slack@v3
+    #   with:
+    #     status: ${{ job.status }}
+    #     channel: '#medhead-security'
+    #     webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+    #     custom_payload: |
+    #       {
+    #         "text": "🔒 Rapport Sécurité MedHead",
+    #         "blocks": [
+    #           {
+    #             "type": "section",
+    #             "text": {
+    #               "type": "mrkdwn",
+    #               "text": "*🔒 Rapport Sécurité MedHead*\n\n*Status:* ${{ job.status }}\n*Commit:* `${{ github.sha }}`\n*Branch:* ${{ github.ref_name }}\n\n*Analyses:*\n• Dépendances: ${{ needs.dependency-security.result }}\n• Code: ${{ needs.code-analysis.result }}\n• Vulnérabilités: ${{ needs.vulnerability-scan.result }}\n• SAST: ${{ needs.sast-analysis.result }}\n• Secrets: ${{ needs.secrets-scan.result }}\n• Conformité: ${{ needs.compliance-check.result }}"
+    #             }
+    #           }
+    #         ]
+    #       }
