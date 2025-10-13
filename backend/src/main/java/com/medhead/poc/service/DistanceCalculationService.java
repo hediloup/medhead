@@ -83,20 +83,12 @@ public class DistanceCalculationService {
      * @return Informations de route avec distance, durée et trafic
      */
     public RouteResult calculateOptimalRouteToHospital(double latitude, double longitude, Hospital hospital) {
-       // return this.calculateDistance(latitude, longitude, hospital.getLatitude(), hospital.getLongitude());
-     
-        // Calcul de la distance en ligne droite (Haversine)
-        double distance = this.calculateDistance(latitude, longitude, hospital.getLatitude(), hospital.getLongitude());
-        
-        // Estimation du temps de trajet basée sur la distance
-        int estimatedTime = this.estimateTravelTime(distance);
-        
-        // Création du résultat de route
-        return new RouteResult(
-            distance,           // distance en km
-            estimatedTime,      // temps estimé en minutes
-            estimatedTime,      // temps avec trafic (même valeur car pas de données de trafic)
-            false              // pas de données de trafic en temps réel
+        // Utilise l'API Google Maps pour un calcul précis avec trafic
+        return googleMapsService.calculateRouteWithTraffic(
+            latitude, 
+            longitude, 
+            hospital.getLatitude(), 
+            hospital.getLongitude()
         );
     }
     
