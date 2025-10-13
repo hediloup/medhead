@@ -2,7 +2,7 @@ name: 🚀 CD - Livraison Continue
 
 on:
   push:
-    branches: [ main, hotfix/correction-cd-pipeline]
+    branches: [ main, staging]
     tags: [ 'v*' ]
   workflow_dispatch:
     inputs:
@@ -125,6 +125,11 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: 🐳 Setup Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      with:
+        driver: docker-container
+
     - name: 🐳 Build et Push Images Staging
       run: |
         # Backend
@@ -132,7 +137,7 @@ jobs:
         docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-backend:staging-${{ github.sha }}
         
         # Frontend
-        docker build -f ./docker/Dockerfile.frontend -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:staging-${{ github.sha }} ./docker
+        docker build -f ./docker/Dockerfile.frontend -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:staging-${{ github.sha }} .
         docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:staging-${{ github.sha }}
 
     - name: 🚀 Déploiement sur Staging
@@ -175,28 +180,6 @@ jobs:
         curl -f https://staging.medhead.com/api/specialties
         
         echo "✅ Validation staging réussie !"
-
-    - name: 📢 Notification Slack Staging
-      if: always()
-      uses: 8398a7/action-slack@v3
-      with:
-        status: ${{ job.status }}
-        channel: '#medhead-deployments'
-        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-        fields: repo,message,commit,author,action,eventName,ref,workflow
-        custom_payload: |
-          {
-            "text": "🚀 Déploiement Staging MedHead",
-            "blocks": [
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "*🚀 Déploiement Staging MedHead*\n\n*Status:* ${{ job.status }}\n*Commit:* `${{ github.sha }}`\n*Environment:* Staging\n*URL:* https://staging.medhead.com"
-                }
-              }
-            ]
-          }
 
   # Job 3: Tests de régression sur Staging
   regression-tests:
@@ -285,6 +268,11 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: 🐳 Setup Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      with:
+        driver: docker-container
+
     - name: 🐳 Build et Push Images Production
       run: |
         # Déterminer la version
@@ -301,8 +289,8 @@ jobs:
         docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-backend:${{ github.sha }}
         
         # Frontend
-        docker build -f ./docker/Dockerfile.frontend -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:$VERSION ./docker
-        docker build -f ./docker/Dockerfile.frontend -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:${{ github.sha }} ./docker
+        docker build -f ./docker/Dockerfile.frontend -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:$VERSION .
+        docker build -f ./docker/Dockerfile.frontend -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:${{ github.sha }} .
         docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:$VERSION
         docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:${{ github.sha }}
 
@@ -374,12 +362,12 @@ jobs:
 
     - name: 🏷️ Création Release GitHub
       if: startsWith(github.ref, 'refs/tags/v')
-      uses: actions/create-release@v1
+      uses: softprops/action-gh-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ github.ref_name }}
-        release_name: Release ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
         body: |
           ## 🚀 Release ${{ github.ref_name }}
           
@@ -397,27 +385,6 @@ jobs:
           - [Documentation](https://docs.medhead.com)
         draft: false
         prerelease: false
-
-    - name: 📢 Notification Slack Production
-      if: always()
-      uses: 8398a7/action-slack@v3
-      with:
-        status: ${{ job.status }}
-        channel: '#medhead-deployments'
-        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-        custom_payload: |
-          {
-            "text": "🌟 Déploiement Production MedHead",
-            "blocks": [
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "*🌟 Déploiement Production MedHead*\n\n*Status:* ${{ job.status }}\n*Version:* ${{ github.ref_name || 'latest' }}\n*Commit:* `${{ github.sha }}`\n*Environment:* Production\n*URL:* https://medhead.com"
-                }
-              }
-            ]
-          }
 
   # Job 5: Monitoring post-déploiement
   post-deployment-monitoring:
