@@ -33,12 +33,23 @@ describe('HospitalAllocationComponent', () => {
     httpMock.verify();
   });
 
+  /**
+   * Helper method to mock the automatic health check request
+   */
+  const mockHealthCheckRequest = () => {
+    const healthRequest = httpMock.expectOne('/api/health');
+    healthRequest.flush({ status: 'UP' });
+  };
+
   it('should create', () => {
     expect(component).toBeTruthy();
   });
 
   it('should initialize form with required validators', () => {
     fixture.detectChanges();
+    
+    // Mock the automatic health check request
+    mockHealthCheckRequest();
     
     const form = component.allocationForm;
     expect(form.get('specialty')?.hasError('required')).toBeTruthy();
@@ -62,6 +73,9 @@ describe('HospitalAllocationComponent', () => {
   it('should validate form correctly', () => {
     fixture.detectChanges();
     
+    // Mock the automatic health check request
+    mockHealthCheckRequest();
+    
     // Test invalid form
     component.onSubmit();
     expect(component.allocationForm.invalid).toBeTruthy();
@@ -76,6 +90,9 @@ describe('HospitalAllocationComponent', () => {
 
   it('should handle form submission with valid data', () => {
     fixture.detectChanges();
+    
+    // Mock the automatic health check request
+    mockHealthCheckRequest();
     
     // Mock geocoding response
     const mockGeocodingResponse: GeocodingResponse[] = [{
@@ -126,6 +143,9 @@ describe('HospitalAllocationComponent', () => {
   it('should handle geocoding failure', () => {
     fixture.detectChanges();
     
+    // Mock the automatic health check request
+    mockHealthCheckRequest();
+    
     component.allocationForm.patchValue({
       specialty: 'Cardiology',
       address: 'Invalid address'
@@ -147,6 +167,9 @@ describe('HospitalAllocationComponent', () => {
 
   it('should handle allocation service error', () => {
     fixture.detectChanges();
+    
+    // Mock the automatic health check request
+    mockHealthCheckRequest();
     
     const mockGeocodingResponse: GeocodingResponse[] = [{
       lat: 48.8566,
@@ -180,6 +203,9 @@ describe('HospitalAllocationComponent', () => {
   it('should reset form correctly', () => {
     fixture.detectChanges();
     
+    // Mock the automatic health check request
+    mockHealthCheckRequest();
+    
     // Set some data
     component.allocationForm.patchValue({
       specialty: 'Cardiology',
@@ -208,6 +234,9 @@ describe('HospitalAllocationComponent', () => {
   it('should check field errors correctly', () => {
     fixture.detectChanges();
     
+    // Mock the automatic health check request
+    mockHealthCheckRequest();
+    
     const addressControl = component.allocationForm.get('address');
     addressControl?.markAsTouched();
     addressControl?.setValue('');
@@ -218,6 +247,9 @@ describe('HospitalAllocationComponent', () => {
 
   it('should validate minimum length for address', () => {
     fixture.detectChanges();
+    
+    // Mock the automatic health check request
+    mockHealthCheckRequest();
     
     const addressControl = component.allocationForm.get('address');
     addressControl?.setValue('abc'); // Less than 5 characters

@@ -39,6 +39,6 @@ describe('AppComponent', () => {
   it('should have correct component structure', () => {
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.tagName).toBe('APP-ROOT');
+    expect(compiled.tagName.toLowerCase()).toBe('app-root');
   });
 });
