@@ -18,6 +18,7 @@ permissions:
   pull-requests: write
   statuses: write
   id-token: write
+  packages: write
 
 jobs:
   # Job 1: Tests Backend (TDD - Unitaires + Intégration)
