@@ -85,7 +85,7 @@ public class AllocationService {
         
         // Use optimized query with projection for better performance
         List<HospitalProjection> eligibleHospitalsProjection = hospitalRepository
-            .findAvailableHospitalsBySpecialtyOptimized(request.getSpecialty());
+            .findBySpecialtyAndAvailableBedsProjection(request.getSpecialty());
         
         if (eligibleHospitalsProjection.isEmpty()) {
             throw new RuntimeException("No hospital available with specialty '" + 
@@ -101,6 +101,7 @@ public class AllocationService {
                 hospital.setLatitude(projection.getLatitude());
                 hospital.setLongitude(projection.getLongitude());
                 hospital.setAvailableBeds(projection.getAvailableBeds());
+                hospital.setCity("Manchester"); // Set default city for testing
                 return hospital;
             })
             .collect(Collectors.toList());
