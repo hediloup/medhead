@@ -9,10 +9,10 @@ import org.springframework.transaction.annotation.Transactional;
  * Spring configuration for Cucumber BDD tests
  */
 @CucumberContextConfiguration
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @Transactional
 public class CucumberSpringConfiguration {
     // This class serves as entry point for Spring configuration in Cucumber
-    // WebEnvironment.NONE to avoid starting a complete web server
+    // WebEnvironment.RANDOM_PORT to enable TestRestTemplate for API testing
 }

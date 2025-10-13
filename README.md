@@ -238,6 +238,7 @@ docker-compose up -d postgres
 > - **Frontend tests require Chrome/Chromium installed locally** or use Chrome-enabled containers.
 > - **Frontend tests may fail with HTTP errors** if they make real API calls instead of using mocks. Use the CI configuration to avoid this.
 > - **Backend tests may have permission issues** if `target/` directory was created by Docker containers. Use Docker approach or fix permissions with `sudo chown -R $USER:$USER target/`.
+> - **BDD tests require WebEnvironment.RANDOM_PORT** for REST API testing (fixed in CucumberSpringConfiguration).
 > - For frontend testing, use local npm commands (recommended) or Chrome-enabled containers.
 
 #### **Backend Tests with Docker**
