@@ -70,12 +70,11 @@ describe('GeocodingService', () => {
 
     it('should handle HTTP errors', () => {
       const address = 'Paris, France';
-      const errorMessage = 'Server error';
 
       service.geocodeAddress(address).subscribe({
         next: () => fail('Expected error'),
         error: (error) => {
-          expect(error.message).toBe(errorMessage);
+          expect(error.message).toContain('Http failure response for');
         }
       });
 
@@ -84,7 +83,7 @@ describe('GeocodingService', () => {
                request.params.get('q') === address;
       });
       
-      req.flush(errorMessage, { status: 500, statusText: 'Server Error' });
+      req.flush('Server error', { status: 500, statusText: 'Server Error' });
     });
   });
 
