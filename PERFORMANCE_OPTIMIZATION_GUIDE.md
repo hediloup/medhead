@@ -273,3 +273,13 @@ k6 run --duration 30m test-optimized.js
 - **Spring Boot Performance** : https://spring.io/guides/gs/spring-boot-performance/
 - **PostgreSQL Tuning** : https://wiki.postgresql.org/wiki/Performance_Optimization
 - **JVM Tuning** : https://docs.oracle.com/en/java/javase/11/gctuning/
+
+
+
+Pour atteindre l'objectif de 800 req/s avec < 200ms, nous devons maintenant appliquer les optimisations avancées :
+Cache Redis pour les résultats de calculs de distance
+Mise en cache des hôpitaux en mémoire
+Optimisation des calculs de distance (algorithme plus rapide)
+Scaling horizontal avec load balancer
+Optimisation des requêtes de géolocalisation
+L'application MedHead est maintenant significativement plus performante et stable ! Les optimisations de base ont été appliquées avec succès sans casser l'application. 🚀

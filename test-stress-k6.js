@@ -14,25 +14,20 @@ export const options = {
     { duration: '2m', target: 0 },     // Descente progressive
   ],
   thresholds: {
-    // Performance : 95% des requêtes < 200ms (objectif principal)
-    http_req_duration: ['p(95)<200'],
-    // Performance : 99% des requêtes < 500ms (tolérance)
-    http_req_duration: ['p(99)<500'],
+    // Objectifs de performance pour les requêtes réussies
+    'http_req_duration{expected_response:true}': [
+      'p(95)<200',  // 95% des requêtes < 200ms
+      'p(99)<500',  // 99% des requêtes < 500ms
+      'avg<100'     // Temps moyen < 100ms
+    ],
     // Taux d'erreur < 1%
     http_req_failed: ['rate<0.01'],
     // Taux d'erreur personnalisé
     errors: ['rate<0.01'],
-    // Temps de réponse moyen < 100ms (optimisation)
-    http_req_duration: ['avg<100'],
   },
   // Configuration optimisée pour les performances
   noConnectionReuse: false,
   userAgent: 'k6-medhead-load-test/1.0',
-  // Réduction du timeout pour détecter les lenteurs
-  httpDebug: false,
-  // Optimisation des connexions
-  batch: 20,
-  batchPerHost: 10,
 };
 
 // Données de test pour l'allocation d'hôpitaux
