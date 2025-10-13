@@ -133,7 +133,6 @@ jobs:
         
         # Frontend
         docker build -f ./docker/Dockerfile.frontend -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:staging-${{ github.sha }} .
-        docker build -f ./docker/Dockerfile.frontend -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:staging-${{ github.sha }} .
         docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:staging-${{ github.sha }}
 
     - name: 🚀 Déploiement sur Staging
@@ -323,8 +322,6 @@ jobs:
         docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-backend:${{ github.sha }}
         
         # Frontend
-        docker build -f ./docker/Dockerfile.frontend -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:$VERSION .
-        docker build -f ./docker/Dockerfile.frontend -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:${{ github.sha }} .
         docker build -f ./docker/Dockerfile.frontend -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:$VERSION .
         docker build -f ./docker/Dockerfile.frontend -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:${{ github.sha }} .
         docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:$VERSION
