@@ -2,7 +2,7 @@ name: 🚀 CD - Livraison Continue
 
 on:
   push:
-    branches: [ main, hotfix/correction-cd-pipeline]
+    branches: [ main, develop]
     tags: [ 'v*' ]
   workflow_dispatch:
     inputs:
