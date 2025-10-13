@@ -36,5 +36,8 @@ ENV SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/medhead_db
 ENV SPRING_DATASOURCE_USERNAME=medhead_user
 ENV SPRING_DATASOURCE_PASSWORD=medhead_password
 
-# Commande pour démarrer l'application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Variables d'environnement pour les performances
+ENV JAVA_OPTS="-Xms512m -Xmx2g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseStringDeduplication -XX:+OptimizeStringConcat -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Djava.security.egd=file:/dev/./urandom"
+
+# Commande pour démarrer l'application avec optimisations
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

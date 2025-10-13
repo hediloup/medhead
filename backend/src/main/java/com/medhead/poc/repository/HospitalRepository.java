@@ -1,6 +1,7 @@
 package com.medhead.poc.repository;
 
 import com.medhead.poc.model.Hospital;
+import com.medhead.poc.dto.HospitalProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,6 +20,14 @@ public interface HospitalRepository extends JpaRepository<Hospital, Long> {
      */
     @Query("SELECT DISTINCT h FROM Hospital h JOIN h.specialities s WHERE LOWER(s.name) LIKE LOWER(CONCAT('%', :specialty, '%')) AND h.availableBeds > 0")
     List<Hospital> findBySpecialtyAndAvailableBeds(@Param("specialty") String specialty);
+    
+    /**
+     * Optimized query using projection for better performance.
+     * Returns only required fields to reduce memory usage and improve query speed.
+     */
+    @Query("SELECT h.id as id, h.name as name, s.name as specialty, h.latitude as latitude, h.longitude as longitude, h.availableBeds as availableBeds " +
+           "FROM Hospital h JOIN h.specialities s WHERE LOWER(s.name) LIKE LOWER(CONCAT('%', :specialty, '%')) AND h.availableBeds > 0")
+    List<HospitalProjection> findAvailableHospitalsBySpecialtyOptimized(@Param("specialty") String specialty);
     
     /**
      * Finds all hospitals with available beds.

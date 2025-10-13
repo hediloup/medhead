@@ -1,11 +1,14 @@
 package com.medhead.poc.service;
 
 import com.medhead.poc.dto.RouteResult;
+import com.medhead.poc.dto.HospitalProjection;
 import com.medhead.poc.model.AllocationRequest;
 import com.medhead.poc.model.AllocationResponse;
 import com.medhead.poc.model.Hospital;
 import com.medhead.poc.model.Patient;
 import com.medhead.poc.repository.HospitalRepository;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Timer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +36,16 @@ public class AllocationService {
     @Autowired
     private EventPublisherService eventPublisherService;
     
+    // Metrics
+    @Autowired
+    private Counter allocationCounter;
+    
+    @Autowired
+    private Counter allocationErrorCounter;
+    
+    @Autowired
+    private Timer allocationTimer;
+    
     /**
      * Finds the most appropriate hospital for an allocation request and records the patient.
      * 
@@ -41,6 +54,22 @@ public class AllocationService {
      * @throws RuntimeException if no appropriate hospital is found
      */
     public AllocationResponse findBestHospital(AllocationRequest request) {
+        try {
+            return allocationTimer.recordCallable(() -> {
+                try {
+                    return performAllocation(request);
+                } catch (Exception e) {
+                    allocationErrorCounter.increment();
+                    throw new RuntimeException(e);
+                }
+            });
+        } catch (Exception e) {
+            allocationErrorCounter.increment();
+            throw new RuntimeException("Failed to allocate hospital", e);
+        }
+    }
+    
+    private AllocationResponse performAllocation(AllocationRequest request) {
         // Parameter validation
         if (request.getSpecialty() == null || request.getSpecialty().trim().isEmpty()) {
             throw new IllegalArgumentException("Specialty is required");
@@ -50,14 +79,27 @@ public class AllocationService {
             throw new IllegalArgumentException("Geolocation is required");
         }
         
-        // Search for hospitals with the requested specialty and available beds
-        List<Hospital> eligibleHospitals = hospitalRepository
-            .findBySpecialtyAndAvailableBeds(request.getSpecialty());
+        // Use optimized query with projection for better performance
+        List<HospitalProjection> eligibleHospitalsProjection = hospitalRepository
+            .findAvailableHospitalsBySpecialtyOptimized(request.getSpecialty());
         
-        if (eligibleHospitals.isEmpty()) {
+        if (eligibleHospitalsProjection.isEmpty()) {
             throw new RuntimeException("No hospital available with specialty '" + 
                                     request.getSpecialty() + "'");
         }
+        
+        // Convert projections to full Hospital objects for distance calculation
+        List<Hospital> eligibleHospitals = eligibleHospitalsProjection.stream()
+            .map(projection -> {
+                Hospital hospital = new Hospital();
+                hospital.setId(projection.getId());
+                hospital.setName(projection.getName());
+                hospital.setLatitude(projection.getLatitude());
+                hospital.setLongitude(projection.getLongitude());
+                hospital.setAvailableBeds(projection.getAvailableBeds());
+                return hospital;
+            })
+            .collect(Collectors.toList());
         
         // Calculate routes with traffic optimization for all eligible hospitals
         List<HospitalWithRoute> hospitalsWithRoute = eligibleHospitals.stream()
@@ -125,6 +167,9 @@ public class AllocationService {
             availableBedsAfter,
             estimatedTime
         );
+        
+        // Increment success counter
+        allocationCounter.increment();
         
         return response;
     }
