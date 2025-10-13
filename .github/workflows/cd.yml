@@ -2,7 +2,7 @@ name: 🚀 CD - Livraison Continue
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, hotfix/correction-cd-pipeline]
     tags: [ 'v*' ]
   workflow_dispatch:
     inputs:
@@ -55,13 +55,13 @@ jobs:
     - name: 🐳 Démarrage des services
       run: |
         echo "🐳 Démarrage des services pour tests de performance..."
-        docker-compose -f ./docker/docker-compose.yml up -d
+        docker compose -f ./docker/docker-compose.yml up -d
         
         echo "⏳ Attente du démarrage complet..."
         sleep 60
         
         echo "🔍 Vérification des services..."
-        docker-compose -f ./docker/docker-compose.yml ps
+        docker compose -f ./docker/docker-compose.yml ps
 
     - name: ⚡ Tests de Performance Backend
       working-directory: ./backend
@@ -80,7 +80,7 @@ jobs:
 
     - name: 🧹 Nettoyage
       if: always()
-      run: docker-compose -f ./docker/docker-compose.yml down -v
+      run: docker compose -f ./docker/docker-compose.yml down -v
 
   # Job 2: Déploiement Staging
   deploy-staging:
@@ -152,8 +152,8 @@ jobs:
           export FRONTEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:staging-${{ github.sha }}
           
           # Redémarrage des services
-          docker-compose -f /opt/medhead/docker-compose.staging.yml down
-          docker-compose -f /opt/medhead/docker-compose.staging.yml up -d
+          docker compose -f /opt/medhead/docker-compose.staging.yml down
+          docker compose -f /opt/medhead/docker-compose.staging.yml up -d
           
           # Vérification du déploiement
           sleep 30
@@ -331,7 +331,7 @@ jobs:
           export FRONTEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:$VERSION
           
           # Démarrage du nouveau environnement (Green)
-          docker-compose -f /opt/medhead/docker-compose.green.yml up -d
+          docker compose -f /opt/medhead/docker-compose.green.yml up -d
           
           # Attente de la stabilisation
           echo "⏳ Attente de la stabilisation..."
@@ -344,11 +344,11 @@ jobs:
           
           # Basculement du trafic (Blue -> Green)
           echo "🔄 Basculement du trafic..."
-          docker-compose -f /opt/medhead/docker-compose.production.yml down
-          docker-compose -f /opt/medhead/docker-compose.green.yml -f /opt/medhead/docker-compose.production.yml up -d
+          docker compose -f /opt/medhead/docker-compose.production.yml down
+          docker compose -f /opt/medhead/docker-compose.green.yml -f /opt/medhead/docker-compose.production.yml up -d
           
           # Arrêt de l'ancien environnement
-          docker-compose -f /opt/medhead/docker-compose.blue.yml down
+          docker compose -f /opt/medhead/docker-compose.blue.yml down
           
           # Renommage pour le prochain déploiement
           mv /opt/medhead/docker-compose.green.yml /opt/medhead/docker-compose.blue.yml

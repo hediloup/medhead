@@ -362,13 +362,13 @@ jobs:
           export FRONTEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:$VERSION
           
           # Sauvegarde de l'état actuel
-          docker-compose -f /opt/medhead/docker-compose.production.yml config > /opt/medhead/backup-config-$(date +%Y%m%d-%H%M%S).yml
+          docker compose -f /opt/medhead/docker-compose.production.yml config > /opt/medhead/backup-config-$(date +%Y%m%d-%H%M%S).yml
           
           # Déploiement avec rollback automatique en cas d'échec
-          if ! docker-compose -f /opt/medhead/docker-compose.production.yml up -d; then
+          if ! docker compose -f /opt/medhead/docker-compose.production.yml up -d; then
             echo "❌ Échec du déploiement, rollback..."
-            docker-compose -f /opt/medhead/docker-compose.production.yml down
-            docker-compose -f /opt/medhead/docker-compose.production.yml up -d
+            docker compose -f /opt/medhead/docker-compose.production.yml down
+            docker compose -f /opt/medhead/docker-compose.production.yml up -d
             exit 1
           fi
           
@@ -378,8 +378,8 @@ jobs:
           
           if ! curl -f https://medhead.com/api/health; then
             echo "❌ Tests de validation échoués, rollback..."
-            docker-compose -f /opt/medhead/docker-compose.production.yml down
-            docker-compose -f /opt/medhead/docker-compose.production.yml up -d
+            docker compose -f /opt/medhead/docker-compose.production.yml down
+            docker compose -f /opt/medhead/docker-compose.production.yml up -d
             exit 1
           fi
           

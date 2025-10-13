@@ -350,13 +350,13 @@ jobs:
     - name: 🐳 Démarrage des services pour tests DAST
       run: |
         echo "🐳 Démarrage des services pour tests DAST..."
-        docker-compose -f ./docker/docker-compose.yml up -d
+        docker compose -f ./docker/docker-compose.yml up -d
         
         echo "⏳ Attente du démarrage..."
         sleep 60
         
         echo "🔍 Vérification des services..."
-        docker-compose -f ./docker/docker-compose.yml ps
+        docker compose -f ./docker/docker-compose.yml ps
 
     - name: 🌐 Tests DAST avec OWASP ZAP
       uses: zaproxy/action-full-scan@v0.4.0
@@ -383,7 +383,7 @@ jobs:
 
     - name: 🧹 Nettoyage
       if: always()
-      run: docker-compose -f ./docker/docker-compose.yml down -v
+      run: docker compose -f ./docker/docker-compose.yml down -v
 
   # Job 8: Rapport de sécurité consolidé
   security-summary:
