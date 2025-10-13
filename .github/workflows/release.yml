@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - 'v*.*.*'
-      - 'V*.*.*'
   workflow_dispatch:
     inputs:
       version:
@@ -304,37 +303,51 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: 📊 Génération du changelog
+      run: |
+        VERSION="${{ needs.validate-release.outputs.version }}"
+        
+        echo "📊 Génération du changelog..."
+        
+        # Récupération des commits depuis la dernière release
+        LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        
+        if [ -n "$LAST_TAG" ]; then
+          echo "📋 Changelog depuis $LAST_TAG:"
+          git log --pretty=format:"- %s (%h)" $LAST_TAG..HEAD > CHANGELOG.md
+        else
+          echo "📋 Changelog complet:"
+          git log --pretty=format:"- %s (%h)" > CHANGELOG.md
+        fi
+        
+        echo "" >> CHANGELOG.md
+        echo "## Version $VERSION" >> CHANGELOG.md
+        echo "Release Date: $(date '+%Y-%m-%d')" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+
     - name: 🏷️ Création de la release GitHub
-      uses: actions/create-release@v1
+      uses: softprops/action-gh-release@v1
       id: create_release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ needs.validate-release.outputs.version }}
-        release_name: Release ${{ needs.validate-release.outputs.version }}
+        name: Release ${{ needs.validate-release.outputs.version }}
         body_path: CHANGELOG.md
         draft: false
         prerelease: ${{ needs.validate-release.outputs.is_prerelease }}
 
     - name: 📦 Upload artefacts de release
-      uses: actions/upload-release-asset@v1
+      uses: softprops/action-gh-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./docker/docker-compose.yml
-        asset_name: docker-compose.yml
-        asset_content_type: application/x-yaml
-
-    - name: 📦 Upload configuration Docker
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./docker/nginx.conf
-        asset_name: nginx.conf
-        asset_content_type: text/plain
+        tag_name: ${{ needs.validate-release.outputs.version }}
+        files: |
+          ./docker/docker-compose.yml
+          ./docker/nginx.conf
+        draft: false
+        prerelease: ${{ needs.validate-release.outputs.is_prerelease }}
 
   # Job 5: Déploiement automatique en production
   deploy-production:
