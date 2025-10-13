@@ -230,97 +230,14 @@ docker-compose up -d postgres
 - **Execution**: Slow (< 5 minutes)
 
 ## 🧪 Test Execution Instructions
-
-### 🚀 Local Test Execution
-
-#### **1. Backend Tests**
-```bash
-# Navigate to backend directory
-cd backend
-
-# Run all tests
-./mvnw clean test
-
-# Run unit tests only
-./mvnw test -Dtest="*Test" -Dtest="!*IntegrationTest"
-
-# Run integration tests only
-./mvnw test -Dtest="*IntegrationTest"
-
-# Run BDD tests with Cucumber
-./mvnw test -P bdd-tests
-
-# Generate coverage report
-./mvnw jacoco:report
-open target/site/jacoco/index.html
-
-# Run tests with specific profile
-./mvnw test -Dspring.profiles.active=test
-```
-
-#### **2. Frontend Tests**
-```bash
-# Navigate to frontend directory
-cd frontend
-
-# Run unit tests
-npm test
-
-# Run tests with coverage
-npm run test:coverage
-
-# Run tests in watch mode
-npm test -- --watch=true
-
-# Run tests for specific component
-npm test -- --include="**/allocation.component.spec.ts"
-
-# Run tests with Chrome browser
-npm test -- --browsers=Chrome
-```
-
-#### **3. E2E Tests**
-```bash
-# Prerequisites: Backend and frontend must be running
-
-# Start the application stack
-cd docker
-./start-medhead.sh
-
-# In another terminal, run E2E tests
-cd frontend
-npm run e2e
-
-# Run E2E tests in CI mode
-npm run e2e:ci
-
-# Open Cypress interactive mode
-npx cypress open
-```
-
-#### **4. Complete Test Suite**
-```bash
-# Run all backend tests
-cd backend
-./mvnw clean test
-
-# Run all frontend tests
-cd ../frontend
-npm test
-
-# Run E2E tests (requires running application)
-npm run e2e
-
-# Generate combined coverage report
-npm run test:coverage
-```
-
 ### 🐳 Docker Test Execution
 
 > **⚠️ Important Notes**: 
 > - The containers in `docker-compose.yml` are runtime containers (OpenJDK slim, Nginx) that don't include build tools like Maven or npm. For testing, we use separate containers with the necessary tools.
 > - The `Dockerfile.frontend.test` references non-existent scripts (`run-tests.sh`, `run-tests-ci.sh`) and should not be used.
-> - For frontend testing, use local npm commands or Chrome-enabled containers.
+> - **Frontend tests require Chrome/Chromium installed locally** or use Chrome-enabled containers.
+> - **Frontend tests may fail with HTTP errors** if they make real API calls instead of using mocks. Use the CI configuration to avoid this.
+> - For frontend testing, use local npm commands (recommended) or Chrome-enabled containers.
 
 #### **Backend Tests with Docker**
 ```bash
@@ -344,12 +261,7 @@ docker-compose down
 
 #### **Frontend Tests with Docker**
 ```bash
-# Option 1: Use local testing (Recommended for development)
-cd ../frontend
-npm install
-npm test
-
-# Option 2: Run tests with Chrome-enabled container
+# Run tests with Chrome-enabled container
 cd docker
 docker-compose up -d postgres backend
 docker run --rm \
@@ -358,13 +270,13 @@ docker run --rm \
   -w /app \
   --shm-size=2g \
   mcr.microsoft.com/playwright:v1.40.0-focal \
-  sh -c "npm install && npm test -- --watch=false --browsers=ChromeHeadless"
+  sh -c "npm install && npm run test:coverage -- --watch=false --browsers=ChromeHeadless --reporters=html,coverage,junit"
 docker-compose down
-
-# Option 3: Run tests with coverage
+```
+#### **Run E2E tests **
+```bash
 cd ../frontend
-npm install
-npm run test:coverage
+npm run e2e:headless
 ```
 
 #### **Complete Test Suite with Docker**
@@ -381,23 +293,21 @@ docker run --rm \
   maven:3.8.4-openjdk-17 \
   mvn clean test -Dspring.profiles.active=test
 
-# Run frontend tests (using Node container)
+# Run frontend with Chrome-enabled container
 docker run --rm \
   --network docker_medhead-network \
   -v $(pwd)/../frontend:/app \
   -w /app \
-  node:18-alpine \
-  sh -c "npm install && npm test"
+  --shm-size=2g \
+  mcr.microsoft.com/playwright:v1.40.0-focal \
+  sh -c "npm install && npm run test:coverage -- --watch=false --browsers=ChromeHeadless --reporters=html,coverage,junit"
 
-# Run E2E tests (requires running application)
-docker run --rm \
-  --network docker_medhead-network \
-  -v $(pwd)/../frontend:/app \
-  -w /app \
-  node:18-alpine \
-  sh -c "npm install && npm run e2e"
+# Run E2E tests (local - requires Chrome installed)
+cd ../frontend
+npm run e2e:headless
 
 # Stop the stack
+cd ../docker
 ./stop-medhead.sh
 ```
 
@@ -450,6 +360,15 @@ npm test -- --browsers=Chrome --watch=true
 
 # Run tests with source maps
 npm test -- --source-map=true
+
+# Fix HTTP call issues (use CI configuration)
+npm run test:coverage -- --watch=false --browsers=ChromeHeadless --reporters=html,coverage,junit
+
+# Debug specific test file
+npm test -- --include="**/allocation.component.spec.ts"
+
+# Run tests with no-sandbox flag (for Docker/CI environments)
+npm test -- --browsers=ChromeHeadless --no-sandbox
 ```
 
 #### **E2E Debug**
