@@ -545,7 +545,7 @@ jobs:
     - name: 🐳 Build et Push Frontend Image
       uses: docker/build-push-action@v5
       with:
-        context: ./docker
+        context: .
         file: ./docker/Dockerfile.frontend
         push: true
         tags: |
