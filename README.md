@@ -237,6 +237,7 @@ docker-compose up -d postgres
 > - The `Dockerfile.frontend.test` references non-existent scripts (`run-tests.sh`, `run-tests-ci.sh`) and should not be used.
 > - **Frontend tests require Chrome/Chromium installed locally** or use Chrome-enabled containers.
 > - **Frontend tests may fail with HTTP errors** if they make real API calls instead of using mocks. Use the CI configuration to avoid this.
+> - **Backend tests may have permission issues** if `target/` directory was created by Docker containers. Use Docker approach or fix permissions with `sudo chown -R $USER:$USER target/`.
 > - For frontend testing, use local npm commands (recommended) or Chrome-enabled containers.
 
 #### **Backend Tests with Docker**
@@ -256,6 +257,20 @@ docker run --rm \
   mvn clean test -Dspring.profiles.active=test
 
 # Clean up
+docker-compose down
+```
+
+#### **Backend BDD Tests**
+```bash
+# Run BDD tests with Docker (Recommended)
+cd docker
+docker-compose up -d postgres
+docker run --rm \
+  --network docker_medhead-network \
+  -v $(pwd)/../backend:/app \
+  -w /app \
+  maven:3.8.4-openjdk-17 \
+  mvn test -P bdd-tests -Dspring.profiles.active=test
 docker-compose down
 ```
 
@@ -307,8 +322,8 @@ cd ../frontend
 npm run e2e:headless
 
 # Stop the stack
-cd ../docker
-./stop-medhead.sh
+cd docker
+docker-compose down
 ```
 
 ### 📊 Test Reports and Coverage
@@ -333,58 +348,6 @@ cd ../docker
 - **Format**: Screenshots, videos, JUnit XML
 - **Content**: Test execution artifacts
 
-### 🔍 Debugging Tests
-
-#### **Backend Debug**
-```bash
-# Run tests with verbose logging
-./mvnw test -X
-
-# Run specific test class
-./mvnw test -Dtest="AllocationServiceTest"
-
-# Run tests with debug profile
-./mvnw test -Dspring.profiles.active=debug
-
-# Run tests with specific JVM options
-./mvnw test -Dmaven.surefire.debug
-```
-
-#### **Frontend Debug**
-```bash
-# Run tests with verbose output
-npm test -- --verbose
-
-# Run tests in debug mode
-npm test -- --browsers=Chrome --watch=true
-
-# Run tests with source maps
-npm test -- --source-map=true
-
-# Fix HTTP call issues (use CI configuration)
-npm run test:coverage -- --watch=false --browsers=ChromeHeadless --reporters=html,coverage,junit
-
-# Debug specific test file
-npm test -- --include="**/allocation.component.spec.ts"
-
-# Run tests with no-sandbox flag (for Docker/CI environments)
-npm test -- --browsers=ChromeHeadless --no-sandbox
-```
-
-#### **E2E Debug**
-```bash
-# Run Cypress in interactive mode
-npx cypress open
-
-# Run specific test file
-npx cypress run --spec "cypress/e2e/allocation.cy.ts"
-
-# Run tests with screenshots
-npm run e2e -- --screenshot
-
-# Run tests with video recording
-npm run e2e -- --video
-```
 
 ## 🚀 CI/CD Pipeline
 
