@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { HospitalAllocationComponent } from './hospital-allocation.component';
@@ -262,10 +262,9 @@ describe('HospitalAllocationComponent', () => {
   it('should handle API health check failure', () => {
     fixture.detectChanges();
     
-    component.ngOnInit();
-
-    const healthReq = httpMock.expectOne('/api/health');
-    healthReq.flush('Service Unavailable', { status: 502, statusText: 'Bad Gateway' });
+    // Mock the automatic health check request from fixture.detectChanges()
+    const healthReq1 = httpMock.expectOne('/api/health');
+    healthReq1.flush('Service Unavailable', { status: 502, statusText: 'Bad Gateway' });
 
     expect(component.errorMessage).toBe('Backend service is not available. Please check that the server is started.');
   });

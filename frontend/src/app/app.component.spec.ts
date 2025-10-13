@@ -39,6 +39,9 @@ describe('AppComponent', () => {
   it('should have correct component structure', () => {
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.tagName.toLowerCase()).toBe('app-root');
+    // In Angular tests, fixture.nativeElement is the actual DOM element (usually div)
+    // We should check that the component exists and has the right content
+    expect(compiled).toBeTruthy();
+    expect(compiled.querySelector('app-hospital-allocation')).toBeTruthy();
   });
 });
