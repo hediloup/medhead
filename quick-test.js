@@ -26,7 +26,7 @@ export default function () {
   console.log('Testing MedHead Hospital Allocation API...');
   
   // Test 1: Health check
-  const healthResponse = http.get('http://localhost:4200/api/health');
+  const healthResponse = http.get('http://localhost:8080/api/health');
   check(healthResponse, {
     'Health check status is 200': (r) => r.status === 200,
     'Health check response time < 1s': (r) => r.timings.duration < 1000,
@@ -41,7 +41,7 @@ export default function () {
   
   // Test 2: Allocation request
   const payload = JSON.stringify(testData);
-  const response = http.post('http://localhost:4200/api/allocate', payload, {
+  const response = http.post('http://localhost:8080/api/allocate', payload, {
     headers: headers,
     timeout: '10s',
   });

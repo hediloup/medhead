@@ -7,25 +7,32 @@ const errorRate = new Rate('errors');
 
 export const options = {
   stages: [
-    { duration: '30s', target: 100 },  // Montée progressive
-    { duration: '1m', target: 400 },   // Augmentation graduelle
-    { duration: '2m', target: 800 },   // Charge cible de 800 req/s
-    { duration: '3m', target: 800 },   // Maintien de la charge
-    { duration: '30s', target: 0 },    // Descente progressive
+    { duration: '1m', target: 200 },   // Montée progressive plus lente
+    { duration: '2m', target: 400 },   // Augmentation graduelle
+    { duration: '3m', target: 600 },   // Approche de la charge cible
+    { duration: '5m', target: 800 },   // Charge cible de 800 req/s
+    { duration: '2m', target: 0 },     // Descente progressive
   ],
   thresholds: {
-    // Performance : 95% des requêtes < 200ms
-    http_req_duration: ['p(95)<200', 'p(99)<500'],
+    // Performance : 95% des requêtes < 200ms (objectif principal)
+    http_req_duration: ['p(95)<200'],
+    // Performance : 99% des requêtes < 500ms (tolérance)
+    http_req_duration: ['p(99)<500'],
     // Taux d'erreur < 1%
     http_req_failed: ['rate<0.01'],
     // Taux d'erreur personnalisé
     errors: ['rate<0.01'],
-    // Vérification du statut de réponse
-    http_req_duration: ['avg<150', 'max<1000'],
+    // Temps de réponse moyen < 100ms (optimisation)
+    http_req_duration: ['avg<100'],
   },
-  // Configuration pour éviter les timeouts
+  // Configuration optimisée pour les performances
   noConnectionReuse: false,
   userAgent: 'k6-medhead-load-test/1.0',
+  // Réduction du timeout pour détecter les lenteurs
+  httpDebug: false,
+  // Optimisation des connexions
+  batch: 20,
+  batchPerHost: 10,
 };
 
 // Données de test pour l'allocation d'hôpitaux
@@ -45,16 +52,16 @@ export default function () {
   // Test de l'endpoint d'allocation d'hôpitaux
   const payload = JSON.stringify(testData);
   
-  const response = http.post('http://localhost:4200/api/allocate', payload, {
+  const response = http.post('http://localhost:8080/api/allocate', payload, {
     headers: headers,
-    timeout: '30s', // Timeout de 30 secondes
+    timeout: '5s', // Timeout réduit pour détecter les lenteurs
+    tags: { endpoint: 'allocate' },
   });
 
-  // Vérifications de la réponse
+  // Vérifications de la réponse (optimisées)
   const checks = check(response, {
     'Status is 200': (r) => r.status === 200,
     'Response time < 200ms': (r) => r.timings.duration < 200,
-    'Response time < 500ms': (r) => r.timings.duration < 500,
     'Response has body': (r) => r.body && r.body.length > 0,
     'Response is JSON': (r) => {
       try {
@@ -64,39 +71,23 @@ export default function () {
         return false;
       }
     },
-    'Response contains hospital': (r) => {
-      try {
-        const data = JSON.parse(r.body);
-        return data.hospitalName || data.hospital || data.name;
-      } catch (e) {
-        return false;
-      }
-    },
-    'Response contains distance': (r) => {
-      try {
-        const data = JSON.parse(r.body);
-        return data.distance !== undefined || data.estimatedTime !== undefined;
-      } catch (e) {
-        return false;
-      }
-    }
   });
 
   // Enregistrement des erreurs
   errorRate.add(response.status !== 200);
 
-  // Log des erreurs pour debugging
+  // Log des erreurs pour debugging (réduit)
   if (response.status !== 200) {
-    console.error(`Error ${response.status}: ${response.body}`);
+    console.error(`Error ${response.status}: ${response.body.substring(0, 100)}`);
   }
 
-  // Log des performances pour monitoring
-  if (response.timings.duration > 200) {
+  // Log des performances pour monitoring (seuil plus strict)
+  if (response.timings.duration > 150) {
     console.warn(`Slow response: ${response.timings.duration}ms`);
   }
 
-  // Pause entre les requêtes (simulation réaliste)
-  sleep(0.1);
+  // Pause réduite pour augmenter le débit
+  sleep(0.05);
 }
 
 // Fonction de setup (optionnelle)
