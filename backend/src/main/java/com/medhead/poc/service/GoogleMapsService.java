@@ -14,6 +14,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Service pour les appels à l'API Google Maps Directions
@@ -32,7 +33,10 @@ public class GoogleMapsService {
     
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
-    private final ConcurrentHashMap<String, RouteResult> routeCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, CachedRoute> routeCache = new ConcurrentHashMap<>();
+
+    @Value("${google.maps.cache.ttl.seconds:60}")
+    private long cacheTtlSeconds;
     
     @Autowired
     public GoogleMapsService() {
@@ -52,10 +56,10 @@ public class GoogleMapsService {
         
         // Check cache first
         String cacheKey = String.format("%.4f,%.4f-%.4f,%.4f", originLat, originLon, destinationLat, destinationLon);
-        RouteResult cachedResult = routeCache.get(cacheKey);
-        if (cachedResult != null) {
+        CachedRoute cached = routeCache.get(cacheKey);
+        if (cached != null && !cached.isExpired(cacheTtlSeconds)) {
             logger.debug("Route trouvée dans le cache");
-            return cachedResult;
+            return cached.result();
         }
         
         // Vérifier si l'API key est configurée
@@ -84,7 +88,7 @@ public class GoogleMapsService {
                 
                 // Mettre en cache si succès
                 if (!result.isError()) {
-                    routeCache.put(cacheKey, result);
+                    routeCache.put(cacheKey, new CachedRoute(result, System.nanoTime()));
                 }
                 
                 return result;
@@ -150,6 +154,13 @@ public class GoogleMapsService {
                 distanceKm, durationMinutes, durationWithTrafficMinutes);
         
         return new RouteResult(distanceKm, durationMinutes, durationWithTrafficMinutes, hasTrafficData);
+    }
+
+    private record CachedRoute(RouteResult result, long storedAtNanos) {
+        boolean isExpired(long ttlSeconds) {
+            long ageSeconds = TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - storedAtNanos);
+            return ageSeconds > ttlSeconds;
+        }
     }
     
     private RouteResult createFallbackResult(double originLat, double originLon, 

@@ -15,6 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 /**
@@ -106,77 +109,98 @@ public class AllocationService {
             })
             .collect(Collectors.toList());
         
-        // Calculate routes with traffic optimization for all eligible hospitals
-        List<HospitalWithRoute> hospitalsWithRoute = eligibleHospitals.stream()
-            .map(hospital -> {
-                RouteResult routeResult = distanceService.calculateOptimalRouteToHospital(
-                    request.getLatitude(), 
-                    request.getLongitude(), 
-                    hospital
-                );
-                return new HospitalWithRoute(hospital, routeResult);
-            })
-            .filter(hwr -> !hwr.getRouteResult().isError()) // Filter out hospitals with route errors
-            .sorted(Comparator.comparingInt(hwr -> hwr.getRouteResult().getOptimalDurationMinutes()))
+        // Préfiltrer: top 5 plus proches par Haversine pour réduire les appels externes
+        List<Hospital> nearestHospitals = eligibleHospitals.stream()
+            .sorted(Comparator.comparingDouble(h ->
+                distanceService.calculateDistance(request.getLatitude(), request.getLongitude(),
+                    h.getLatitude(), h.getLongitude())))
+            .limit(5)
             .collect(Collectors.toList());
+
+        // Paralleliser les appels Google Maps pour ces hôpitaux (top 5)
+        ExecutorService executor = Executors.newFixedThreadPool(Math.min(5, nearestHospitals.size()));
+        try {
+            List<CompletableFuture<HospitalWithRoute>> futures = nearestHospitals.stream()
+                .map(hospital -> CompletableFuture.supplyAsync(() -> {
+                    RouteResult routeResult = distanceService.calculateOptimalRouteToHospital(
+                        request.getLatitude(), request.getLongitude(), hospital);
+                    return new HospitalWithRoute(hospital, routeResult);
+                }, executor))
+                .collect(Collectors.toList());
+
+            List<HospitalWithRoute> hospitalsWithRoute = futures.stream()
+                .map(CompletableFuture::join)
+                .filter(hwr -> !hwr.getRouteResult().isError())
+                .sorted(Comparator.comparingInt(hwr -> hwr.getRouteResult().getOptimalDurationMinutes()))
+                .collect(Collectors.toList());
+
+            if (hospitalsWithRoute.isEmpty()) {
+                throw new RuntimeException("No accessible hospital found with specialty '" +
+                        request.getSpecialty() + "'");
+            }
+
+            // Select the best hospital (fastest travel time)
+            HospitalWithRoute bestHospital = hospitalsWithRoute.get(0);
+            Hospital selectedHospital = bestHospital.getHospital();
+            RouteResult routeResult = bestHospital.getRouteResult();
+
+            double distance = routeResult.getDistanceKm();
+            int estimatedTime = routeResult.getOptimalDurationMinutes();
+
+            // Create anonymized patient
+            Patient patient = patientAnonymizationService.createAnonymizedPatient(
+                request.getSpecialty(),
+                request.getLatitude(),
+                request.getLongitude(),
+                "MEDIUM" // Default severity level
+            );
+
+            // Associate patient with hospital
+            patient.setAllocatedHospital(selectedHospital);
+            patientAnonymizationService.anonymizePatient(patient);
+
+            // Calculate available beds after reservation
+            int availableBedsAfter = selectedHospital.getAvailableBeds() - 1;
+
+            // Create response
+            AllocationResponse response = new AllocationResponse(
+                selectedHospital.getName(),
+                selectedHospital.getId(),
+                Math.round(distance * 100.0) / 100.0, // Rounded to 2 decimal places
+                request.getSpecialty(),
+                availableBedsAfter,
+                estimatedTime
+            );
+
+            // Publish BED_RESERVED event
+            eventPublisherService.publishBedReservedEvent(
+                patient.getPatientUuid(),
+                patient.getAnonymizedName(),
+                request.getSpecialty(),
+                patient.getSeverityLevel(),
+                patient.getAgeGroup(),
+                selectedHospital.getId(),
+                selectedHospital.getName(),
+                selectedHospital.getCity(),
+                Math.round(distance * 100.0) / 100.0,
+                availableBedsAfter,
+                estimatedTime
+            );
+
+            // Increment success counter
+            allocationCounter.increment();
+
+            return response;
+        } finally {
+            executor.shutdown();
+        }
         
         if (hospitalsWithRoute.isEmpty()) {
             throw new RuntimeException("No accessible hospital found with specialty '" + 
                                     request.getSpecialty() + "'");
         }
         
-        // Select the best hospital (fastest travel time)
-        HospitalWithRoute bestHospital = hospitalsWithRoute.get(0);
-        Hospital selectedHospital = bestHospital.getHospital();
-        RouteResult routeResult = bestHospital.getRouteResult();
-        
-        double distance = routeResult.getDistanceKm();
-        int estimatedTime = routeResult.getOptimalDurationMinutes();
-        
-        // Create anonymized patient
-        Patient patient = patientAnonymizationService.createAnonymizedPatient(
-            request.getSpecialty(),
-            request.getLatitude(),
-            request.getLongitude(),
-            "MEDIUM" // Default severity level
-        );
-        
-        // Associate patient with hospital
-        patient.setAllocatedHospital(selectedHospital);
-        patientAnonymizationService.anonymizePatient(patient);
-        
-        // Calculate available beds after reservation
-        int availableBedsAfter = selectedHospital.getAvailableBeds() - 1;
-        
-        // Create response
-        AllocationResponse response = new AllocationResponse(
-            selectedHospital.getName(),
-            selectedHospital.getId(),
-            Math.round(distance * 100.0) / 100.0, // Rounded to 2 decimal places
-            request.getSpecialty(),
-            availableBedsAfter,
-            estimatedTime
-        );
-        
-        // Publish BED_RESERVED event
-        eventPublisherService.publishBedReservedEvent(
-            patient.getPatientUuid(),
-            patient.getAnonymizedName(),
-            request.getSpecialty(),
-            patient.getSeverityLevel(),
-            patient.getAgeGroup(),
-            selectedHospital.getId(),
-            selectedHospital.getName(),
-            selectedHospital.getCity(),
-            Math.round(distance * 100.0) / 100.0,
-            availableBedsAfter,
-            estimatedTime
-        );
-        
-        // Increment success counter
-        allocationCounter.increment();
-        
-        return response;
+        // Dead code removed by refactor
     }
     
     /**
