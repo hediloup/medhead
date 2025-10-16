@@ -5,6 +5,11 @@ import com.medhead.poc.model.Hospital;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * Service for geographic distance calculations with real-time traffic optimization.
  */
@@ -93,6 +98,120 @@ public class DistanceCalculationService {
     }
     
     /**
+     * Calcule la route optimale vers le meilleur hôpital en utilisant une stratégie ultra-optimisée :
+     * - Utilise Haversine pour sélectionner le meilleur hôpital (ultra-rapide)
+     * - Utilise Google Maps API uniquement pour obtenir la distance et le temps précis du meilleur hôpital
+     * 
+     * @param latitude Latitude de départ
+     * @param longitude Longitude de départ
+     * @param hospitals Liste des hôpitaux
+     * @return Le meilleur hôpital avec ses informations de route précises
+     */
+    public HospitalWithRoute findBestHospitalWithOptimizedRoute(double latitude, double longitude, 
+                                                               List<Hospital> hospitals) {
+        // Étape 1: Calculer les distances Haversine pour tous les hôpitaux (ultra-rapide)
+        Hospital bestHospital = hospitals.stream()
+            .min(Comparator.comparingDouble(hospital -> 
+                calculateDistanceToHospital(latitude, longitude, hospital)))
+            .orElseThrow(() -> new RuntimeException("No hospitals available"));
+        
+        // Étape 2: Utiliser Google Maps uniquement pour le meilleur hôpital sélectionné
+        try {
+            RouteResult preciseRoute = googleMapsService.calculateRouteWithTraffic(
+                latitude, longitude, 
+                bestHospital.getLatitude(), bestHospital.getLongitude()
+            );
+            return new HospitalWithRoute(bestHospital, preciseRoute);
+        } catch (Exception e) {
+            // Fallback: utiliser Haversine si Google Maps échoue
+            double haversineDistance = calculateDistanceToHospital(latitude, longitude, bestHospital);
+            int estimatedTime = estimateTravelTime(haversineDistance);
+            RouteResult fallbackRoute = new RouteResult(
+                haversineDistance, estimatedTime, false, "Haversine fallback - Google Maps unavailable"
+            );
+            return new HospitalWithRoute(bestHospital, fallbackRoute);
+        }
+    }
+    
+    /**
+     * Calcule les distances pour une liste d'hôpitaux en utilisant une stratégie optimisée :
+     * - Utilise Haversine pour tous les hôpitaux (rapide)
+     * - Utilise Google Maps API uniquement pour les 3 hôpitaux les plus proches (précis)
+     * 
+     * @param latitude Latitude de départ
+     * @param longitude Longitude de départ
+     * @param hospitals Liste des hôpitaux
+     * @return Liste des hôpitaux avec leurs informations de route optimisées
+     * @deprecated Utilisez findBestHospitalWithOptimizedRoute pour de meilleures performances
+     */
+    @Deprecated
+    public List<HospitalWithRoute> calculateOptimizedRoutesToHospitals(double latitude, double longitude, 
+                                                                      List<Hospital> hospitals) {
+        // Étape 1: Calculer les distances Haversine pour tous les hôpitaux (rapide)
+        List<HospitalWithDistance> hospitalsWithHaversineDistance = hospitals.stream()
+            .map(hospital -> {
+                double haversineDistance = calculateDistanceToHospital(latitude, longitude, hospital);
+                return new HospitalWithDistance(hospital, haversineDistance);
+            })
+            .sorted(Comparator.comparingDouble(HospitalWithDistance::getHaversineDistance))
+            .collect(Collectors.toList());
+        
+        // Étape 2: Prendre les 3 hôpitaux les plus proches selon Haversine
+        List<Hospital> closestHospitals = hospitalsWithHaversineDistance.stream()
+            .limit(3)
+            .map(HospitalWithDistance::getHospital)
+            .collect(Collectors.toList());
+        
+        // Étape 3: Calculer les routes précises avec Google Maps pour les 3 plus proches
+        List<HospitalWithRoute> optimizedRoutes = closestHospitals.stream()
+            .map(hospital -> {
+                try {
+                    RouteResult routeResult = googleMapsService.calculateRouteWithTraffic(
+                        latitude, longitude, hospital.getLatitude(), hospital.getLongitude()
+                    );
+                    return new HospitalWithRoute(hospital, routeResult);
+                } catch (Exception e) {
+                    // En cas d'erreur Google Maps, utiliser Haversine comme fallback
+                    double haversineDistance = calculateDistanceToHospital(latitude, longitude, hospital);
+                    int estimatedTime = estimateTravelTime(haversineDistance);
+                    RouteResult fallbackRoute = new RouteResult(
+                        haversineDistance, estimatedTime, false, "Haversine fallback"
+                    );
+                    return new HospitalWithRoute(hospital, fallbackRoute);
+                }
+            })
+            .filter(hwr -> !hwr.getRouteResult().isError())
+            .sorted(Comparator.comparingInt(hwr -> hwr.getRouteResult().getOptimalDurationMinutes()))
+            .collect(Collectors.toList());
+        
+        // Étape 4: Ajouter les hôpitaux restants avec des estimations Haversine
+        List<Hospital> remainingHospitals = hospitalsWithHaversineDistance.stream()
+            .skip(3)
+            .map(HospitalWithDistance::getHospital)
+            .collect(Collectors.toList());
+        
+        List<HospitalWithRoute> remainingRoutes = remainingHospitals.stream()
+            .map(hospital -> {
+                double haversineDistance = calculateDistanceToHospital(latitude, longitude, hospital);
+                int estimatedTime = estimateTravelTime(haversineDistance);
+                RouteResult haversineRoute = new RouteResult(
+                    haversineDistance, estimatedTime, false, "Haversine estimation"
+                );
+                return new HospitalWithRoute(hospital, haversineRoute);
+            })
+            .collect(Collectors.toList());
+        
+        // Étape 5: Combiner et trier par temps de trajet
+        List<HospitalWithRoute> allRoutes = new ArrayList<>();
+        allRoutes.addAll(optimizedRoutes);
+        allRoutes.addAll(remainingRoutes);
+        
+        return allRoutes.stream()
+            .sorted(Comparator.comparingInt(hwr -> hwr.getRouteResult().getOptimalDurationMinutes()))
+            .collect(Collectors.toList());
+    }
+    
+    /**
      * Estimates travel time in minutes based on distance.
      * Uses an average speed of 50 km/h in the city.
      * 
@@ -116,5 +235,47 @@ public class DistanceCalculationService {
     public int estimateTravelTime(double distanceKm, int speedKmh) {
         double timeHours = distanceKm / speedKmh;
         return (int) Math.round(timeHours * 60);
+    }
+    
+    /**
+     * Classe interne pour stocker un hôpital avec sa distance Haversine.
+     */
+    public static class HospitalWithDistance {
+        private final Hospital hospital;
+        private final double haversineDistance;
+        
+        public HospitalWithDistance(Hospital hospital, double haversineDistance) {
+            this.hospital = hospital;
+            this.haversineDistance = haversineDistance;
+        }
+        
+        public Hospital getHospital() {
+            return hospital;
+        }
+        
+        public double getHaversineDistance() {
+            return haversineDistance;
+        }
+    }
+    
+    /**
+     * Classe interne pour stocker un hôpital avec ses informations de route.
+     */
+    public static class HospitalWithRoute {
+        private final Hospital hospital;
+        private final RouteResult routeResult;
+        
+        public HospitalWithRoute(Hospital hospital, RouteResult routeResult) {
+            this.hospital = hospital;
+            this.routeResult = routeResult;
+        }
+        
+        public Hospital getHospital() {
+            return hospital;
+        }
+        
+        public RouteResult getRouteResult() {
+            return routeResult;
+        }
     }
 }

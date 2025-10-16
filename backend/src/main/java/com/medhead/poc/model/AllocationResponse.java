@@ -13,8 +13,11 @@ public class AllocationResponse {
     @JsonProperty("hospital_id")
     private Long hospitalId;
     
-    @JsonProperty("distance_km")
-    private Double distanceKm;
+    @JsonProperty("hospital_latitude")
+    private Double hospitalLatitude;
+    
+    @JsonProperty("hospital_longitude")
+    private Double hospitalLongitude;
     
     @JsonProperty("specialty")
     private String specialty;
@@ -22,20 +25,17 @@ public class AllocationResponse {
     @JsonProperty("available_beds")
     private Integer availableBeds;
     
-    @JsonProperty("estimated_time_minutes")
-    private Integer estimatedTimeMinutes;
-    
     // Constructors
     public AllocationResponse() {}
     
-    public AllocationResponse(String hospitalName, Long hospitalId, Double distanceKm, 
-                            String specialty, Integer availableBeds, Integer estimatedTimeMinutes) {
+    public AllocationResponse(String hospitalName, Long hospitalId, Double hospitalLatitude, 
+                            Double hospitalLongitude, String specialty, Integer availableBeds) {
         this.hospitalName = hospitalName;
         this.hospitalId = hospitalId;
-        this.distanceKm = distanceKm;
+        this.hospitalLatitude = hospitalLatitude;
+        this.hospitalLongitude = hospitalLongitude;
         this.specialty = specialty;
         this.availableBeds = availableBeds;
-        this.estimatedTimeMinutes = estimatedTimeMinutes;
     }
     
     // Getters and Setters
@@ -55,12 +55,20 @@ public class AllocationResponse {
         this.hospitalId = hospitalId;
     }
     
-    public Double getDistanceKm() {
-        return distanceKm;
+    public Double getHospitalLatitude() {
+        return hospitalLatitude;
     }
     
-    public void setDistanceKm(Double distanceKm) {
-        this.distanceKm = distanceKm;
+    public void setHospitalLatitude(Double hospitalLatitude) {
+        this.hospitalLatitude = hospitalLatitude;
+    }
+    
+    public Double getHospitalLongitude() {
+        return hospitalLongitude;
+    }
+    
+    public void setHospitalLongitude(Double hospitalLongitude) {
+        this.hospitalLongitude = hospitalLongitude;
     }
     
     public String getSpecialty() {
@@ -79,21 +87,16 @@ public class AllocationResponse {
         this.availableBeds = availableBeds;
     }
     
-    public Integer getEstimatedTimeMinutes() {
-        return estimatedTimeMinutes;
-    }
     
-    public void setEstimatedTimeMinutes(Integer estimatedTimeMinutes) {
-        this.estimatedTimeMinutes = estimatedTimeMinutes;
-    }
-    
-    // Méthodes de compatibilité pour les tests
+    // Méthodes de compatibilité pour les tests (deprecated)
+    @Deprecated
     public Double getDistance() {
-        return getDistanceKm();
+        return null; // Distance now handled by frontend
     }
     
+    @Deprecated
     public void setDistance(Double distance) {
-        setDistanceKm(distance);
+        // Distance now handled by frontend
     }
     
     public Integer getAvailableBedsAfterAllocation() {
@@ -109,10 +112,10 @@ public class AllocationResponse {
         return "AllocationResponse{" +
                 "hospitalName='" + hospitalName + '\'' +
                 ", hospitalId=" + hospitalId +
-                ", distanceKm=" + distanceKm +
+                ", hospitalLatitude=" + hospitalLatitude +
+                ", hospitalLongitude=" + hospitalLongitude +
                 ", specialty='" + specialty + '\'' +
                 ", availableBeds=" + availableBeds +
-                ", estimatedTimeMinutes=" + estimatedTimeMinutes +
                 '}';
     }
 }

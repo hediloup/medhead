@@ -106,32 +106,16 @@ public class AllocationService {
             })
             .collect(Collectors.toList());
         
-        // Calculate routes with traffic optimization for all eligible hospitals
-        List<HospitalWithRoute> hospitalsWithRoute = eligibleHospitals.stream()
-            .map(hospital -> {
-                RouteResult routeResult = distanceService.calculateOptimalRouteToHospital(
+        // Ultra-optimized strategy: Haversine selection only (no Google Maps calls in backend)
+        Hospital selectedHospital = eligibleHospitals.stream()
+            .min(Comparator.comparingDouble(hospital -> 
+                distanceService.calculateDistanceToHospital(
                     request.getLatitude(), 
                     request.getLongitude(), 
                     hospital
-                );
-                return new HospitalWithRoute(hospital, routeResult);
-            })
-            .filter(hwr -> !hwr.getRouteResult().isError()) // Filter out hospitals with route errors
-            .sorted(Comparator.comparingInt(hwr -> hwr.getRouteResult().getOptimalDurationMinutes()))
-            .collect(Collectors.toList());
-        
-        if (hospitalsWithRoute.isEmpty()) {
-            throw new RuntimeException("No accessible hospital found with specialty '" + 
-                                    request.getSpecialty() + "'");
-        }
-        
-        // Select the best hospital (fastest travel time)
-        HospitalWithRoute bestHospital = hospitalsWithRoute.get(0);
-        Hospital selectedHospital = bestHospital.getHospital();
-        RouteResult routeResult = bestHospital.getRouteResult();
-        
-        double distance = routeResult.getDistanceKm();
-        int estimatedTime = routeResult.getOptimalDurationMinutes();
+                )))
+            .orElseThrow(() -> new RuntimeException("No accessible hospital found with specialty '" + 
+                                    request.getSpecialty() + "'"));
         
         // Create anonymized patient
         Patient patient = patientAnonymizationService.createAnonymizedPatient(
@@ -148,17 +132,17 @@ public class AllocationService {
         // Calculate available beds after reservation
         int availableBedsAfter = selectedHospital.getAvailableBeds() - 1;
         
-        // Create response
+        // Create response with hospital coordinates (frontend will handle Google Maps)
         AllocationResponse response = new AllocationResponse(
             selectedHospital.getName(),
             selectedHospital.getId(),
-            Math.round(distance * 100.0) / 100.0, // Rounded to 2 decimal places
+            selectedHospital.getLatitude(),  // Hospital latitude for frontend
+            selectedHospital.getLongitude(), // Hospital longitude for frontend
             request.getSpecialty(),
-            availableBedsAfter,
-            estimatedTime
+            availableBedsAfter
         );
         
-        // Publish BED_RESERVED event
+        // Publish BED_RESERVED event (without distance/time - handled by frontend)
         eventPublisherService.publishBedReservedEvent(
             patient.getPatientUuid(),
             patient.getAnonymizedName(),
@@ -168,9 +152,7 @@ public class AllocationService {
             selectedHospital.getId(),
             selectedHospital.getName(),
             selectedHospital.getCity(),
-            Math.round(distance * 100.0) / 100.0,
-            availableBedsAfter,
-            estimatedTime
+            availableBedsAfter
         );
         
         // Increment success counter
@@ -179,24 +161,4 @@ public class AllocationService {
         return response;
     }
     
-    /**
-     * Internal class to store a hospital with its route information.
-     */
-    private static class HospitalWithRoute {
-        private final Hospital hospital;
-        private final RouteResult routeResult;
-        
-        public HospitalWithRoute(Hospital hospital, RouteResult routeResult) {
-            this.hospital = hospital;
-            this.routeResult = routeResult;
-        }
-        
-        public Hospital getHospital() {
-            return hospital;
-        }
-        
-        public RouteResult getRouteResult() {
-            return routeResult;
-        }
-    }
 }
