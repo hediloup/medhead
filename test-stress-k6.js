@@ -6,24 +6,15 @@ import { Rate } from 'k6/metrics';
 const errorRate = new Rate('errors');
 
 export const options = {
-  // Utilise un scénario à taux d'arrivée pour viser un débit précis (req/s)
   scenarios: {
     allocate_api_rate: {
-      executor: 'ramping-arrival-rate',
-      startRate: 100,           // démarrage à 100 req/s
-      timeUnit: '1s',
-      preAllocatedVUs: 1000,    // VUs pré-alloués pour absorber les pointes
-      maxVUs: 2000,             // plafond de VUs si nécessaire
-      stages: [
-        { duration: '1m', target: 200 },  // 200 req/s
-        { duration: '2m', target: 400 },  // 400 req/s
-        { duration: '3m', target: 600 },  // 600 req/s
-        { duration: '5m', target: 800 },  // 800 req/s (palier)
-        { duration: '2m', target: 0 },    // descente
-      ],
-      tags: { test: 'allocate' },
-      exec: 'default',
-    },
+      executor: 'constant-arrival-rate',
+      rate: 800,                 // target 800 iterations per timeUnit
+      timeUnit: '1s',            // 800 iterations / second
+      duration: '13m',           // duration of the test
+      preAllocatedVUs: 800,      // threads preallocated to try to reach the rate quickly
+      maxVUs: 3000               // upper bound if more VUs are needed
+    }
   },
   thresholds: {
     'http_req_duration{expected_response:true}': [
