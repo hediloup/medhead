@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Injectable } from '@angular/core';
+import { environment } from '../../environments/environment';
 
 export interface DistanceResult {
   distanceText?: string;
@@ -31,14 +31,7 @@ function loadGoogleMapsApi(apiKey: string): Promise<void> {
 export class DistanceService {
   // Note: the API key must be provided in the frontend environment (see environment.ts)
   private get apiKey(): string {
-    try {
-      // dynamic import to avoid bundling environment in this snippet
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const env = require('../../environments/environment');
-      return env?.environment?.googleMapsApiKey || env?.googleMapsApiKey || '';
-    } catch (e) {
-      return '';
-    }
+    return environment?.googleMapsApiKey || '';
   }
 
   constructor() {}
