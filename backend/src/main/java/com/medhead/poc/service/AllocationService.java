@@ -145,14 +145,16 @@ public class AllocationService {
         // Calculate available beds after reservation
         int availableBedsAfter = selectedHospital.getAvailableBeds() - 1;
         
-        // Create response
+        // Create response with hospital coordinates
         AllocationResponse response = new AllocationResponse(
             selectedHospital.getName(),
             selectedHospital.getId(),
             Math.round(distance * 100.0) / 100.0, // Rounded to 2 decimal places
             request.getSpecialty(),
             availableBedsAfter,
-            estimatedTime
+            estimatedTime,
+            selectedHospital.getLatitude(),
+            selectedHospital.getLongitude()
         );
         
         // Publish BED_RESERVED event

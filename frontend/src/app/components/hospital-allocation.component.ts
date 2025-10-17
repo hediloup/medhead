@@ -170,7 +170,7 @@ export class HospitalAllocationComponent implements OnInit {
           const origin = { lat: latitude, lng: longitude };
           const destination = { lat: response.hospital_latitude, lng: response.hospital_longitude };
           console.log('[medhead] scheduling distance+render for origin,destination', origin, destination);
-          // Delay the distance / render call to the next tick so Angular has time to render
+          // Delay the distance / render call to ensure Angular has time to render
           // the map container (it is shown using *ngIf="allocationResult"). Without this,
           // renderRouteOnMap can run before the DOM element exists; users reported the map
           // only appears when manually invoking the helper from the console.
@@ -180,17 +180,23 @@ export class HospitalAllocationComponent implements OnInit {
                 const res = await this.distanceService.getDistance(origin, destination);
                 this.distanceText = res.distanceText || '';
                 this.durationText = res.durationText || '';
-                // Render route on map
-                this.renderRouteOnMap(origin, destination);
+                // Render route on map with additional delay to ensure DOM is ready
+                setTimeout(() => {
+                  this.renderRouteOnMap(origin, destination);
+                }, 100);
               } catch (err: any) {
                 console.warn('Distance service error', err);
                 this.errorMessage = err?.message || 'Unable to retrieve live travel time/distance. Showing estimated values.';
+                // Still try to render the map even if distance service fails
+                setTimeout(() => {
+                  this.renderRouteOnMap(origin, destination);
+                }, 100);
               } finally {
                 this.isLoading = false;
                 this.isGeocoding = false;
               }
             })();
-          }, 0);
+          }, 100);
         } else {
           this.isLoading = false;
           this.isGeocoding = false;
@@ -206,10 +212,15 @@ export class HospitalAllocationComponent implements OnInit {
 
   /** Initialize or update the map and show route between origin and destination */
   private async renderRouteOnMap(origin: {lat:number,lng:number}, destination: {lat:number,lng:number}) {
+    console.log('[medhead] renderRouteOnMap called with origin:', origin, 'destination:', destination);
+    
     try {
       await this.gmapsLoader.load();
       const google = (window as any).google;
-      if (!google || !google.maps) return;
+      if (!google || !google.maps) {
+        console.error('[medhead] Google Maps API not loaded');
+        return;
+      }
 
       // Create map if not exists
       // Some Angular builds add attribute selectors like _ngcontent-xxx; ensure element is found.
@@ -224,22 +235,28 @@ export class HospitalAllocationComponent implements OnInit {
             if (el.id === 'map') { mapEl = el; break; }
           }
         }
+        console.log('[medhead] map element search result:', mapEl);
       };
 
       findMapEl();
       let attempts = 0;
-      while (!mapEl && attempts < 5) {
+      while (!mapEl && attempts < 10) {
         // Wait 200ms and try again
         // eslint-disable-next-line no-await-in-loop
         await new Promise(r => setTimeout(r, 200));
         attempts++;
         findMapEl();
+        console.log(`[medhead] map element search attempt ${attempts}/10`);
       }
+      
       if (!mapEl) {
-        console.warn('[medhead] map element not found after retries; aborting render');
+        console.error('[medhead] map element not found after retries; aborting render');
+        // Build fallback URL
+        const originParam = `${origin.lat},${origin.lng}`;
+        const destParam = `${destination.lat},${destination.lng}`;
+        this.googleMapsFallbackUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(originParam)}&destination=${encodeURIComponent(destParam)}&travelmode=driving`;
         return;
       }
-      if (!mapEl) return;
 
       // Initialize or reuse map centered between points
       const center = { lat: (origin.lat + destination.lat)/2, lng: (origin.lng + destination.lng)/2 };
@@ -349,6 +366,26 @@ export class HospitalAllocationComponent implements OnInit {
     this.errorMessage = '';
     this.successMessage = '';
     this.googleMapsFallbackUrl = undefined;
+    // Clear map instances to force recreation on next search
+    this.mapInstance = null;
+    this.directionsRendererInstance = null;
+    this.directionsServiceInstance = null;
+  }
+
+  /**
+   * Force reload the map (useful for debugging)
+   */
+  reloadMap(): void {
+    if (this.allocationResult && this.allocationResult.hospital_latitude && this.allocationResult.hospital_longitude) {
+      const formValue = this.allocationForm.value;
+      if (formValue.address) {
+        this.geocodeAddress(formValue.address, formValue.specialty).then(() => {
+          console.log('[medhead] Map reloaded successfully');
+        }).catch((error) => {
+          console.error('[medhead] Failed to reload map:', error);
+        });
+      }
+    }
   }
 
   /**

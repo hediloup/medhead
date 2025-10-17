@@ -131,6 +131,15 @@
   <!-- Map container: shown when allocation result is available -->
   <div *ngIf="allocationResult" class="card map-card">
     <h3>🗺️ Itinéraire</h3>
+    <div class="map-controls" style="margin-bottom: 10px;">
+      <button 
+        type="button" 
+        class="btn btn-sm btn-outline-secondary" 
+        (click)="reloadMap()"
+        title="Recharger la carte">
+        🔄 Recharger la carte
+      </button>
+    </div>
     <div id="map" class="map-container"></div>
     <div *ngIf="googleMapsFallbackUrl" class="alert alert-warning" style="margin-top:8px;">
       <strong>Itinéraire non disponible via l'API.</strong>

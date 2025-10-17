@@ -19,14 +19,18 @@ export class GoogleMapsLoaderService {
         resolve();
         return;
       }
-      console.log('[GoogleMapsLoader] injecting script tag for Google Maps JS API');
+      console.log('[GoogleMapsLoader] injecting script tag for Google Maps JS API with key:', apiKey.substring(0, 10) + '...');
       const script = document.createElement('script');
       script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places`;
       script.async = true;
       script.defer = true;
-      script.onload = () => resolve();
+      script.onload = () => {
+        console.log('[GoogleMapsLoader] Google Maps JS API loaded successfully');
+        resolve();
+      };
       script.onerror = (err) => {
         console.error('[GoogleMapsLoader] failed to load Google Maps JS API', err);
+        this.loading = null; // Reset loading state so we can retry
         reject(new Error('Failed to load Google Maps JS API'));
       };
       document.head.appendChild(script);

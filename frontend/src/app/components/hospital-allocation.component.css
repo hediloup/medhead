@@ -205,6 +205,8 @@
   height: 360px;
   border: 1px solid #ddd;
   margin-top: 8px;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .map-card {
@@ -213,4 +215,28 @@
 
 .map-card .alert {
   margin: 8px 0 0 0;
+}
+
+.map-controls {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 14px;
+  border-radius: 6px;
+}
+
+.btn-outline-secondary {
+  color: #6c757d;
+  border-color: #6c757d;
+  background-color: transparent;
+}
+
+.btn-outline-secondary:hover {
+  color: #fff;
+  background-color: #6c757d;
+  border-color: #6c757d;
 }
