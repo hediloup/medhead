@@ -128,6 +128,12 @@
   </div>
 
   <!-- Informations sur le service -->
+  <!-- Map container: shown when allocation result is available -->
+  <div *ngIf="allocationResult" class="card map-card">
+    <h3>🗺️ Itinéraire</h3>
+    <div id="map" class="map-container"></div>
+  </div>
+
   <div class="card">
     <h3>ℹ️ À propos de ce service</h3>
     <ul>

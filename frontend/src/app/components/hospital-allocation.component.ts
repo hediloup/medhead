@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AllocationService } from '../services/allocation.service';
 import { GeocodingService } from '../services/geocoding.service';
 import { DistanceService } from '../services/distance.service';
+import { GoogleMapsLoaderService } from '../services/google-maps-loader.service';
 import { AllocationRequest } from '../models/allocation-request';
 import { AllocationResponse } from '../models/allocation-response';
 
@@ -46,6 +47,7 @@ export class HospitalAllocationComponent implements OnInit {
     private allocationService: AllocationService,
     private geocodingService: GeocodingService
     , private distanceService: DistanceService
+    , private gmapsLoader: GoogleMapsLoaderService
   ) {
     this.allocationForm = this.fb.group({
       specialty: ['', [Validators.required]],
@@ -56,6 +58,8 @@ export class HospitalAllocationComponent implements OnInit {
   ngOnInit(): void {
     // Check API health on startup
     this.checkApiHealth();
+    // Prepare map container if google key available later
+    // Map will be initialized on first allocation result
   }
 
   /**
@@ -136,9 +140,11 @@ export class HospitalAllocationComponent implements OnInit {
           const destination = { lat: response.hospital_latitude, lng: response.hospital_longitude };
           (async () => {
             try {
-              const res = await this.distanceService.getDistance(origin, destination);
-              this.distanceText = res.distanceText || '';
-              this.durationText = res.durationText || '';
+                const res = await this.distanceService.getDistance(origin, destination);
+                this.distanceText = res.distanceText || '';
+                this.durationText = res.durationText || '';
+                // Render route on map
+                this.renderRouteOnMap(origin, destination);
             } catch (err: any) {
               console.warn('Distance service error', err);
               this.errorMessage = err?.message || 'Unable to retrieve live travel time/distance. Showing estimated values.';
@@ -158,6 +164,46 @@ export class HospitalAllocationComponent implements OnInit {
         this.isGeocoding = false;
       }
     });
+  }
+
+  /** Initialize or update the map and show route between origin and destination */
+  private async renderRouteOnMap(origin: {lat:number,lng:number}, destination: {lat:number,lng:number}) {
+    try {
+      await this.gmapsLoader.load();
+      const google = (window as any).google;
+      if (!google || !google.maps) return;
+
+      // Create map if not exists
+      let mapEl = document.getElementById('map');
+      if (!mapEl) return;
+
+      // Initialize map centered between points
+      const center = { lat: (origin.lat + destination.lat)/2, lng: (origin.lng + destination.lng)/2 };
+      const map = new google.maps.Map(mapEl, { zoom: 12, center });
+
+      const directionsService = new google.maps.DirectionsService();
+      const directionsRenderer = new google.maps.DirectionsRenderer({ map });
+
+      const request = {
+        origin: new google.maps.LatLng(origin.lat, origin.lng),
+        destination: new google.maps.LatLng(destination.lat, destination.lng),
+        travelMode: google.maps.TravelMode.DRIVING,
+        drivingOptions: {
+          departureTime: new Date(),
+          trafficModel: 'best_guess'
+        }
+      };
+
+      directionsService.route(request, (res: any, status: any) => {
+        if (status === 'OK' || status === google.maps.DirectionsStatus.OK) {
+          directionsRenderer.setDirections(res);
+        } else {
+          console.warn('Directions request failed: ', status);
+        }
+      });
+    } catch (e) {
+      console.error('Error rendering map route', e);
+    }
   }
 
   /**
