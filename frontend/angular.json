@@ -65,19 +65,19 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "medhead-frontend:build:production"
+              "browserTarget": "medhead-frontend:build:production"
             },
             "development": {
-              "buildTarget": "medhead-frontend:build:development"
+              "browserTarget": "medhead-frontend:build:development"
             }
           },
           "defaultConfiguration": "development"
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
-          "options": {
-            "buildTarget": "medhead-frontend:build"
-          }
+            "options": {
+              "browserTarget": "medhead-frontend:build"
+            }
         },
         "test": {
           "builder": "@angular-devkit/build-angular:karma",
@@ -101,6 +101,7 @@
       }
     }
   },
+  "defaultProject": "medhead-frontend",
   "cli": {
     "analytics": false
   }

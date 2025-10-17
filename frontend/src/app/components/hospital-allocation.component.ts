@@ -62,6 +62,9 @@ export class HospitalAllocationComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Debug helper: confirm this running build includes our changes
+    console.log('[medhead-version] google-maps-integration=1');
+
     // Check API health on startup
     this.checkApiHealth();
     // Prepare map container if google key available later
@@ -225,17 +228,43 @@ export class HospitalAllocationComponent implements OnInit {
         origin: new google.maps.LatLng(origin.lat, origin.lng),
         destination: new google.maps.LatLng(destination.lat, destination.lng),
         travelMode: google.maps.TravelMode.DRIVING,
+        // Only provide departureTime; omit trafficModel to avoid InvalidValueError on some API versions
         drivingOptions: {
-          departureTime: new Date(),
-          trafficModel: 'best_guess'
+          departureTime: new Date()
         }
       };
 
-      this.directionsServiceInstance.route(request, (res: any, status: any) => {
+      // Wrap route call so synchronous exceptions (InvalidValueError, etc.) can be retried with a simpler request
+      const callRoute = (req: any, onResult: (res:any, status:any)=>void) => {
+        try {
+          this.directionsServiceInstance.route(req, onResult);
+        } catch (err) {
+          console.warn('[medhead] DirectionsService threw, will retry without drivingOptions', err);
+          // Retry without drivingOptions
+          const simpleReq = {
+            origin: req.origin,
+            destination: req.destination,
+            travelMode: req.travelMode
+          };
+          try {
+            this.directionsServiceInstance.route(simpleReq, onResult);
+          } catch (err2) {
+            console.error('[medhead] DirectionsService retry also threw', err2);
+            // Build fallback URL
+            try {
+              const originParam = `${origin.lat},${origin.lng}`;
+              const destParam = `${destination.lat},${destination.lng}`;
+              this.googleMapsFallbackUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(originParam)}&destination=${encodeURIComponent(destParam)}&travelmode=driving`;
+              try { (window as any).__medheadGoogleMapsFallback = this.googleMapsFallbackUrl; } catch(e) {}
+            } catch (e) { console.error('Failed to build fallback URL after route retry error', e); }
+          }
+        }
+      };
+
+      callRoute(request, (res: any, status: any) => {
         console.log('[medhead] DirectionsService callback status=', status);
         if (status === 'OK' || status === google.maps.DirectionsStatus.OK) {
-            // clear any fallback if present
-            try { this.googleMapsFallbackUrl = undefined; (window as any).__medheadGoogleMapsFallback = undefined; } catch(e){}
+          try { this.googleMapsFallbackUrl = undefined; (window as any).__medheadGoogleMapsFallback = undefined; } catch(e){}
           this.directionsRendererInstance.setDirections(res);
           console.log('[medhead] Directions rendered successfully');
         } else {
