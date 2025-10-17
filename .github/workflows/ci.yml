@@ -281,9 +281,28 @@ jobs:
         echo "🔍 Vérification du statut du backend..."
         docker compose -f ./docker/docker-compose.yml ps
         
-        echo "🔧 Vérification de l'accessibilité du backend..."
-        timeout 60s bash -c 'until curl -f http://localhost:8080/api/health > /dev/null 2>&1; do sleep 5; echo "⏳ En attente du backend..."; done'
-        echo "✅ Backend accessible"
+        echo "🔧 Vérification de l'accessibilité du backend (polling jusqu'à 5 minutes)..."
+        # Poll the health endpoint, retry up to 60 times (5 minutes total with 5s interval)
+        success=1
+        for i in $(seq 1 60); do
+          if curl -sSf http://localhost:8080/api/health > /dev/null 2>&1; then
+            echo "✅ Backend accessible"
+            success=0
+            break
+          fi
+          echo "⏳ En attente du backend... ($i/60)"
+          sleep 5
+        done
+        if [ "$success" -ne 0 ]; then
+          echo "❌ Backend non accessible après 5 minutes. Dump des logs pour debug..."
+          echo "\n--- docker compose ps ---"
+          docker compose -f ./docker/docker-compose.yml ps || true
+          echo "\n--- docker logs backend (last 200 lines) ---"
+          docker logs --tail 200 medhead-backend || true
+          echo "\n--- docker compose logs (last 200 lines) ---"
+          docker compose -f ./docker/docker-compose.yml logs --no-color --tail 200 || true
+          exit 1
+        fi
 
     - name: 🌐 Démarrage du frontend Angular
       working-directory: ./frontend
