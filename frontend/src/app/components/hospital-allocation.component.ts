@@ -21,6 +21,10 @@ export class HospitalAllocationComponent implements OnInit {
   durationText = '';
   errorMessage = '';
   successMessage = '';
+  // Map and renderer instances (persisted)
+  private mapInstance: any = null;
+  private directionsRendererInstance: any = null;
+  private directionsServiceInstance: any = null;
 
   // List of available medical specialties
   medicalSpecialties = [
@@ -60,6 +64,13 @@ export class HospitalAllocationComponent implements OnInit {
     this.checkApiHealth();
     // Prepare map container if google key available later
     // Map will be initialized on first allocation result
+    // Expose debug helper to window so you can trigger route rendering manually from console
+    try {
+      (window as any).__medheadRenderRoute = async (olat: number, olng: number, dlat: number, dlng: number) => {
+        console.log('[medhead debug] manual renderRoute called', olat, olng, dlat, dlng);
+        await this.renderRouteOnMap({lat: olat, lng: olng}, {lat: dlat, lng: dlng});
+      };
+    } catch (e) { /* ignore in non-browser env */ }
   }
 
   /**
@@ -177,12 +188,24 @@ export class HospitalAllocationComponent implements OnInit {
       let mapEl = document.getElementById('map');
       if (!mapEl) return;
 
-      // Initialize map centered between points
+      // Initialize or reuse map centered between points
       const center = { lat: (origin.lat + destination.lat)/2, lng: (origin.lng + destination.lng)/2 };
-      const map = new google.maps.Map(mapEl, { zoom: 12, center });
+      if (!this.mapInstance) {
+        console.log('[medhead] creating new map instance at center', center);
+        this.mapInstance = new google.maps.Map(mapEl, { zoom: 12, center });
+      } else {
+        console.log('[medhead] reusing existing map instance');
+        this.mapInstance.setCenter(center);
+      }
 
-      const directionsService = new google.maps.DirectionsService();
-      const directionsRenderer = new google.maps.DirectionsRenderer({ map });
+      if (!this.directionsServiceInstance) {
+        this.directionsServiceInstance = new google.maps.DirectionsService();
+      }
+      if (!this.directionsRendererInstance) {
+        this.directionsRendererInstance = new google.maps.DirectionsRenderer({ map: this.mapInstance });
+      } else {
+        this.directionsRendererInstance.setMap(this.mapInstance);
+      }
 
       const request = {
         origin: new google.maps.LatLng(origin.lat, origin.lng),
@@ -194,11 +217,13 @@ export class HospitalAllocationComponent implements OnInit {
         }
       };
 
-      directionsService.route(request, (res: any, status: any) => {
+      this.directionsServiceInstance.route(request, (res: any, status: any) => {
+        console.log('[medhead] DirectionsService callback status=', status);
         if (status === 'OK' || status === google.maps.DirectionsStatus.OK) {
-          directionsRenderer.setDirections(res);
+          this.directionsRendererInstance.setDirections(res);
+          console.log('[medhead] Directions rendered successfully');
         } else {
-          console.warn('Directions request failed: ', status);
+          console.warn('[medhead] Directions request failed: ', status, res);
         }
       });
     } catch (e) {
