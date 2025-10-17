@@ -75,6 +75,15 @@ export class HospitalAllocationComponent implements OnInit {
         console.log('[medhead debug] manual renderRoute called', olat, olng, dlat, dlng);
         await this.renderRouteOnMap({lat: olat, lng: olng}, {lat: dlat, lng: dlng});
       };
+      // Expose helper to trigger a full allocation search from the console for debugging
+      (window as any).__medheadTriggerSearch = (specialty?: string, address?: string) => {
+        try {
+          if (specialty) this.allocationForm.get('specialty')?.setValue(specialty);
+          if (address) this.allocationForm.get('address')?.setValue(address);
+          console.log('[medhead debug] __medheadTriggerSearch calling onSubmit with', this.allocationForm.value);
+          this.onSubmit();
+        } catch (e) { console.error('[medhead debug] __medheadTriggerSearch failed', e); }
+      };
     } catch (e) { /* ignore in non-browser env */ }
   }
 
@@ -97,6 +106,7 @@ export class HospitalAllocationComponent implements OnInit {
    * Submits the form to request a hospital allocation
    */
   onSubmit(): void {
+    console.log('[medhead] onSubmit called, form value=', this.allocationForm.value);
     if (this.allocationForm.valid) {
       // Clear any previous fallback link
       this.googleMapsFallbackUrl = undefined;
@@ -118,6 +128,7 @@ export class HospitalAllocationComponent implements OnInit {
    * Geocodes the address and launches the allocation request
    */
   private async geocodeAddress(address: string, specialty: string): Promise<void> {
+    console.log('[medhead] geocodeAddress called with', address, specialty);
     this.isGeocoding = true;
     
     try {
@@ -142,6 +153,7 @@ export class HospitalAllocationComponent implements OnInit {
    * Requests hospital allocation with geographic coordinates
    */
   private requestAllocation(specialty: string, latitude: number, longitude: number): void {
+    console.log('[medhead] requestAllocation called with', { specialty, latitude, longitude });
     const request: AllocationRequest = {
       specialty,
       latitude,
@@ -153,9 +165,11 @@ export class HospitalAllocationComponent implements OnInit {
         this.allocationResult = response;
         this.successMessage = `Recommended hospital found: ${response.hospital_name}`;
         // After allocation, fetch distance/time from Google via backend
+        console.log('[medhead] allocation response received', response);
         if (response && response.hospital_latitude != null && response.hospital_longitude != null) {
           const origin = { lat: latitude, lng: longitude };
           const destination = { lat: response.hospital_latitude, lng: response.hospital_longitude };
+          console.log('[medhead] scheduling distance+render for origin,destination', origin, destination);
           // Delay the distance / render call to the next tick so Angular has time to render
           // the map container (it is shown using *ngIf="allocationResult"). Without this,
           // renderRouteOnMap can run before the DOM element exists; users reported the map
