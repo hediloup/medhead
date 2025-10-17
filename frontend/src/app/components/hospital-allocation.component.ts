@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AllocationService } from '../services/allocation.service';
 import { GeocodingService } from '../services/geocoding.service';
+import { DistanceService } from '../services/distance.service';
 import { AllocationRequest } from '../models/allocation-request';
 import { AllocationResponse } from '../models/allocation-response';
 
@@ -15,6 +16,8 @@ export class HospitalAllocationComponent implements OnInit {
   isLoading = false;
   isGeocoding = false;
   allocationResult: AllocationResponse | null = null;
+  distanceText = '';
+  durationText = '';
   errorMessage = '';
   successMessage = '';
 
@@ -42,6 +45,7 @@ export class HospitalAllocationComponent implements OnInit {
     private fb: FormBuilder,
     private allocationService: AllocationService,
     private geocodingService: GeocodingService
+    , private distanceService: DistanceService
   ) {
     this.allocationForm = this.fb.group({
       specialty: ['', [Validators.required]],
@@ -126,8 +130,27 @@ export class HospitalAllocationComponent implements OnInit {
       next: (response) => {
         this.allocationResult = response;
         this.successMessage = `Recommended hospital found: ${response.hospital_name}`;
-        this.isLoading = false;
-        this.isGeocoding = false;
+        // After allocation, fetch distance/time from Google via backend
+        if (response && response.hospital_latitude != null && response.hospital_longitude != null) {
+          const origin = { lat: latitude, lng: longitude };
+          const destination = { lat: response.hospital_latitude, lng: response.hospital_longitude };
+          (async () => {
+            try {
+              const res = await this.distanceService.getDistance(origin, destination);
+              this.distanceText = res.distanceText || '';
+              this.durationText = res.durationText || '';
+            } catch (err: any) {
+              console.warn('Distance service error', err);
+              this.errorMessage = err?.message || 'Unable to retrieve live travel time/distance. Showing estimated values.';
+            } finally {
+              this.isLoading = false;
+              this.isGeocoding = false;
+            }
+          })();
+        } else {
+          this.isLoading = false;
+          this.isGeocoding = false;
+        }
       },
       error: (error) => {
         this.errorMessage = error.message;

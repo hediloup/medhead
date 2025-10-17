@@ -101,12 +101,12 @@
       
       <div class="result-item">
         <div class="result-label">Distance</div>
-        <div class="result-value">{{ allocationResult.distance_km }} km</div>
+        <div class="result-value">{{ distanceText || (allocationResult.distance_km + ' km') }}</div>
       </div>
       
       <div class="result-item">
         <div class="result-label">Temps estimé</div>
-        <div class="result-value">{{ allocationResult.estimated_time_minutes }} minutes</div>
+        <div class="result-value">{{ durationText || (allocationResult.estimated_time_minutes + ' minutes') }}</div>
       </div>
       
       <div class="result-item">

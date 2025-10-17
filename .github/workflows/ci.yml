@@ -128,6 +128,24 @@ jobs:
         echo "📦 Installation des dépendances npm..."
         npm ci
 
+    - name: 🔐 Inject Google Maps key into environment (frontend)
+      if: ${{ secrets.GOOGLE_MAPS_API_KEY != '' }}
+      working-directory: ./frontend
+      run: |
+        echo "🔐 Injecting GOOGLE_MAPS_API_KEY into environment files"
+        cat > src/environments/environment.ts <<'EOF'
+export const environment = {
+  production: false,
+  googleMapsApiKey: '${{ secrets.GOOGLE_MAPS_API_KEY }}'
+};
+EOF
+        cat > src/environments/environment.prod.ts <<'EOF'
+export const environment = {
+  production: true,
+  googleMapsApiKey: '${{ secrets.GOOGLE_MAPS_API_KEY }}'
+};
+EOF
+
     - name: 🧪 Tests Unitaires Frontend
       working-directory: ./frontend
       run: |
@@ -313,6 +331,23 @@ jobs:
         mkdir -p ../reports/frontend
         mkdir -p reports
         
+        # Inject Google Maps key (if present) before building
+        if [ -n "${{ secrets.GOOGLE_MAPS_API_KEY }}" ]; then
+          echo "🔐 Injecting GOOGLE_MAPS_API_KEY into environment files"
+          cat > src/environments/environment.ts <<'EOF'
+export const environment = {
+  production: false,
+  googleMapsApiKey: '${{ secrets.GOOGLE_MAPS_API_KEY }}'
+};
+EOF
+          cat > src/environments/environment.prod.ts <<'EOF'
+export const environment = {
+  production: true,
+  googleMapsApiKey: '${{ secrets.GOOGLE_MAPS_API_KEY }}'
+};
+EOF
+        fi
+
         # Construire l'application d'abord
         echo "🔨 Construction de l'application Angular..."
         npx ng build --configuration development
