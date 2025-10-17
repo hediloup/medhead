@@ -234,8 +234,8 @@ export class HospitalAllocationComponent implements OnInit {
       this.directionsServiceInstance.route(request, (res: any, status: any) => {
         console.log('[medhead] DirectionsService callback status=', status);
         if (status === 'OK' || status === google.maps.DirectionsStatus.OK) {
-          // clear any fallback if present
-          try { this.googleMapsFallbackUrl = undefined; } catch(e){}
+            // clear any fallback if present
+            try { this.googleMapsFallbackUrl = undefined; (window as any).__medheadGoogleMapsFallback = undefined; } catch(e){}
           this.directionsRendererInstance.setDirections(res);
           console.log('[medhead] Directions rendered successfully');
         } else {
@@ -245,6 +245,7 @@ export class HospitalAllocationComponent implements OnInit {
             const originParam = `${origin.lat},${origin.lng}`;
             const destParam = `${destination.lat},${destination.lng}`;
             this.googleMapsFallbackUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(originParam)}&destination=${encodeURIComponent(destParam)}&travelmode=driving`;
+            try { (window as any).__medheadGoogleMapsFallback = this.googleMapsFallbackUrl; } catch(e) {}
           } catch (e) {
             console.error('Failed to build fallback URL', e);
           }
@@ -257,6 +258,7 @@ export class HospitalAllocationComponent implements OnInit {
         const originParam = `${origin.lat},${origin.lng}`;
         const destParam = `${destination.lat},${destination.lng}`;
         this.googleMapsFallbackUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(originParam)}&destination=${encodeURIComponent(destParam)}&travelmode=driving`;
+        try { (window as any).__medheadGoogleMapsFallback = this.googleMapsFallbackUrl; } catch(e) {}
       } catch (err) {
         console.error('Failed to build fallback URL after loader error', err);
       }
