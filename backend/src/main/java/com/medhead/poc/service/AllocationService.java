@@ -1,6 +1,5 @@
 package com.medhead.poc.service;
 
-import com.medhead.poc.dto.RouteResult;
 import com.medhead.poc.dto.HospitalProjection;
 import com.medhead.poc.model.AllocationRequest;
 import com.medhead.poc.model.AllocationResponse;
@@ -106,32 +105,30 @@ public class AllocationService {
             })
             .collect(Collectors.toList());
         
-        // Calculate routes with traffic optimization for all eligible hospitals
-        List<HospitalWithRoute> hospitalsWithRoute = eligibleHospitals.stream()
+        // Calculate distances for all eligible hospitals
+        List<HospitalWithDistance> hospitalsWithDistance = eligibleHospitals.stream()
             .map(hospital -> {
-                RouteResult routeResult = distanceService.calculateOptimalRouteToHospital(
-                    request.getLatitude(), 
-                    request.getLongitude(), 
+                double distanceKm = distanceService.calculateDistanceToHospital(
+                    request.getLatitude(),
+                    request.getLongitude(),
                     hospital
                 );
-                return new HospitalWithRoute(hospital, routeResult);
+                int estimatedTime = estimateTravelTime(distanceKm);
+                return new HospitalWithDistance(hospital, distanceKm, estimatedTime);
             })
-            .filter(hwr -> !hwr.getRouteResult().isError()) // Filter out hospitals with route errors
-            .sorted(Comparator.comparingInt(hwr -> hwr.getRouteResult().getOptimalDurationMinutes()))
+            .sorted(Comparator.comparingDouble(HospitalWithDistance::getDistanceKm))
             .collect(Collectors.toList());
         
-        if (hospitalsWithRoute.isEmpty()) {
+        if (hospitalsWithDistance.isEmpty()) {
             throw new RuntimeException("No accessible hospital found with specialty '" + 
                                     request.getSpecialty() + "'");
         }
         
-        // Select the best hospital (fastest travel time)
-        HospitalWithRoute bestHospital = hospitalsWithRoute.get(0);
+        // Select the best hospital (nearest distance)
+        HospitalWithDistance bestHospital = hospitalsWithDistance.get(0);
         Hospital selectedHospital = bestHospital.getHospital();
-        RouteResult routeResult = bestHospital.getRouteResult();
-        
-        double distance = routeResult.getDistanceKm();
-        int estimatedTime = routeResult.getOptimalDurationMinutes();
+        double distance = bestHospital.getDistanceKm();
+        int estimatedTime = bestHospital.getEstimatedTimeMinutes();
         
         // Create anonymized patient
         Patient patient = patientAnonymizationService.createAnonymizedPatient(
@@ -178,25 +175,37 @@ public class AllocationService {
         
         return response;
     }
+
+    private int estimateTravelTime(double distanceKm) {
+        double averageSpeedKmh = 50.0; // city average
+        double timeHours = distanceKm / averageSpeedKmh;
+        return (int) Math.round(timeHours * 60);
+    }
     
     /**
-     * Internal class to store a hospital with its route information.
+     * Internal class to store a hospital with its distance information.
      */
-    private static class HospitalWithRoute {
+    private static class HospitalWithDistance {
         private final Hospital hospital;
-        private final RouteResult routeResult;
+        private final double distanceKm;
+        private final int estimatedTimeMinutes;
         
-        public HospitalWithRoute(Hospital hospital, RouteResult routeResult) {
+        public HospitalWithDistance(Hospital hospital, double distanceKm, int estimatedTimeMinutes) {
             this.hospital = hospital;
-            this.routeResult = routeResult;
+            this.distanceKm = distanceKm;
+            this.estimatedTimeMinutes = estimatedTimeMinutes;
         }
         
         public Hospital getHospital() {
             return hospital;
         }
         
-        public RouteResult getRouteResult() {
-            return routeResult;
+        public double getDistanceKm() {
+            return distanceKm;
+        }
+        
+        public int getEstimatedTimeMinutes() {
+            return estimatedTimeMinutes;
         }
     }
 }

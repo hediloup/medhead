@@ -1,7 +1,6 @@
 package com.medhead.poc.unit.service;
 
 import com.medhead.poc.dto.HospitalProjection;
-import com.medhead.poc.dto.RouteResult;
 import com.medhead.poc.model.AllocationRequest;
 import com.medhead.poc.model.AllocationResponse;
 import com.medhead.poc.model.Hospital;
@@ -31,8 +30,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests unitaires pour AllocationService
- * Approche TDD : Test-Driven Development
+ * Tests unitaires pour AllocationService (sélection par distance Haversine)
  */
 @RunWith(MockitoJUnitRunner.class)
 public class AllocationServiceTest {
@@ -169,27 +167,9 @@ public class AllocationServiceTest {
         when(hospitalRepository.findBySpecialtyAndAvailableBedsProjection("Cardiology"))
                 .thenReturn(eligibleProjections);
 
-        RouteResult routeResult1 = new RouteResult();
-        routeResult1.setDistanceKm(5.2);
-        routeResult1.setOptimalDurationMinutes(15);
-        routeResult1.setError(false);
-
-        RouteResult routeResult2 = new RouteResult();
-        routeResult2.setDistanceKm(8.1);
-        routeResult2.setOptimalDurationMinutes(25);
-        routeResult2.setError(false);
-
-        // Mock distance service to return different results based on hospital name
-        when(distanceService.calculateOptimalRouteToHospital(anyDouble(), anyDouble(), any(Hospital.class)))
-                .thenAnswer(invocation -> {
-                    Hospital hospital = invocation.getArgument(2);
-                    if ("Hôpital Central".equals(hospital.getName())) {
-                        return routeResult1; // Plus rapide (15 min)
-                    } else if ("Hôpital Nord".equals(hospital.getName())) {
-                        return routeResult2; // Plus lent (25 min)
-                    }
-                    return routeResult1; // Default
-                });
+        // Mock des distances (hospital1 plus proche)
+        when(distanceService.calculateDistanceToHospital(anyDouble(), anyDouble(), eq(hospital1))).thenReturn(5.2);
+        when(distanceService.calculateDistanceToHospital(anyDouble(), anyDouble(), eq(hospital2))).thenReturn(8.1);
 
         // When - Exécution du test
         AllocationResponse response = allocationService.findBestHospital(validRequest);
@@ -199,12 +179,14 @@ public class AllocationServiceTest {
         assertEquals("Le nom de l'hôpital doit être correct", "Hôpital Central", response.getHospitalName());
         assertEquals("L'ID de l'hôpital doit être correct", Long.valueOf(1L), response.getHospitalId());
         assertEquals("La distance doit être correcte", 5.2, response.getDistance().doubleValue(), 0.01);
-        assertEquals("Le temps estimé doit être correct", Integer.valueOf(15), response.getEstimatedTimeMinutes());
         assertEquals("Le nombre de lits disponibles doit être correct", Integer.valueOf(4), response.getAvailableBedsAfterAllocation());
+        // ETA approx à 50 km/h -> ~6 minutes
+        assertEquals("Le temps estimé doit être correct", Integer.valueOf(6), response.getEstimatedTimeMinutes());
 
         // Vérification des interactions avec les mocks
         verify(hospitalRepository).findBySpecialtyAndAvailableBedsProjection("Cardiology");
-        verify(distanceService, times(2)).calculateOptimalRouteToHospital(anyDouble(), anyDouble(), any(Hospital.class));
+        verify(distanceService, times(1)).calculateDistanceToHospital(anyDouble(), anyDouble(), eq(hospital1));
+        verify(distanceService, times(1)).calculateDistanceToHospital(anyDouble(), anyDouble(), eq(hospital2));
         verify(patientAnonymizationService).createAnonymizedPatient(anyString(), anyDouble(), anyDouble(), anyString());
         verify(eventPublisherService).publishBedReservedEvent(anyString(), anyString(), anyString(), 
                 anyString(), anyString(), anyLong(), anyString(), anyString(), anyDouble(), anyInt(), anyInt());
@@ -266,61 +248,24 @@ public class AllocationServiceTest {
         // Then - Exception attendue
     }
 
-    @Test(expected = RuntimeException.class)
-    public void testFindBestHospital_NoAccessibleHospitals() {
-        // Given
-        HospitalProjection projection1 = createProjection(hospital1);
-        List<HospitalProjection> eligibleProjections = Arrays.asList(projection1);
-        when(hospitalRepository.findBySpecialtyAndAvailableBedsProjection("Cardiology"))
-                .thenReturn(eligibleProjections);
-
-        RouteResult errorRouteResult = new RouteResult();
-        errorRouteResult.setError(true);
-        when(distanceService.calculateOptimalRouteToHospital(anyDouble(), anyDouble(), any(Hospital.class)))
-                .thenReturn(errorRouteResult);
-
-        // When
-        allocationService.findBestHospital(validRequest);
-
-        // Then - Exception attendue
-    }
-
     @Test
-    public void testFindBestHospital_SelectsFastestHospital() {
-        // Given - Configuration pour que hospital2 soit plus rapide
+    public void testFindBestHospital_SelectsNearestHospital() {
+        // Given
         HospitalProjection projection1 = createProjection(hospital1);
         HospitalProjection projection2 = createProjection(hospital2);
         List<HospitalProjection> eligibleProjections = Arrays.asList(projection1, projection2);
         when(hospitalRepository.findBySpecialtyAndAvailableBedsProjection("Cardiology"))
                 .thenReturn(eligibleProjections);
 
-        RouteResult routeResult1 = new RouteResult();
-        routeResult1.setDistanceKm(5.2);
-        routeResult1.setOptimalDurationMinutes(25); // Plus lent
-        routeResult1.setError(false);
-
-        RouteResult routeResult2 = new RouteResult();
-        routeResult2.setDistanceKm(8.1);
-        routeResult2.setOptimalDurationMinutes(15); // Plus rapide
-        routeResult2.setError(false);
-
-        // Mock distance service to return different results based on hospital name
-        when(distanceService.calculateOptimalRouteToHospital(anyDouble(), anyDouble(), any(Hospital.class)))
-                .thenAnswer(invocation -> {
-                    Hospital hospital = invocation.getArgument(2);
-                    if ("Hôpital Central".equals(hospital.getName())) {
-                        return routeResult1; // Plus lent
-                    } else if ("Hôpital Nord".equals(hospital.getName())) {
-                        return routeResult2; // Plus rapide
-                    }
-                    return routeResult1; // Default
-                });
+        // Mock: hospital2 plus proche
+        when(distanceService.calculateDistanceToHospital(anyDouble(), anyDouble(), eq(hospital1))).thenReturn(10.0);
+        when(distanceService.calculateDistanceToHospital(anyDouble(), anyDouble(), eq(hospital2))).thenReturn(3.0);
 
         // When
         AllocationResponse response = allocationService.findBestHospital(validRequest);
 
-        // Then - Vérification que l'hôpital le plus rapide est sélectionné
-        assertEquals("L'hôpital le plus rapide doit être sélectionné", "Hôpital Nord", response.getHospitalName());
-        assertEquals("Le temps estimé doit être celui du plus rapide", Integer.valueOf(15), response.getEstimatedTimeMinutes());
+        // Then
+        assertEquals("L'hôpital le plus proche doit être sélectionné", "Hôpital Nord", response.getHospitalName());
+        assertEquals("Le temps estimé doit être basé sur la distance", Integer.valueOf(4), response.getEstimatedTimeMinutes()); // 3km -> ~4 min
     }
 }
