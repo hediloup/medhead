@@ -132,6 +132,10 @@
   <div *ngIf="allocationResult" class="card map-card">
     <h3>🗺️ Itinéraire</h3>
     <div id="map" class="map-container"></div>
+    <div *ngIf="googleMapsFallbackUrl" class="alert alert-warning" style="margin-top:8px;">
+      <strong>Itinéraire non disponible via l'API.</strong>
+      <a [href]="googleMapsFallbackUrl" target="_blank" rel="noopener noreferrer">Voir l'itinéraire sur Google Maps</a>
+    </div>
   </div>
 
   <div class="card">

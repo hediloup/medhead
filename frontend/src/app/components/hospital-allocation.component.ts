@@ -21,6 +21,8 @@ export class HospitalAllocationComponent implements OnInit {
   durationText = '';
   errorMessage = '';
   successMessage = '';
+  // When directions fail, we expose a fallback URL to open Google Maps
+  googleMapsFallbackUrl?: string;
   // Map and renderer instances (persisted)
   private mapInstance: any = null;
   private directionsRendererInstance: any = null;
@@ -93,6 +95,8 @@ export class HospitalAllocationComponent implements OnInit {
    */
   onSubmit(): void {
     if (this.allocationForm.valid) {
+      // Clear any previous fallback link
+      this.googleMapsFallbackUrl = undefined;
       this.isLoading = true;
       this.errorMessage = '';
       this.successMessage = '';
@@ -185,7 +189,17 @@ export class HospitalAllocationComponent implements OnInit {
       if (!google || !google.maps) return;
 
       // Create map if not exists
+      // Some Angular builds add attribute selectors like _ngcontent-xxx; ensure element is found
       let mapEl = document.getElementById('map');
+      if (!mapEl) {
+        // Fallback: search for element with id attribute manually
+        const els = document.querySelectorAll('[id]');
+        for (let i = 0; i < els.length; i++) {
+          const el = els[i] as HTMLElement;
+          if (el.id === 'map') { mapEl = el; break; }
+        }
+      }
+      if (!mapEl) return;
       if (!mapEl) return;
 
       // Initialize or reuse map centered between points
@@ -220,14 +234,32 @@ export class HospitalAllocationComponent implements OnInit {
       this.directionsServiceInstance.route(request, (res: any, status: any) => {
         console.log('[medhead] DirectionsService callback status=', status);
         if (status === 'OK' || status === google.maps.DirectionsStatus.OK) {
+          // clear any fallback if present
+          try { this.googleMapsFallbackUrl = undefined; } catch(e){}
           this.directionsRendererInstance.setDirections(res);
           console.log('[medhead] Directions rendered successfully');
         } else {
           console.warn('[medhead] Directions request failed: ', status, res);
+          // Build a fallback URL to open Google Maps directions in a new tab
+          try {
+            const originParam = `${origin.lat},${origin.lng}`;
+            const destParam = `${destination.lat},${destination.lng}`;
+            this.googleMapsFallbackUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(originParam)}&destination=${encodeURIComponent(destParam)}&travelmode=driving`;
+          } catch (e) {
+            console.error('Failed to build fallback URL', e);
+          }
         }
       });
     } catch (e) {
       console.error('Error rendering map route', e);
+      // If loader failed, expose fallback so user can open Google Maps directly
+      try {
+        const originParam = `${origin.lat},${origin.lng}`;
+        const destParam = `${destination.lat},${destination.lng}`;
+        this.googleMapsFallbackUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(originParam)}&destination=${encodeURIComponent(destParam)}&travelmode=driving`;
+      } catch (err) {
+        console.error('Failed to build fallback URL after loader error', err);
+      }
     }
   }
 
@@ -249,6 +281,7 @@ export class HospitalAllocationComponent implements OnInit {
     this.allocationResult = null;
     this.errorMessage = '';
     this.successMessage = '';
+    this.googleMapsFallbackUrl = undefined;
   }
 
   /**
