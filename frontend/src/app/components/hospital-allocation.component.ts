@@ -156,21 +156,27 @@ export class HospitalAllocationComponent implements OnInit {
         if (response && response.hospital_latitude != null && response.hospital_longitude != null) {
           const origin = { lat: latitude, lng: longitude };
           const destination = { lat: response.hospital_latitude, lng: response.hospital_longitude };
-          (async () => {
-            try {
+          // Delay the distance / render call to the next tick so Angular has time to render
+          // the map container (it is shown using *ngIf="allocationResult"). Without this,
+          // renderRouteOnMap can run before the DOM element exists; users reported the map
+          // only appears when manually invoking the helper from the console.
+          setTimeout(() => {
+            (async () => {
+              try {
                 const res = await this.distanceService.getDistance(origin, destination);
                 this.distanceText = res.distanceText || '';
                 this.durationText = res.durationText || '';
                 // Render route on map
                 this.renderRouteOnMap(origin, destination);
-            } catch (err: any) {
-              console.warn('Distance service error', err);
-              this.errorMessage = err?.message || 'Unable to retrieve live travel time/distance. Showing estimated values.';
-            } finally {
-              this.isLoading = false;
-              this.isGeocoding = false;
-            }
-          })();
+              } catch (err: any) {
+                console.warn('Distance service error', err);
+                this.errorMessage = err?.message || 'Unable to retrieve live travel time/distance. Showing estimated values.';
+              } finally {
+                this.isLoading = false;
+                this.isGeocoding = false;
+              }
+            })();
+          }, 0);
         } else {
           this.isLoading = false;
           this.isGeocoding = false;
@@ -192,17 +198,33 @@ export class HospitalAllocationComponent implements OnInit {
       if (!google || !google.maps) return;
 
       // Create map if not exists
-      // Some Angular builds add attribute selectors like _ngcontent-xxx; ensure element is found
-      let mapEl = document.getElementById('map');
-      if (!mapEl) {
-        // Fallback: search for element with id attribute manually
-        const els = document.querySelectorAll('[id]');
-        for (let i = 0; i < els.length; i++) {
-          const el = els[i] as HTMLElement;
-          if (el.id === 'map') { mapEl = el; break; }
+      // Some Angular builds add attribute selectors like _ngcontent-xxx; ensure element is found.
+      // If the element isn't present yet (view not updated), retry a few times with small delay.
+      let mapEl: HTMLElement | null = null;
+      const findMapEl = () => {
+        mapEl = document.getElementById('map') as HTMLElement | null;
+        if (!mapEl) {
+          const els = document.querySelectorAll('[id]');
+          for (let i = 0; i < els.length; i++) {
+            const el = els[i] as HTMLElement;
+            if (el.id === 'map') { mapEl = el; break; }
+          }
         }
+      };
+
+      findMapEl();
+      let attempts = 0;
+      while (!mapEl && attempts < 5) {
+        // Wait 200ms and try again
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise(r => setTimeout(r, 200));
+        attempts++;
+        findMapEl();
       }
-      if (!mapEl) return;
+      if (!mapEl) {
+        console.warn('[medhead] map element not found after retries; aborting render');
+        return;
+      }
       if (!mapEl) return;
 
       // Initialize or reuse map centered between points
