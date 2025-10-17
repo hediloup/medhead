@@ -56,9 +56,10 @@ export class DistanceService {
           destination: new google.maps.LatLng(destination.lat, destination.lng),
           travelMode: google.maps.TravelMode.DRIVING,
           drivingOptions: {
-            departureTime: new Date()
+            departureTime: new Date(),
+            trafficModel: google.maps.TrafficModel.BEST_GUESS
           },
-          provideRouteAlternatives: false
+          provideRouteAlternatives: true
         };
 
         const callRoute = (req: any) => {
@@ -67,8 +68,17 @@ export class DistanceService {
               if (status !== google.maps.DirectionsStatus.OK && status !== 'OK') {
                 return reject(new Error('Directions request failed: ' + status));
               }
-              const route = result.routes?.[0];
-              const leg = route?.legs?.[0];
+              // Select the best route based on traffic conditions
+              let bestRoute = result.routes?.[0];
+              if (result.routes && result.routes.length > 1) {
+                bestRoute = result.routes.reduce((best: any, current: any) => {
+                  const bestDuration = best.legs[0]?.duration_in_traffic?.value || best.legs[0]?.duration?.value || Infinity;
+                  const currentDuration = current.legs[0]?.duration_in_traffic?.value || current.legs[0]?.duration?.value || Infinity;
+                  return currentDuration < bestDuration ? current : best;
+                });
+              }
+              
+              const leg = bestRoute?.legs?.[0];
               if (!leg) {
                 return reject(new Error('No legs in directions result'));
               }
@@ -92,8 +102,17 @@ export class DistanceService {
                 if (status !== google.maps.DirectionsStatus.OK && status !== 'OK') {
                   return reject(new Error('Directions request failed on retry: ' + status));
                 }
-                const route = result.routes?.[0];
-                const leg = route?.legs?.[0];
+                // Select the best route based on traffic conditions
+                let bestRoute = result.routes?.[0];
+                if (result.routes && result.routes.length > 1) {
+                  bestRoute = result.routes.reduce((best: any, current: any) => {
+                    const bestDuration = best.legs[0]?.duration_in_traffic?.value || best.legs[0]?.duration?.value || Infinity;
+                    const currentDuration = current.legs[0]?.duration_in_traffic?.value || current.legs[0]?.duration?.value || Infinity;
+                    return currentDuration < bestDuration ? current : best;
+                  });
+                }
+                
+                const leg = bestRoute?.legs?.[0];
                 if (!leg) {
                   return reject(new Error('No legs in directions result'));
                 }

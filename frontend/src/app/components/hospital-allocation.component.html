@@ -102,11 +102,15 @@
       <div class="result-item">
         <div class="result-label">Distance</div>
         <div class="result-value">{{ distanceText || (allocationResult.distance_km + ' km') }}</div>
+        <div *ngIf="distanceText" class="data-source">📡 Données temps réel Google Maps</div>
+        <div *ngIf="!distanceText" class="data-source">📊 Estimation backend</div>
       </div>
       
       <div class="result-item">
         <div class="result-label">Temps estimé</div>
         <div class="result-value">{{ durationText || (allocationResult.estimated_time_minutes + ' minutes') }}</div>
+        <div *ngIf="durationText" class="data-source">📡 Données temps réel Google Maps</div>
+        <div *ngIf="!durationText" class="data-source">📊 Estimation backend</div>
       </div>
       
       <div class="result-item">
@@ -123,7 +127,7 @@
     <div class="alert alert-success">
       <strong>🎉 Allocation réussie !</strong><br>
       Un lit a été réservé pour vous à l'hôpital {{ allocationResult.hospital_name }}. 
-      Temps de trajet estimé: {{ allocationResult.estimated_time_minutes }} minutes.
+      Temps de trajet estimé: {{ durationText || (allocationResult.estimated_time_minutes + ' minutes') }}.
     </div>
   </div>
 

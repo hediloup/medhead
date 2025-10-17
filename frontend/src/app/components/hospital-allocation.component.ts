@@ -281,10 +281,15 @@ export class HospitalAllocationComponent implements OnInit {
         origin: new google.maps.LatLng(origin.lat, origin.lng),
         destination: new google.maps.LatLng(destination.lat, destination.lng),
         travelMode: google.maps.TravelMode.DRIVING,
-        // Only provide departureTime; omit trafficModel to avoid InvalidValueError on some API versions
+        // Configure traffic model for optimal route based on current traffic
         drivingOptions: {
-          departureTime: new Date()
-        }
+          departureTime: new Date(),
+          trafficModel: google.maps.TrafficModel.BEST_GUESS
+        },
+        // Request multiple route alternatives to find the best one
+        provideRouteAlternatives: true,
+        // Optimize for traffic conditions
+        optimizeWaypoints: true
       };
 
       // Wrap route call so synchronous exceptions (InvalidValueError, etc.) can be retried with a simpler request
@@ -316,10 +321,39 @@ export class HospitalAllocationComponent implements OnInit {
 
       callRoute(request, (res: any, status: any) => {
         console.log('[medhead] DirectionsService callback status=', status);
+        console.log('[medhead] DirectionsService response routes count:', res?.routes?.length);
+        if (res?.routes?.[0]?.legs?.[0]) {
+          console.log('[medhead] Route details:', {
+            distance: res.routes[0].legs[0].distance?.text,
+            duration: res.routes[0].legs[0].duration?.text,
+            durationInTraffic: res.routes[0].legs[0].duration_in_traffic?.text
+          });
+        }
+        
         if (status === 'OK' || status === google.maps.DirectionsStatus.OK) {
           try { this.googleMapsFallbackUrl = undefined; (window as any).__medheadGoogleMapsFallback = undefined; } catch(e){}
-          this.directionsRendererInstance.setDirections(res);
-          console.log('[medhead] Directions rendered successfully');
+          
+          // Select the best route based on traffic conditions
+          let bestRoute = res.routes[0];
+          if (res.routes && res.routes.length > 1) {
+            // Find route with shortest duration considering traffic
+            bestRoute = res.routes.reduce((best: any, current: any) => {
+              const bestDuration = best.legs[0]?.duration_in_traffic?.value || best.legs[0]?.duration?.value || Infinity;
+              const currentDuration = current.legs[0]?.duration_in_traffic?.value || current.legs[0]?.duration?.value || Infinity;
+              return currentDuration < bestDuration ? current : best;
+            });
+            console.log('[medhead] Selected best route from', res.routes.length, 'alternatives');
+          }
+          
+          // Add markers for origin and destination
+          this.addOriginDestinationMarkers(origin, destination);
+          
+          // Set the best route
+          this.directionsRendererInstance.setDirections({
+            ...res,
+            routes: [bestRoute]
+          });
+          console.log('[medhead] Directions rendered successfully with traffic optimization');
         } else {
           console.warn('[medhead] Directions request failed: ', status, res);
           // Build a fallback URL to open Google Maps directions in a new tab
@@ -327,6 +361,7 @@ export class HospitalAllocationComponent implements OnInit {
             const originParam = `${origin.lat},${origin.lng}`;
             const destParam = `${destination.lat},${destination.lng}`;
             this.googleMapsFallbackUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(originParam)}&destination=${encodeURIComponent(destParam)}&travelmode=driving`;
+            console.log('[medhead] Generated fallback URL:', this.googleMapsFallbackUrl);
             try { (window as any).__medheadGoogleMapsFallback = this.googleMapsFallbackUrl; } catch(e) {}
           } catch (e) {
             console.error('Failed to build fallback URL', e);
@@ -370,6 +405,75 @@ export class HospitalAllocationComponent implements OnInit {
     this.mapInstance = null;
     this.directionsRendererInstance = null;
     this.directionsServiceInstance = null;
+  }
+
+  /**
+   * Add markers for origin and destination points
+   */
+  private addOriginDestinationMarkers(origin: {lat: number, lng: number}, destination: {lat: number, lng: number}): void {
+    if (!this.mapInstance) return;
+    
+    const google = (window as any).google;
+    if (!google || !google.maps) return;
+    
+    // Clear existing markers
+    if (this.mapInstance.markers) {
+      this.mapInstance.markers.forEach((marker: any) => marker.setMap(null));
+    }
+    this.mapInstance.markers = [];
+    
+    // Origin marker (patient location)
+    const originMarker = new google.maps.Marker({
+      position: new google.maps.LatLng(origin.lat, origin.lng),
+      map: this.mapInstance,
+      title: 'Votre position',
+      icon: {
+        url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+        scaledSize: new google.maps.Size(32, 32)
+      },
+      label: {
+        text: '🏠',
+        fontSize: '16px',
+        fontWeight: 'bold'
+      }
+    });
+    
+    // Destination marker (hospital)
+    const destinationMarker = new google.maps.Marker({
+      position: new google.maps.LatLng(destination.lat, destination.lng),
+      map: this.mapInstance,
+      title: 'Hôpital recommandé',
+      icon: {
+        url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+        scaledSize: new google.maps.Size(32, 32)
+      },
+      label: {
+        text: '🏥',
+        fontSize: '16px',
+        fontWeight: 'bold'
+      }
+    });
+    
+    // Store markers for cleanup
+    this.mapInstance.markers = [originMarker, destinationMarker];
+    
+    // Add info windows
+    const originInfoWindow = new google.maps.InfoWindow({
+      content: '<div style="padding: 5px;"><strong>📍 Votre position</strong><br/>Point de départ</div>'
+    });
+    
+    const destinationInfoWindow = new google.maps.InfoWindow({
+      content: '<div style="padding: 5px;"><strong>🏥 Hôpital recommandé</strong><br/>Destination optimale</div>'
+    });
+    
+    // Add click listeners
+    originMarker.addListener('click', () => {
+      originInfoWindow.open(this.mapInstance, originMarker);
+    });
+    
+    destinationMarker.addListener('click', () => {
+      destinationInfoWindow.open(this.mapInstance, destinationMarker);
+    });
   }
 
   /**
