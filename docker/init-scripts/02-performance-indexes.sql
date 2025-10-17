@@ -1,14 +1,8 @@
 -- Performance optimization indexes for MedHead Hospital Allocation
 -- These indexes will significantly improve query performance
 
--- Index on specialty for filtering hospitals by medical specialty
-CREATE INDEX IF NOT EXISTS idx_hospital_specialty ON hospitals(specialty);
-
 -- Index on available beds for filtering hospitals with available capacity
 CREATE INDEX IF NOT EXISTS idx_hospital_beds ON hospitals(available_beds);
-
--- Composite index for specialty and available beds (most common query pattern)
-CREATE INDEX IF NOT EXISTS idx_hospital_specialty_beds ON hospitals(specialty, available_beds);
 
 -- Index on location coordinates for distance calculations
 CREATE INDEX IF NOT EXISTS idx_hospital_location ON hospitals(latitude, longitude);
