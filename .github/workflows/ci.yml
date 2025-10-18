@@ -133,18 +133,14 @@ jobs:
       working-directory: ./frontend
       run: |
         echo "🔐 Injecting GOOGLE_MAPS_API_KEY into environment files"
-        cat > src/environments/environment.ts <<EOF
-export const environment = {
-  production: false,
-  googleMapsApiKey: '${{ secrets.GOOGLE_MAPS_API_KEY }}'
-};
-EOF
-        cat > src/environments/environment.prod.ts <<EOF
-export const environment = {
-  production: true,
-  googleMapsApiKey: '${{ secrets.GOOGLE_MAPS_API_KEY }}'
-};
-EOF
+        echo "export const environment = {" > src/environments/environment.ts
+        echo "  production: false," >> src/environments/environment.ts
+        echo "  googleMapsApiKey: '${{ secrets.GOOGLE_MAPS_API_KEY }}'" >> src/environments/environment.ts
+        echo "};" >> src/environments/environment.ts
+        echo "export const environment = {" > src/environments/environment.prod.ts
+        echo "  production: true," >> src/environments/environment.prod.ts
+        echo "  googleMapsApiKey: '${{ secrets.GOOGLE_MAPS_API_KEY }}'" >> src/environments/environment.prod.ts
+        echo "};" >> src/environments/environment.prod.ts
 
     - name: 🧪 Tests Unitaires Frontend
       working-directory: ./frontend
