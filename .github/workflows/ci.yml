@@ -290,6 +290,10 @@ jobs:
         echo "🧹 Nettoyage des conteneurs existants..."
         docker compose -f ./docker/docker-compose.yml down -v || true
         
+        # Forcer la reconstruction de l'image backend (sans cache)
+        echo "🔨 Reconstruction de l'image backend (sans cache)..."
+        docker compose -f ./docker/docker-compose.yml build --no-cache backend
+        
         # Démarrer postgres d'abord
         echo "🐘 Démarrage de PostgreSQL..."
         docker compose -f ./docker/docker-compose.yml up -d postgres
