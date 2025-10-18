@@ -327,6 +327,16 @@ jobs:
         echo "⏳ Attente du démarrage du backend..."
         sleep 30
         
+        # Vérifier si le backend crash et le redémarrer si nécessaire
+        echo "🔍 Vérification de l'état du backend..."
+        backend_status=$(docker compose -f ./docker/docker-compose.yml ps --format "table {{.Name}}\t{{.Status}}" | grep medhead-backend | awk '{print $2}')
+        if [[ "$backend_status" == *"Restarting"* ]] || [[ "$backend_status" == *"Exited"* ]]; then
+          echo "⚠️ Backend en erreur, tentative de redémarrage..."
+          docker compose -f ./docker/docker-compose.yml restart backend
+          echo "⏳ Attente du redémarrage..."
+          sleep 30
+        fi
+        
         echo "🔍 Vérification du statut des services..."
         docker compose -f ./docker/docker-compose.yml ps
         
@@ -350,8 +360,14 @@ jobs:
           docker logs --tail 50 medhead-postgres || true
           echo "\n--- docker logs backend (last 200 lines) ---"
           docker logs --tail 200 medhead-backend || true
-          echo "\n--- docker compose logs (last 200 lines) ---"
-          docker compose -f ./docker/docker-compose.yml logs --no-color --tail 200 || true
+          echo "\n--- docker compose logs backend (last 200 lines) ---"
+          docker compose -f ./docker/docker-compose.yml logs --no-color --tail 200 backend || true
+          echo "\n--- docker compose logs postgres (last 50 lines) ---"
+          docker compose -f ./docker/docker-compose.yml logs --no-color --tail 50 postgres || true
+          echo "\n--- Vérification des variables d'environnement ---"
+          docker compose -f ./docker/docker-compose.yml exec backend env | grep -E "(SPRING|MANAGEMENT)" || true
+          echo "\n--- Test de connectivité à la base de données ---"
+          docker compose -f ./docker/docker-compose.yml exec postgres pg_isready -U medhead_user -d medhead_db || true
           exit 1
         fi
 

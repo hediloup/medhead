@@ -1,0 +1,44 @@
+# Configuration spécifique pour les tests E2E
+spring:
+  profiles:
+    active: test
+  
+  # Configuration de la base de données pour les tests
+  datasource:
+    url: jdbc:postgresql://postgres:5432/medhead_db
+    username: medhead_user
+    password: medhead_password
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+
+# Configuration du serveur
+server:
+  port: 8080
+
+# Désactiver complètement Actuator pour les tests
+management:
+  endpoints:
+    enabled-by-default: false
+  endpoint:
+    health:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+# Configuration de logging minimal
+logging:
+  level:
+    com.medhead.poc: INFO
+    org.springframework: WARN
+    org.hibernate: WARN
+    root: WARN

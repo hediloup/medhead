@@ -31,16 +31,17 @@ services:
       dockerfile: Dockerfile
     container_name: medhead-backend
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      SPRING_PROFILES_ACTIVE: test
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/medhead_db
       SPRING_DATASOURCE_USERNAME: medhead_user
       SPRING_DATASOURCE_PASSWORD: medhead_password
       GOOGLE_MAPS_API_KEY: AIzaSyA6EicRUZ_a2YTAuB1ZFWWXB6yOaqnKyB0
-      # Désactiver les métriques système problématiques dans Docker
-      MANAGEMENT_METRICS_SYSTEM_ENABLED: false
-      MANAGEMENT_METRICS_PROCESS_ENABLED: false
-      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
-      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: when-authorized
+      # Désactiver complètement les métriques pour éviter les problèmes Docker
+      MANAGEMENT_ENDPOINTS_ENABLED_BY_DEFAULT: false
+      MANAGEMENT_ENDPOINT_HEALTH_ENABLED: true
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health
+      # Options JVM pour éviter les problèmes de métriques
+      JAVA_OPTS: "-Xms512m -Xmx1g -XX:+UseG1GC -Djava.security.egd=file:/dev/./urandom -Dspring.profiles.active=test -Dmanagement.endpoints.enabled-by-default=false -Dmanagement.endpoint.health.enabled=true"
     ports:
       - "8080:8080"
     networks:
