@@ -306,10 +306,15 @@ jobs:
           -e SPRING_DATASOURCE_USERNAME=medhead_user \
           -e SPRING_DATASOURCE_PASSWORD=medhead_password \
           -e GOOGLE_MAPS_API_KEY=AIzaSyA6EicRUZ_a2YTAuB1ZFWWXB6yOaqnKyB0 \
+          -e MANAGEMENT_ENDPOINTS_ENABLED_BY_DEFAULT=false \
+          -e MANAGEMENT_ENDPOINT_HEALTH_ENABLED=true \
+          -e MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health \
+          -e MANAGEMENT_METRICS_ENABLED=false \
           -e MANAGEMENT_METRICS_SYSTEM_ENABLED=false \
           -e MANAGEMENT_METRICS_PROCESS_ENABLED=false \
           -e MANAGEMENT_METRICS_JVM_ENABLED=false \
-          -e MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info \
+          -e MANAGEMENT_METRICS_JDBC_ENABLED=false \
+          -e MANAGEMENT_METRICS_HIKARICP_ENABLED=false \
           docker-backend
         
         echo "⏳ Attente du démarrage du backend..."
@@ -318,9 +323,26 @@ jobs:
         # Vérifier si le backend a des problèmes de démarrage et redémarrer si nécessaire
         echo "🔍 Vérification de l'état du backend..."
         if ! docker ps | grep medhead-backend | grep -q "Up"; then
-          echo "⚠️ Backend non démarré, tentative de redémarrage avec configuration alternative..."
-          # Redémarrer avec une configuration minimale
-          docker restart medhead-backend
+          echo "⚠️ Backend non démarré, vérification des logs..."
+          docker logs medhead-backend --tail 20 || echo "Aucun log disponible"
+          echo "⚠️ Tentative de redémarrage avec configuration alternative..."
+          # Nettoyer le conteneur existant
+          docker rm -f medhead-backend || true
+          # Redémarrer avec une configuration minimale (sans métriques)
+          docker run -d \
+            --name medhead-backend \
+            --network docker_medhead-network \
+            -p 8080:8080 \
+            -e SPRING_PROFILES_ACTIVE=docker \
+            -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/medhead_db \
+            -e SPRING_DATASOURCE_USERNAME=medhead_user \
+            -e SPRING_DATASOURCE_PASSWORD=medhead_password \
+            -e GOOGLE_MAPS_API_KEY=AIzaSyA6EicRUZ_a2YTAuB1ZFWWXB6yOaqnKyB0 \
+            -e MANAGEMENT_ENDPOINTS_ENABLED_BY_DEFAULT=false \
+            -e MANAGEMENT_ENDPOINT_HEALTH_ENABLED=true \
+            -e MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health \
+            -e MANAGEMENT_METRICS_ENABLED=false \
+            docker-backend
           sleep 20
         fi
         
