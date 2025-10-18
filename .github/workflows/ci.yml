@@ -296,7 +296,7 @@ jobs:
         
         # Démarrer le backend avec configuration CI spécifique
         echo "🚀 Démarrage du backend avec configuration CI..."
-        # Démarrer le backend avec docker run et variables d'environnement spécifiques
+        # Démarrer le backend avec docker run et options JVM pour désactiver Actuator
         docker run -d \
           --name medhead-backend \
           --network docker_medhead-network \
@@ -306,15 +306,7 @@ jobs:
           -e SPRING_DATASOURCE_USERNAME=medhead_user \
           -e SPRING_DATASOURCE_PASSWORD=medhead_password \
           -e GOOGLE_MAPS_API_KEY=AIzaSyA6EicRUZ_a2YTAuB1ZFWWXB6yOaqnKyB0 \
-          -e MANAGEMENT_ENDPOINTS_ENABLED_BY_DEFAULT=false \
-          -e MANAGEMENT_ENDPOINT_HEALTH_ENABLED=true \
-          -e MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health \
-          -e MANAGEMENT_METRICS_ENABLED=false \
-          -e MANAGEMENT_METRICS_SYSTEM_ENABLED=false \
-          -e MANAGEMENT_METRICS_PROCESS_ENABLED=false \
-          -e MANAGEMENT_METRICS_JVM_ENABLED=false \
-          -e MANAGEMENT_METRICS_JDBC_ENABLED=false \
-          -e MANAGEMENT_METRICS_HIKARICP_ENABLED=false \
+          -e JAVA_OPTS="-Xms512m -Xmx2g -Dmanagement.endpoints.enabled-by-default=false -Dmanagement.endpoint.health.enabled=true -Dmanagement.endpoints.web.exposure.include=health -Dmanagement.metrics.enabled=false -Dmanagement.metrics.system.enabled=false -Dmanagement.metrics.process.enabled=false -Dmanagement.metrics.jvm.enabled=false" \
           docker-backend
         
         echo "⏳ Attente du démarrage du backend..."
@@ -338,10 +330,7 @@ jobs:
             -e SPRING_DATASOURCE_USERNAME=medhead_user \
             -e SPRING_DATASOURCE_PASSWORD=medhead_password \
             -e GOOGLE_MAPS_API_KEY=AIzaSyA6EicRUZ_a2YTAuB1ZFWWXB6yOaqnKyB0 \
-            -e MANAGEMENT_ENDPOINTS_ENABLED_BY_DEFAULT=false \
-            -e MANAGEMENT_ENDPOINT_HEALTH_ENABLED=true \
-            -e MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health \
-            -e MANAGEMENT_METRICS_ENABLED=false \
+            -e JAVA_OPTS="-Xms512m -Xmx2g -Dmanagement.endpoints.enabled-by-default=false -Dmanagement.endpoint.health.enabled=true -Dmanagement.endpoints.web.exposure.include=health -Dmanagement.metrics.enabled=false -Dmanagement.metrics.system.enabled=false -Dmanagement.metrics.process.enabled=false -Dmanagement.metrics.jvm.enabled=false" \
             docker-backend
           sleep 20
         fi
