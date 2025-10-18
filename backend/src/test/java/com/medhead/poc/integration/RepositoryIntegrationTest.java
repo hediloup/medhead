@@ -85,17 +85,22 @@ public class RepositoryIntegrationTest {
     @Test
     public void testHospitalRepository_FindBySpecialtyAndAvailableBeds() {
         // When
+        System.out.println("🔍 Test: Repository - Recherche par spécialité et lits disponibles");
+        System.out.println("   Recherche d'hôpitaux avec spécialité 'Cardiology'");
         List<Hospital> cardiologyHospitals = hospitalRepository.findBySpecialtyAndAvailableBeds("Cardiology");
 
         // Then
+        System.out.println("   Nombre d'hôpitaux trouvés: " + cardiologyHospitals.size());
         assertNotNull("La liste ne doit pas être null", cardiologyHospitals);
         assertEquals("Il doit y avoir 2 hôpitaux avec la spécialité Cardiology", 2, cardiologyHospitals.size());
         assertTrue("hospital1 doit être dans la liste", cardiologyHospitals.contains(hospital1));
         assertTrue("hospital2 doit être dans la liste", cardiologyHospitals.contains(hospital2));
 
         // Test avec une spécialité inexistante
+        System.out.println("   Test avec spécialité inexistante 'Pediatrics'");
         List<Hospital> neurologyHospitals = hospitalRepository.findBySpecialtyAndAvailableBeds("Pediatrics");
         assertEquals("Il ne doit y avoir aucun hôpital avec la spécialité Pediatrics", 0, neurologyHospitals.size());
+        System.out.println("   ✅ Test Repository réussi - Recherche par spécialité fonctionne");
     }
 
     @Test
@@ -138,14 +143,19 @@ public class RepositoryIntegrationTest {
     @Test
     public void testPatientRepository_SaveAndFind() {
         // Given
+        System.out.println("🔍 Test: Repository - Sauvegarde et recherche de patient");
         Patient patient = createValidPatient("Cardiology", 53.3976314, -2.1829641, "ANON123", true);
         patient.setAllocatedHospital(hospital1);
+        System.out.println("   Patient créé: " + patient.getAnonymizedName() + " - " + patient.getRequiredSpecialty());
 
         // When
+        System.out.println("   Sauvegarde du patient en base");
         Patient savedPatient = patientRepository.save(patient);
+        System.out.println("   Recherche du patient par ID: " + savedPatient.getId());
         Patient foundPatient = patientRepository.findById(savedPatient.getId()).orElse(null);
 
         // Then
+        System.out.println("   Vérification des données du patient");
         assertNotNull("Le patient sauvegardé ne doit pas être null", savedPatient);
         assertNotNull("Le patient trouvé ne doit pas être null", foundPatient);
         assertEquals("La spécialité doit être correcte", "Cardiology", foundPatient.getRequiredSpecialty());
@@ -154,6 +164,7 @@ public class RepositoryIntegrationTest {
         assertEquals("Le genre doit être correct", "M", foundPatient.getGender());
         assertNotNull("L'hôpital alloué ne doit pas être null", foundPatient.getAllocatedHospital());
         assertEquals("L'ID de l'hôpital doit être correct", hospital1.getId(), foundPatient.getAllocatedHospital().getId());
+        System.out.println("   ✅ Test Repository réussi - Sauvegarde et recherche de patient fonctionne");
     }
 
     @Test

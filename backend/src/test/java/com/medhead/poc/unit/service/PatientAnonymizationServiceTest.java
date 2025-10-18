@@ -43,16 +43,22 @@ public class PatientAnonymizationServiceTest {
     @Test
     public void testAnonymizePatient_Success() {
         // Given
+        System.out.println("🔍 Test: Service Anonymisation - Anonymisation réussie");
+        System.out.println("   Patient initial: " + testPatient.getRequiredSpecialty() + " - " + testPatient.getSeverityLevel());
         when(patientRepository.save(any(Patient.class))).thenReturn(testPatient);
 
         // When
+        System.out.println("   Exécution de l'anonymisation");
         Patient result = patientAnonymizationService.anonymizePatient(testPatient);
 
         // Then
+        System.out.println("   Vérification de l'anonymisation");
         assertNotNull("Le résultat ne doit pas être null", result);
         assertTrue("Le patient doit être marqué comme anonymisé", result.getIsAnonymized());
         assertNotNull("Le nom anonymisé doit être généré", result.getAnonymizedName());
         assertTrue("Le nom anonymisé doit commencer par PATIENT_", result.getAnonymizedName().startsWith("PATIENT_"));
+        System.out.println("   Nom anonymisé généré: " + result.getAnonymizedName());
+        System.out.println("   ✅ Test Anonymisation réussi - Patient anonymisé correctement");
 
         verify(patientRepository).save(testPatient);
     }
@@ -68,10 +74,12 @@ public class PatientAnonymizationServiceTest {
     @Test
     public void testCreateAnonymizedPatient_Success() {
         // Given
+        System.out.println("🔍 Test: Service Anonymisation - Création de patient anonymisé");
         String specialty = "Cardiology";
         Double latitude = 53.3976314;
         Double longitude = -2.1829641;
         String severityLevel = "HIGH";
+        System.out.println("   Paramètres: " + specialty + " à " + latitude + ", " + longitude + " - " + severityLevel);
 
         when(patientRepository.save(any(Patient.class))).thenAnswer(invocation -> {
             Patient patient = invocation.getArgument(0);
@@ -80,15 +88,18 @@ public class PatientAnonymizationServiceTest {
         });
 
         // When
+        System.out.println("   Création du patient anonymisé");
         Patient result = patientAnonymizationService.createAnonymizedPatient(specialty, latitude, longitude, severityLevel);
 
         // Then
+        System.out.println("   Vérification du patient créé");
         assertNotNull("Le résultat ne doit pas être null", result);
         assertTrue("Le patient doit être marqué comme anonymisé", result.getIsAnonymized());
         assertEquals("La spécialité doit être correcte", specialty, result.getRequiredSpecialty());
         assertEquals("La latitude doit être correcte", latitude, result.getLatitude());
         assertEquals("La longitude doit être correcte", longitude, result.getLongitude());
         assertEquals("Le niveau de gravité doit être correct", severityLevel, result.getSeverityLevel());
+        System.out.println("   ✅ Test Anonymisation réussi - Patient anonymisé créé correctement");
 
         verify(patientRepository).save(any(Patient.class));
     }
