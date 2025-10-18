@@ -132,22 +132,20 @@
   </div>
 
   <!-- Informations sur le service -->
-  <!-- Map container: shown when allocation result is available -->
+  <!-- Google Maps button: shown when allocation result is available -->
   <div *ngIf="allocationResult" class="card map-card">
     <h3>🗺️ Itinéraire</h3>
     <div class="map-controls" style="margin-bottom: 10px;">
       <button 
         type="button" 
-        class="btn btn-sm btn-outline-secondary" 
-        (click)="reloadMap()"
-        title="Recharger la carte">
-        🔄 Recharger la carte
+        class="btn btn-primary" 
+        (click)="openGoogleMaps()"
+        title="Ouvrir l'itinéraire dans Google Maps">
+        🗺️ Voir sur Google Maps
       </button>
     </div>
-    <div id="map" class="map-container"></div>
-    <div *ngIf="googleMapsFallbackUrl" class="alert alert-warning" style="margin-top:8px;">
-      <strong>Itinéraire non disponible via l'API.</strong>
-      <a [href]="googleMapsFallbackUrl" target="_blank" rel="noopener noreferrer">Voir l'itinéraire sur Google Maps</a>
+    <div class="alert alert-info" style="margin-top:8px;">
+      <strong>💡 Conseil :</strong> Cliquez sur le bouton ci-dessus pour ouvrir l'itinéraire optimal dans Google Maps avec les conditions de trafic en temps réel.
     </div>
   </div>
 

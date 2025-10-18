@@ -3,7 +3,6 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AllocationService } from '../services/allocation.service';
 import { GeocodingService } from '../services/geocoding.service';
 import { DistanceService } from '../services/distance.service';
-import { GoogleMapsLoaderService } from '../services/google-maps-loader.service';
 import { AllocationRequest } from '../models/allocation-request';
 import { AllocationResponse } from '../models/allocation-response';
 
@@ -21,12 +20,8 @@ export class HospitalAllocationComponent implements OnInit {
   durationText = '';
   errorMessage = '';
   successMessage = '';
-  // When directions fail, we expose a fallback URL to open Google Maps
-  googleMapsFallbackUrl?: string;
-  // Map and renderer instances (persisted)
-  private mapInstance: any = null;
-  private directionsRendererInstance: any = null;
-  private directionsServiceInstance: any = null;
+  // Store patient coordinates for Google Maps URL generation
+  private patientCoordinates?: { lat: number, lng: number };
 
   // List of available medical specialties
   medicalSpecialties = [
@@ -51,9 +46,8 @@ export class HospitalAllocationComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private allocationService: AllocationService,
-    private geocodingService: GeocodingService
-    , private distanceService: DistanceService
-    , private gmapsLoader: GoogleMapsLoaderService
+    private geocodingService: GeocodingService,
+    private distanceService: DistanceService
   ) {
     this.allocationForm = this.fb.group({
       specialty: ['', [Validators.required]],
@@ -63,19 +57,13 @@ export class HospitalAllocationComponent implements OnInit {
 
   ngOnInit(): void {
     // Debug helper: confirm this running build includes our changes
-    console.log('[medhead-version] google-maps-integration=1');
+    console.log('[medhead-version] google-maps-button-integration=1');
 
     // Check API health on startup
     this.checkApiHealth();
-    // Prepare map container if google key available later
-    // Map will be initialized on first allocation result
-    // Expose debug helper to window so you can trigger route rendering manually from console
+    
+    // Expose debug helper to trigger a full allocation search from the console for debugging
     try {
-      (window as any).__medheadRenderRoute = async (olat: number, olng: number, dlat: number, dlng: number) => {
-        console.log('[medhead debug] manual renderRoute called', olat, olng, dlat, dlng);
-        await this.renderRouteOnMap({lat: olat, lng: olng}, {lat: dlat, lng: dlng});
-      };
-      // Expose helper to trigger a full allocation search from the console for debugging
       (window as any).__medheadTriggerSearch = (specialty?: string, address?: string) => {
         try {
           if (specialty) this.allocationForm.get('specialty')?.setValue(specialty);
@@ -108,12 +96,11 @@ export class HospitalAllocationComponent implements OnInit {
   onSubmit(): void {
     console.log('[medhead] onSubmit called, form value=', this.allocationForm.value);
     if (this.allocationForm.valid) {
-      // Clear any previous fallback link
-      this.googleMapsFallbackUrl = undefined;
       this.isLoading = true;
       this.errorMessage = '';
       this.successMessage = '';
       this.allocationResult = null;
+      this.patientCoordinates = undefined;
 
       const formValue = this.allocationForm.value;
       
@@ -135,6 +122,8 @@ export class HospitalAllocationComponent implements OnInit {
       const coordinates = await this.geocodingService.geocodeAddressAsync(address);
       
       if (coordinates) {
+        // Store patient coordinates for Google Maps URL generation
+        this.patientCoordinates = { lat: coordinates.lat, lng: coordinates.lon };
         // Step 2: Request allocation with coordinates
         this.requestAllocation(specialty, coordinates.lat, coordinates.lon);
       } else {
@@ -179,27 +168,16 @@ export class HospitalAllocationComponent implements OnInit {
             lat: latitude,
             lng: longitude
           });
-          // Delay the distance / render call to ensure Angular has time to render
-          // the map container (it is shown using *ngIf="allocationResult"). Without this,
-          // renderRouteOnMap can run before the DOM element exists; users reported the map
-          // only appears when manually invoking the helper from the console.
+          // Get distance and time information
           setTimeout(() => {
             (async () => {
               try {
                 const res = await this.distanceService.getDistance(origin, destination);
                 this.distanceText = res.distanceText || '';
                 this.durationText = res.durationText || '';
-                // Render route on map with additional delay to ensure DOM is ready
-                setTimeout(() => {
-                  this.renderRouteOnMap(origin, destination);
-                }, 100);
               } catch (err: any) {
                 console.warn('Distance service error', err);
                 this.errorMessage = err?.message || 'Unable to retrieve live travel time/distance. Showing estimated values.';
-                // Still try to render the map even if distance service fails
-                setTimeout(() => {
-                  this.renderRouteOnMap(origin, destination);
-                }, 100);
               } finally {
                 this.isLoading = false;
                 this.isGeocoding = false;
@@ -219,197 +197,30 @@ export class HospitalAllocationComponent implements OnInit {
     });
   }
 
-  /** Initialize or update the map and show route between origin and destination */
-  private async renderRouteOnMap(origin: {lat:number,lng:number}, destination: {lat:number,lng:number}) {
-    console.log('[medhead] renderRouteOnMap called with origin:', origin, 'destination:', destination);
-    console.log('[medhead] Exact coordinates being used:');
-    console.log('  Origin (Patient):', `${origin.lat}, ${origin.lng}`);
-    console.log('  Destination (Hospital):', `${destination.lat}, ${destination.lng}`);
-    
-    try {
-      await this.gmapsLoader.load();
-      const google = (window as any).google;
-      if (!google || !google.maps) {
-        console.error('[medhead] Google Maps API not loaded');
-        return;
-      }
-
-      // Create map if not exists
-      // Some Angular builds add attribute selectors like _ngcontent-xxx; ensure element is found.
-      // If the element isn't present yet (view not updated), retry a few times with small delay.
-      let mapEl: HTMLElement | null = null;
-      const findMapEl = () => {
-        mapEl = document.getElementById('map') as HTMLElement | null;
-        if (!mapEl) {
-          const els = document.querySelectorAll('[id]');
-          for (let i = 0; i < els.length; i++) {
-            const el = els[i] as HTMLElement;
-            if (el.id === 'map') { mapEl = el; break; }
-          }
-        }
-        console.log('[medhead] map element search result:', mapEl);
-      };
-
-      findMapEl();
-      let attempts = 0;
-      while (!mapEl && attempts < 10) {
-        // Wait 200ms and try again
-        // eslint-disable-next-line no-await-in-loop
-        await new Promise(r => setTimeout(r, 200));
-        attempts++;
-        findMapEl();
-        console.log(`[medhead] map element search attempt ${attempts}/10`);
-      }
-      
-      if (!mapEl) {
-        console.error('[medhead] map element not found after retries; aborting render');
-        // Build fallback URL
-        const originParam = `${origin.lat},${origin.lng}`;
-        const destParam = `${destination.lat},${destination.lng}`;
-        this.googleMapsFallbackUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(originParam)}&destination=${encodeURIComponent(destParam)}&travelmode=driving`;
-        return;
-      }
-
-      // Initialize or reuse map centered between points
-      const center = { lat: (origin.lat + destination.lat)/2, lng: (origin.lng + destination.lng)/2 };
-      if (!this.mapInstance) {
-        console.log('[medhead] creating new map instance at center', center);
-        this.mapInstance = new google.maps.Map(mapEl, { zoom: 12, center });
-      } else {
-        console.log('[medhead] reusing existing map instance');
-        this.mapInstance.setCenter(center);
-      }
-
-      if (!this.directionsServiceInstance) {
-        this.directionsServiceInstance = new google.maps.DirectionsService();
-      }
-      if (!this.directionsRendererInstance) {
-        this.directionsRendererInstance = new google.maps.DirectionsRenderer({ map: this.mapInstance });
-      } else {
-        this.directionsRendererInstance.setMap(this.mapInstance);
-      }
-
-      const request = {
-        origin: new google.maps.LatLng(origin.lat, origin.lng),
-        destination: new google.maps.LatLng(destination.lat, destination.lng),
-        travelMode: google.maps.TravelMode.DRIVING,
-        // Configure traffic model for optimal route based on current traffic
-        drivingOptions: {
-          departureTime: new Date(),
-          trafficModel: google.maps.TrafficModel.BEST_GUESS
-        },
-        // Request multiple route alternatives to find the best one
-        provideRouteAlternatives: true,
-        // Optimize for traffic conditions
-        optimizeWaypoints: true
-      };
-      
-      console.log('[medhead] DirectionsService request:', {
-        origin: `${origin.lat}, ${origin.lng}`,
-        destination: `${destination.lat}, ${destination.lng}`,
-        travelMode: 'DRIVING',
-        trafficModel: 'BEST_GUESS'
-      });
-
-      // Wrap route call so synchronous exceptions (InvalidValueError, etc.) can be retried with a simpler request
-      const callRoute = (req: any, onResult: (res:any, status:any)=>void) => {
-        try {
-          this.directionsServiceInstance.route(req, onResult);
-        } catch (err) {
-          console.warn('[medhead] DirectionsService threw, will retry without drivingOptions', err);
-          // Retry without drivingOptions
-          const simpleReq = {
-            origin: req.origin,
-            destination: req.destination,
-            travelMode: req.travelMode
-          };
-          try {
-            this.directionsServiceInstance.route(simpleReq, onResult);
-          } catch (err2) {
-            console.error('[medhead] DirectionsService retry also threw', err2);
-            // Build fallback URL
-            try {
-              const originParam = `${origin.lat},${origin.lng}`;
-              const destParam = `${destination.lat},${destination.lng}`;
-              this.googleMapsFallbackUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(originParam)}&destination=${encodeURIComponent(destParam)}&travelmode=driving`;
-              try { (window as any).__medheadGoogleMapsFallback = this.googleMapsFallbackUrl; } catch(e) {}
-            } catch (e) { console.error('Failed to build fallback URL after route retry error', e); }
-          }
-        }
-      };
-
-      callRoute(request, (res: any, status: any) => {
-        console.log('[medhead] DirectionsService callback status=', status);
-        console.log('[medhead] DirectionsService response routes count:', res?.routes?.length);
-        if (res?.routes?.[0]?.legs?.[0]) {
-          console.log('[medhead] Route details:', {
-            distance: res.routes[0].legs[0].distance?.text,
-            duration: res.routes[0].legs[0].duration?.text,
-            durationInTraffic: res.routes[0].legs[0].duration_in_traffic?.text
-          });
-          
-          // Log the geocoded addresses from Google Maps
-          if (res.routes[0].legs[0].start_address) {
-            console.log('[medhead] Google Maps geocoded start address:', res.routes[0].legs[0].start_address);
-          }
-          if (res.routes[0].legs[0].end_address) {
-            console.log('[medhead] Google Maps geocoded end address:', res.routes[0].legs[0].end_address);
-          }
-        }
-        
-        if (status === 'OK' || status === google.maps.DirectionsStatus.OK) {
-          try { this.googleMapsFallbackUrl = undefined; (window as any).__medheadGoogleMapsFallback = undefined; } catch(e){}
-          
-          // Select the best route based on traffic conditions
-          let bestRoute = res.routes[0];
-          if (res.routes && res.routes.length > 1) {
-            // Find route with shortest duration considering traffic
-            bestRoute = res.routes.reduce((best: any, current: any) => {
-              const bestDuration = best.legs[0]?.duration_in_traffic?.value || best.legs[0]?.duration?.value || Infinity;
-              const currentDuration = current.legs[0]?.duration_in_traffic?.value || current.legs[0]?.duration?.value || Infinity;
-              return currentDuration < bestDuration ? current : best;
-            });
-            console.log('[medhead] Selected best route from', res.routes.length, 'alternatives');
-          }
-          
-          // Verify hospital location with reverse geocoding
-          this.verifyHospitalLocation(destination, this.allocationResult?.hospital_name);
-          
-          // Add markers for origin and destination
-          this.addOriginDestinationMarkers(origin, destination);
-          
-          // Set the best route
-          this.directionsRendererInstance.setDirections({
-            ...res,
-            routes: [bestRoute]
-          });
-          console.log('[medhead] Directions rendered successfully with traffic optimization');
-        } else {
-          console.warn('[medhead] Directions request failed: ', status, res);
-          // Build a fallback URL to open Google Maps directions in a new tab
-          try {
-            const originParam = `${origin.lat},${origin.lng}`;
-            const destParam = `${destination.lat},${destination.lng}`;
-            this.googleMapsFallbackUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(originParam)}&destination=${encodeURIComponent(destParam)}&travelmode=driving`;
-            console.log('[medhead] Generated fallback URL:', this.googleMapsFallbackUrl);
-            try { (window as any).__medheadGoogleMapsFallback = this.googleMapsFallbackUrl; } catch(e) {}
-          } catch (e) {
-            console.error('Failed to build fallback URL', e);
-          }
-        }
-      });
-    } catch (e) {
-      console.error('Error rendering map route', e);
-      // If loader failed, expose fallback so user can open Google Maps directly
-      try {
-        const originParam = `${origin.lat},${origin.lng}`;
-        const destParam = `${destination.lat},${destination.lng}`;
-        this.googleMapsFallbackUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(originParam)}&destination=${encodeURIComponent(destParam)}&travelmode=driving`;
-        try { (window as any).__medheadGoogleMapsFallback = this.googleMapsFallbackUrl; } catch(e) {}
-      } catch (err) {
-        console.error('Failed to build fallback URL after loader error', err);
-      }
+  /**
+   * Opens Google Maps with the route from patient location to hospital
+   */
+  openGoogleMaps(): void {
+    if (!this.allocationResult || !this.patientCoordinates) {
+      console.error('[medhead] Cannot open Google Maps: missing allocation result or patient coordinates');
+      return;
     }
+
+    const origin = this.patientCoordinates;
+    const destination = {
+      lat: this.allocationResult.hospital_latitude,
+      lng: this.allocationResult.hospital_longitude
+    };
+
+    // Generate Google Maps directions URL
+    const originParam = `${origin.lat},${origin.lng}`;
+    const destParam = `${destination.lat},${destination.lng}`;
+    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(originParam)}&destination=${encodeURIComponent(destParam)}&travelmode=driving`;
+    
+    console.log('[medhead] Opening Google Maps with URL:', googleMapsUrl);
+    
+    // Open in new tab
+    window.open(googleMapsUrl, '_blank', 'noopener,noreferrer');
   }
 
   /**
@@ -430,134 +241,9 @@ export class HospitalAllocationComponent implements OnInit {
     this.allocationResult = null;
     this.errorMessage = '';
     this.successMessage = '';
-    this.googleMapsFallbackUrl = undefined;
-    // Clear map instances to force recreation on next search
-    this.mapInstance = null;
-    this.directionsRendererInstance = null;
-    this.directionsServiceInstance = null;
+    this.patientCoordinates = undefined;
   }
 
-  /**
-   * Verify hospital location using reverse geocoding
-   */
-  private verifyHospitalLocation(coordinates: {lat: number, lng: number}, hospitalName?: string): void {
-    if (!this.mapInstance) return;
-    
-    const google = (window as any).google;
-    if (!google || !google.maps) return;
-    
-    const geocoder = new google.maps.Geocoder();
-    geocoder.geocode({ location: new google.maps.LatLng(coordinates.lat, coordinates.lng) }, (results: any, status: any) => {
-      if (status === 'OK' && results && results[0]) {
-        console.log('[medhead] Hospital location verification:');
-        console.log('  Expected hospital:', hospitalName);
-        console.log('  Coordinates:', `${coordinates.lat}, ${coordinates.lng}`);
-        console.log('  Reverse geocoded address:', results[0].formatted_address);
-        console.log('  Address components:', results[0].address_components);
-        
-        // Check if the geocoded address contains hospital-related keywords
-        const address = results[0].formatted_address.toLowerCase();
-        const isHospital = address.includes('hospital') || 
-                          address.includes('medical') || 
-                          address.includes('health') ||
-                          (hospitalName && address.includes(hospitalName.toLowerCase()));
-        
-        if (!isHospital) {
-          console.warn('[medhead] ⚠️ WARNING: The geocoded address does not appear to be a hospital location!');
-          console.warn('[medhead] This might indicate incorrect coordinates in the database.');
-        } else {
-          console.log('[medhead] ✅ Hospital location verified successfully');
-        }
-      } else {
-        console.warn('[medhead] Failed to reverse geocode hospital location:', status);
-      }
-    });
-  }
-
-  /**
-   * Add markers for origin and destination points
-   */
-  private addOriginDestinationMarkers(origin: {lat: number, lng: number}, destination: {lat: number, lng: number}): void {
-    if (!this.mapInstance) return;
-    
-    const google = (window as any).google;
-    if (!google || !google.maps) return;
-    
-    // Clear existing markers
-    if (this.mapInstance.markers) {
-      this.mapInstance.markers.forEach((marker: any) => marker.setMap(null));
-    }
-    this.mapInstance.markers = [];
-    
-    // Origin marker (patient location)
-    const originMarker = new google.maps.Marker({
-      position: new google.maps.LatLng(origin.lat, origin.lng),
-      map: this.mapInstance,
-      title: 'Votre position',
-      icon: {
-        url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
-        scaledSize: new google.maps.Size(32, 32)
-      },
-      label: {
-        text: '🏠',
-        fontSize: '16px',
-        fontWeight: 'bold'
-      }
-    });
-    
-    // Destination marker (hospital)
-    const destinationMarker = new google.maps.Marker({
-      position: new google.maps.LatLng(destination.lat, destination.lng),
-      map: this.mapInstance,
-      title: 'Hôpital recommandé',
-      icon: {
-        url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
-        scaledSize: new google.maps.Size(32, 32)
-      },
-      label: {
-        text: '🏥',
-        fontSize: '16px',
-        fontWeight: 'bold'
-      }
-    });
-    
-    // Store markers for cleanup
-    this.mapInstance.markers = [originMarker, destinationMarker];
-    
-    // Add info windows
-    const originInfoWindow = new google.maps.InfoWindow({
-      content: '<div style="padding: 5px;"><strong>📍 Votre position</strong><br/>Point de départ</div>'
-    });
-    
-    const destinationInfoWindow = new google.maps.InfoWindow({
-      content: '<div style="padding: 5px;"><strong>🏥 Hôpital recommandé</strong><br/>Destination optimale</div>'
-    });
-    
-    // Add click listeners
-    originMarker.addListener('click', () => {
-      originInfoWindow.open(this.mapInstance, originMarker);
-    });
-    
-    destinationMarker.addListener('click', () => {
-      destinationInfoWindow.open(this.mapInstance, destinationMarker);
-    });
-  }
-
-  /**
-   * Force reload the map (useful for debugging)
-   */
-  reloadMap(): void {
-    if (this.allocationResult && this.allocationResult.hospital_latitude && this.allocationResult.hospital_longitude) {
-      const formValue = this.allocationForm.value;
-      if (formValue.address) {
-        this.geocodeAddress(formValue.address, formValue.specialty).then(() => {
-          console.log('[medhead] Map reloaded successfully');
-        }).catch((error) => {
-          console.error('[medhead] Failed to reload map:', error);
-        });
-      }
-    }
-  }
 
   /**
    * Checks if a form field has errors
