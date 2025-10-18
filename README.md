@@ -285,6 +285,7 @@ docker run --rm \
   -w /app \
   maven:3.8.4-openjdk-17 \
   mvn test -P bdd-tests -Dspring.profiles.active=test
+  
 docker-compose down
 ```
 
