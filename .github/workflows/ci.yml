@@ -289,13 +289,45 @@ jobs:
     - name: 🐳 Démarrage du backend avec Docker Compose
       run: |
         echo "🐳 Démarrage du backend MedHead..."
-        # Démarrer uniquement postgres et backend
-        docker compose -f ./docker/docker-compose.yml up -d postgres backend
+        
+        # Vérifier Docker et Docker Compose
+        echo "🔍 Vérification de Docker..."
+        docker --version || { echo "❌ Docker non disponible"; exit 1; }
+        docker compose version || { echo "❌ Docker Compose non disponible"; exit 1; }
+        
+        # Vérifier que le fichier docker-compose existe
+        if [ ! -f "./docker/docker-compose.yml" ]; then
+          echo "❌ Fichier docker-compose.yml non trouvé"
+          exit 1
+        fi
+        
+        # Nettoyer les conteneurs existants
+        echo "🧹 Nettoyage des conteneurs existants..."
+        docker compose -f ./docker/docker-compose.yml down -v || true
+        
+        # Démarrer postgres d'abord
+        echo "🐘 Démarrage de PostgreSQL..."
+        docker compose -f ./docker/docker-compose.yml up -d postgres
+        
+        # Attendre que PostgreSQL soit prêt
+        echo "⏳ Attente de PostgreSQL..."
+        for i in $(seq 1 30); do
+          if docker compose -f ./docker/docker-compose.yml exec -T postgres pg_isready -U medhead_user -d medhead_db > /dev/null 2>&1; then
+            echo "✅ PostgreSQL prêt"
+            break
+          fi
+          echo "⏳ En attente de PostgreSQL... ($i/30)"
+          sleep 2
+        done
+        
+        # Démarrer le backend
+        echo "🚀 Démarrage du backend..."
+        docker compose -f ./docker/docker-compose.yml up -d backend
         
         echo "⏳ Attente du démarrage du backend..."
-        sleep 45
+        sleep 30
         
-        echo "🔍 Vérification du statut du backend..."
+        echo "🔍 Vérification du statut des services..."
         docker compose -f ./docker/docker-compose.yml ps
         
         echo "🔧 Vérification de l'accessibilité du backend (polling jusqu'à 5 minutes)..."
@@ -314,6 +346,8 @@ jobs:
           echo "❌ Backend non accessible après 5 minutes. Dump des logs pour debug..."
           echo "\n--- docker compose ps ---"
           docker compose -f ./docker/docker-compose.yml ps || true
+          echo "\n--- docker logs postgres (last 50 lines) ---"
+          docker logs --tail 50 medhead-postgres || true
           echo "\n--- docker logs backend (last 200 lines) ---"
           docker logs --tail 200 medhead-backend || true
           echo "\n--- docker compose logs (last 200 lines) ---"
