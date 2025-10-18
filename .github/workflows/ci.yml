@@ -330,18 +330,14 @@ jobs:
         # Inject Google Maps key (if present) before building
         if [ -n "${{ secrets.GOOGLE_MAPS_API_KEY }}" ]; then
           echo "🔐 Injecting GOOGLE_MAPS_API_KEY into environment files"
-          cat > src/environments/environment.ts <<'EOF'
-export const environment = {
-  production: false,
-  googleMapsApiKey: '${{ secrets.GOOGLE_MAPS_API_KEY }}'
-};
-EOF
-          cat > src/environments/environment.prod.ts <<'EOF'
-export const environment = {
-  production: true,
-  googleMapsApiKey: '${{ secrets.GOOGLE_MAPS_API_KEY }}'
-};
-EOF
+          echo "export const environment = {" > src/environments/environment.ts
+          echo "  production: false," >> src/environments/environment.ts
+          echo "  googleMapsApiKey: \"${{ secrets.GOOGLE_MAPS_API_KEY }}\"" >> src/environments/environment.ts
+          echo "};" >> src/environments/environment.ts
+          echo "export const environment = {" > src/environments/environment.prod.ts
+          echo "  production: true," >> src/environments/environment.prod.ts
+          echo "  googleMapsApiKey: \"${{ secrets.GOOGLE_MAPS_API_KEY }}\"" >> src/environments/environment.prod.ts
+          echo "};" >> src/environments/environment.prod.ts
         fi
 
         # Construire l'application d'abord
@@ -625,7 +621,7 @@ EOF
         echo "📊 Génération du rapport consolidé CI..."
         mkdir -p reports/ci-summary
         
-        cat > reports/ci-summary/ci-report.html << 'EOF'
+        cat > reports/ci-summary/ci-report.html << EOF
         <!DOCTYPE html>
         <html lang="fr">
         <head>
