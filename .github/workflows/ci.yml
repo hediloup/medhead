@@ -26,21 +26,6 @@ jobs:
     name: 🧪 Tests Backend
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_DB: medhead_test
-          POSTGRES_USER: medhead_user
-          POSTGRES_PASSWORD: medhead_password
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
 
     steps:
     - name: 📥 Checkout du code
@@ -129,22 +114,21 @@ jobs:
         npm ci
 
     - name: 🔐 Inject Google Maps key into environment (frontend)
-      if: ${{ secrets.GOOGLE_MAPS_API_KEY != '' }}
       working-directory: ./frontend
       run: |
         echo "🔐 Injecting GOOGLE_MAPS_API_KEY into environment files"
-        cat > src/environments/environment.ts <<'EOF'
-export const environment = {
-  production: false,
-  googleMapsApiKey: '${{ secrets.GOOGLE_MAPS_API_KEY }}'
-};
-EOF
-        cat > src/environments/environment.prod.ts <<'EOF'
-export const environment = {
-  production: true,
-  googleMapsApiKey: '${{ secrets.GOOGLE_MAPS_API_KEY }}'
-};
-EOF
+        if [ -n "${{ secrets.GOOGLE_MAPS_API_KEY }}" ]; then
+          echo "export const environment = {" > src/environments/environment.ts
+          echo "  production: false," >> src/environments/environment.ts
+          echo "  googleMapsApiKey: \"${{ secrets.GOOGLE_MAPS_API_KEY }}\"" >> src/environments/environment.ts
+          echo "};" >> src/environments/environment.ts
+          echo "export const environment = {" > src/environments/environment.prod.ts
+          echo "  production: true," >> src/environments/environment.prod.ts
+          echo "  googleMapsApiKey: \"${{ secrets.GOOGLE_MAPS_API_KEY }}\"" >> src/environments/environment.prod.ts
+          echo "};" >> src/environments/environment.prod.ts
+        else
+          echo "⚠️ GOOGLE_MAPS_API_KEY not found, using default environment"
+        fi
 
     - name: 🧪 Tests Unitaires Frontend
       working-directory: ./frontend
@@ -243,21 +227,6 @@ EOF
     runs-on: ubuntu-latest
     timeout-minutes: 40
     needs: [backend-tests, frontend-tests]
-    
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_DB: medhead_db
-          POSTGRES_USER: medhead_user
-          POSTGRES_PASSWORD: medhead_password
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
 
     steps:
     - name: 📥 Checkout du code
@@ -290,14 +259,84 @@ EOF
     - name: 🐳 Démarrage du backend avec Docker Compose
       run: |
         echo "🐳 Démarrage du backend MedHead..."
-        # Démarrer uniquement postgres et backend
-        docker compose -f ./docker/docker-compose.yml up -d postgres backend
+        
+        # Vérifier Docker et Docker Compose
+        echo "🔍 Vérification de Docker..."
+        docker --version || { echo "❌ Docker non disponible"; exit 1; }
+        docker compose version || { echo "❌ Docker Compose non disponible"; exit 1; }
+        
+        # Vérifier que le fichier docker-compose existe
+        if [ ! -f "./docker/docker-compose.yml" ]; then
+          echo "❌ Fichier docker-compose.yml non trouvé"
+          exit 1
+        fi
+        
+        # Nettoyer les conteneurs existants
+        echo "🧹 Nettoyage des conteneurs existants..."
+        docker compose -f ./docker/docker-compose.yml down -v || true
+        
+        # Forcer la reconstruction de l'image backend (sans cache)
+        echo "🔨 Reconstruction de l'image backend (sans cache)..."
+        docker compose -f ./docker/docker-compose.yml build --no-cache backend
+        
+        # Démarrer postgres d'abord
+        echo "🐘 Démarrage de PostgreSQL..."
+        docker compose -f ./docker/docker-compose.yml up -d postgres
+        
+        # Attendre que PostgreSQL soit prêt
+        echo "⏳ Attente de PostgreSQL..."
+        for i in $(seq 1 30); do
+          if docker compose -f ./docker/docker-compose.yml exec -T postgres pg_isready -U medhead_user -d medhead_db > /dev/null 2>&1; then
+            echo "✅ PostgreSQL prêt"
+            break
+          fi
+          echo "⏳ En attente de PostgreSQL... ($i/30)"
+          sleep 2
+        done
+        
+        # Démarrer le backend avec configuration CI spécifique
+        echo "🚀 Démarrage du backend avec configuration CI..."
+        # Démarrer le backend avec docker run et options JVM pour désactiver Actuator
+        docker run -d \
+          --name medhead-backend \
+          --network docker_medhead-network \
+          -p 8080:8080 \
+          -e SPRING_PROFILES_ACTIVE=docker \
+          -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/medhead_db \
+          -e SPRING_DATASOURCE_USERNAME=medhead_user \
+          -e SPRING_DATASOURCE_PASSWORD=medhead_password \
+          -e GOOGLE_MAPS_API_KEY=AIzaSyA6EicRUZ_a2YTAuB1ZFWWXB6yOaqnKyB0 \
+          -e JAVA_OPTS="-Xms512m -Xmx2g -Dmanagement.endpoints.enabled-by-default=false -Dmanagement.endpoint.health.enabled=true -Dmanagement.endpoints.web.exposure.include=health -Dmanagement.metrics.enabled=false -Dmanagement.metrics.system.enabled=false -Dmanagement.metrics.process.enabled=false -Dmanagement.metrics.jvm.enabled=false -Dmanagement.metrics.binders.system.enabled=false -Dmanagement.metrics.binders.tomcat.enabled=false -Dspring.autoconfigure.exclude=org.springframework.boot.actuate.autoconfigure.metrics.SystemMetricsAutoConfiguration,org.springframework.boot.actuate.autoconfigure.metrics.web.tomcat.TomcatMetricsAutoConfiguration" \
+          docker-backend
         
         echo "⏳ Attente du démarrage du backend..."
-        sleep 45
+        sleep 30
         
-        echo "🔍 Vérification du statut du backend..."
-        docker compose -f ./docker/docker-compose.yml ps
+        # Vérifier si le backend a des problèmes de démarrage et redémarrer si nécessaire
+        echo "🔍 Vérification de l'état du backend..."
+        if ! docker ps | grep medhead-backend | grep -q "Up"; then
+          echo "⚠️ Backend non démarré, vérification des logs..."
+          docker logs medhead-backend --tail 20 || echo "Aucun log disponible"
+          echo "⚠️ Tentative de redémarrage avec configuration alternative..."
+          # Nettoyer le conteneur existant
+          docker rm -f medhead-backend || true
+          # Redémarrer avec une configuration minimale (sans métriques)
+          docker run -d \
+            --name medhead-backend \
+            --network docker_medhead-network \
+            -p 8080:8080 \
+            -e SPRING_PROFILES_ACTIVE=docker \
+            -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/medhead_db \
+            -e SPRING_DATASOURCE_USERNAME=medhead_user \
+            -e SPRING_DATASOURCE_PASSWORD=medhead_password \
+            -e GOOGLE_MAPS_API_KEY=AIzaSyA6EicRUZ_a2YTAuB1ZFWWXB6yOaqnKyB0 \
+            -e JAVA_OPTS="-Xms512m -Xmx2g -Dmanagement.endpoints.enabled-by-default=false -Dmanagement.endpoint.health.enabled=true -Dmanagement.endpoints.web.exposure.include=health -Dmanagement.metrics.enabled=false -Dmanagement.metrics.system.enabled=false -Dmanagement.metrics.process.enabled=false -Dmanagement.metrics.jvm.enabled=false -Dmanagement.metrics.binders.system.enabled=false -Dmanagement.metrics.binders.tomcat.enabled=false -Dspring.autoconfigure.exclude=org.springframework.boot.actuate.autoconfigure.metrics.SystemMetricsAutoConfiguration,org.springframework.boot.actuate.autoconfigure.metrics.web.tomcat.TomcatMetricsAutoConfiguration" \
+            docker-backend
+          sleep 20
+        fi
+        
+        echo "🔍 Vérification du statut des services..."
+        docker ps | grep -E "(medhead-backend|medhead-postgres)"
         
         echo "🔧 Vérification de l'accessibilité du backend (polling jusqu'à 5 minutes)..."
         # Poll the health endpoint, retry up to 60 times (5 minutes total with 5s interval)
@@ -313,12 +352,16 @@ EOF
         done
         if [ "$success" -ne 0 ]; then
           echo "❌ Backend non accessible après 5 minutes. Dump des logs pour debug..."
-          echo "\n--- docker compose ps ---"
-          docker compose -f ./docker/docker-compose.yml ps || true
+          echo "\n--- docker ps ---"
+          docker ps || true
+          echo "\n--- docker logs postgres (last 50 lines) ---"
+          docker logs --tail 50 medhead-postgres || true
           echo "\n--- docker logs backend (last 200 lines) ---"
           docker logs --tail 200 medhead-backend || true
-          echo "\n--- docker compose logs (last 200 lines) ---"
-          docker compose -f ./docker/docker-compose.yml logs --no-color --tail 200 || true
+          echo "\n--- Vérification des variables d'environnement ---"
+          docker exec medhead-backend env | grep -E "(SPRING|MANAGEMENT)" || true
+          echo "\n--- Test de connectivité à la base de données ---"
+          docker exec medhead-postgres pg_isready -U medhead_user -d medhead_db || true
           exit 1
         fi
 
@@ -334,18 +377,14 @@ EOF
         # Inject Google Maps key (if present) before building
         if [ -n "${{ secrets.GOOGLE_MAPS_API_KEY }}" ]; then
           echo "🔐 Injecting GOOGLE_MAPS_API_KEY into environment files"
-          cat > src/environments/environment.ts <<'EOF'
-export const environment = {
-  production: false,
-  googleMapsApiKey: '${{ secrets.GOOGLE_MAPS_API_KEY }}'
-};
-EOF
-          cat > src/environments/environment.prod.ts <<'EOF'
-export const environment = {
-  production: true,
-  googleMapsApiKey: '${{ secrets.GOOGLE_MAPS_API_KEY }}'
-};
-EOF
+          echo "export const environment = {" > src/environments/environment.ts
+          echo "  production: false," >> src/environments/environment.ts
+          echo "  googleMapsApiKey: \"${{ secrets.GOOGLE_MAPS_API_KEY }}\"" >> src/environments/environment.ts
+          echo "};" >> src/environments/environment.ts
+          echo "export const environment = {" > src/environments/environment.prod.ts
+          echo "  production: true," >> src/environments/environment.prod.ts
+          echo "  googleMapsApiKey: \"${{ secrets.GOOGLE_MAPS_API_KEY }}\"" >> src/environments/environment.prod.ts
+          echo "};" >> src/environments/environment.prod.ts
         fi
 
         # Construire l'application d'abord
@@ -629,7 +668,7 @@ EOF
         echo "📊 Génération du rapport consolidé CI..."
         mkdir -p reports/ci-summary
         
-        cat > reports/ci-summary/ci-report.html << 'EOF'
+        cat > reports/ci-summary/ci-report.html << EOF
         <!DOCTYPE html>
         <html lang="fr">
         <head>

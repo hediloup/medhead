@@ -21,6 +21,9 @@ RUN mvn clean package -DskipTests
 # Étape 2: Runtime avec OpenJDK
 FROM openjdk:17-jdk-slim
 
+# Installer curl pour le healthcheck
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 # Définir le répertoire de travail
 WORKDIR /app
 
