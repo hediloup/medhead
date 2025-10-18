@@ -6,26 +6,27 @@ import { Rate } from 'k6/metrics';
 const errorRate = new Rate('errors');
 
 export const options = {
-  stages: [
-    { duration: '1m', target: 200 },   // Montée progressive plus lente
-    { duration: '2m', target: 400 },   // Augmentation graduelle
-    { duration: '3m', target: 600 },   // Approche de la charge cible
-    { duration: '5m', target: 800 },   // Charge cible de 800 req/s
-    { duration: '2m', target: 0 },     // Descente progressive
-  ],
+  scenarios: {
+    allocate_api_rate: {
+      executor: 'constant-arrival-rate',
+      rate: 800,                 // target 800 iterations per timeUnit
+      timeUnit: '1s',            // 800 iterations / second
+      duration: '13m',           // duration of the test
+      preAllocatedVUs: 800,      // threads preallocated to try to reach the rate quickly
+      maxVUs: 3000               // upper bound if more VUs are needed
+    }
+  },
   thresholds: {
-    // Objectifs de performance pour les requêtes réussies
     'http_req_duration{expected_response:true}': [
-      'p(95)<200',  // 95% des requêtes < 200ms
-      'p(99)<500',  // 99% des requêtes < 500ms
-      'avg<100'     // Temps moyen < 100ms
+      'p(95)<200',
+      'p(99)<500',
+      'avg<100'
     ],
-    // Taux d'erreur < 1%
     http_req_failed: ['rate<0.01'],
-    // Taux d'erreur personnalisé
     errors: ['rate<0.01'],
   },
-  // Configuration optimisée pour les performances
+  // Réduction du coût client
+  discardResponseBodies: true,
   noConnectionReuse: false,
   userAgent: 'k6-medhead-load-test/1.0',
 };
@@ -57,15 +58,6 @@ export default function () {
   const checks = check(response, {
     'Status is 200': (r) => r.status === 200,
     'Response time < 200ms': (r) => r.timings.duration < 200,
-    'Response has body': (r) => r.body && r.body.length > 0,
-    'Response is JSON': (r) => {
-      try {
-        JSON.parse(r.body);
-        return true;
-      } catch (e) {
-        return false;
-      }
-    },
   });
 
   // Enregistrement des erreurs
@@ -77,12 +69,10 @@ export default function () {
   }
 
   // Log des performances pour monitoring (seuil plus strict)
-  if (response.timings.duration > 150) {
-    console.warn(`Slow response: ${response.timings.duration}ms`);
-  }
+  // (désactivé pour limiter l'overhead côté client)
 
-  // Pause réduite pour augmenter le débit
-  sleep(0.05);
+  // Pas de pause: le scénario à taux d'arrivée cadence déjà les itérations
+  // sleep(0);
 }
 
 // Fonction de setup (optionnelle)

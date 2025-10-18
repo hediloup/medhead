@@ -101,12 +101,16 @@
       
       <div class="result-item">
         <div class="result-label">Distance</div>
-        <div class="result-value">{{ allocationResult.distance_km }} km</div>
+        <div class="result-value">{{ distanceText || (allocationResult.distance_km + ' km') }}</div>
+        <div *ngIf="distanceText" class="data-source">📡 Données temps réel Google Maps</div>
+        <div *ngIf="!distanceText" class="data-source">📊 Estimation backend</div>
       </div>
       
       <div class="result-item">
         <div class="result-label">Temps estimé</div>
-        <div class="result-value">{{ allocationResult.estimated_time_minutes }} minutes</div>
+        <div class="result-value">{{ durationText || (allocationResult.estimated_time_minutes + ' minutes') }}</div>
+        <div *ngIf="durationText" class="data-source">📡 Données temps réel Google Maps</div>
+        <div *ngIf="!durationText" class="data-source">📊 Estimation backend</div>
       </div>
       
       <div class="result-item">
@@ -123,11 +127,28 @@
     <div class="alert alert-success">
       <strong>🎉 Allocation réussie !</strong><br>
       Un lit a été réservé pour vous à l'hôpital {{ allocationResult.hospital_name }}. 
-      Temps de trajet estimé: {{ allocationResult.estimated_time_minutes }} minutes.
+      Temps de trajet estimé: {{ durationText || (allocationResult.estimated_time_minutes + ' minutes') }}.
     </div>
   </div>
 
   <!-- Informations sur le service -->
+  <!-- Google Maps button: shown when allocation result is available -->
+  <div *ngIf="allocationResult" class="card map-card">
+    <h3>🗺️ Itinéraire</h3>
+    <div class="map-controls" style="margin-bottom: 10px;">
+      <button 
+        type="button" 
+        class="btn btn-primary" 
+        (click)="openGoogleMaps()"
+        title="Ouvrir l'itinéraire dans Google Maps">
+        🗺️ Voir sur Google Maps
+      </button>
+    </div>
+    <div class="alert alert-info" style="margin-top:8px;">
+      <strong>💡 Conseil :</strong> Cliquez sur le bouton ci-dessus pour ouvrir l'itinéraire optimal dans Google Maps avec les conditions de trafic en temps réel.
+    </div>
+  </div>
+
   <div class="card">
     <h3>ℹ️ À propos de ce service</h3>
     <ul>

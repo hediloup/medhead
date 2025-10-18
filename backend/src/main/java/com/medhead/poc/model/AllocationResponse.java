@@ -25,6 +25,12 @@ public class AllocationResponse {
     @JsonProperty("estimated_time_minutes")
     private Integer estimatedTimeMinutes;
     
+    @JsonProperty("hospital_latitude")
+    private Double hospitalLatitude;
+    
+    @JsonProperty("hospital_longitude")
+    private Double hospitalLongitude;
+    
     // Constructors
     public AllocationResponse() {}
     
@@ -36,6 +42,19 @@ public class AllocationResponse {
         this.specialty = specialty;
         this.availableBeds = availableBeds;
         this.estimatedTimeMinutes = estimatedTimeMinutes;
+    }
+    
+    public AllocationResponse(String hospitalName, Long hospitalId, Double distanceKm, 
+                            String specialty, Integer availableBeds, Integer estimatedTimeMinutes,
+                            Double hospitalLatitude, Double hospitalLongitude) {
+        this.hospitalName = hospitalName;
+        this.hospitalId = hospitalId;
+        this.distanceKm = distanceKm;
+        this.specialty = specialty;
+        this.availableBeds = availableBeds;
+        this.estimatedTimeMinutes = estimatedTimeMinutes;
+        this.hospitalLatitude = hospitalLatitude;
+        this.hospitalLongitude = hospitalLongitude;
     }
     
     // Getters and Setters
@@ -87,6 +106,22 @@ public class AllocationResponse {
         this.estimatedTimeMinutes = estimatedTimeMinutes;
     }
     
+    public Double getHospitalLatitude() {
+        return hospitalLatitude;
+    }
+    
+    public void setHospitalLatitude(Double hospitalLatitude) {
+        this.hospitalLatitude = hospitalLatitude;
+    }
+    
+    public Double getHospitalLongitude() {
+        return hospitalLongitude;
+    }
+    
+    public void setHospitalLongitude(Double hospitalLongitude) {
+        this.hospitalLongitude = hospitalLongitude;
+    }
+    
     // Méthodes de compatibilité pour les tests
     public Double getDistance() {
         return getDistanceKm();
@@ -113,6 +148,8 @@ public class AllocationResponse {
                 ", specialty='" + specialty + '\'' +
                 ", availableBeds=" + availableBeds +
                 ", estimatedTimeMinutes=" + estimatedTimeMinutes +
+                ", hospitalLatitude=" + hospitalLatitude +
+                ", hospitalLongitude=" + hospitalLongitude +
                 '}';
     }
 }

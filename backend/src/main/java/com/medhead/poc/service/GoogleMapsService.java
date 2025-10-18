@@ -154,11 +154,14 @@ public class GoogleMapsService {
     
     private RouteResult createFallbackResult(double originLat, double originLon, 
                                            double destinationLat, double destinationLon) {
-        // Utilise la formule Haversine comme fallback
-        DistanceCalculationService fallbackService = new DistanceCalculationService();
-        double distanceKm = fallbackService.calculateDistance(originLat, originLon, destinationLat, destinationLon);
-        int durationMinutes = fallbackService.estimateTravelTime(distanceKm);
-        
-        return new RouteResult(distanceKm, durationMinutes, durationMinutes, false);
-    }
+		// Utilise la formule Haversine comme fallback
+		DistanceCalculationService fallbackService = new DistanceCalculationService();
+		double distanceKm = fallbackService.calculateDistance(originLat, originLon, destinationLat, destinationLon);
+		// Estimation locale simple: 50 km/h en ville
+		double averageSpeedKmh = 50.0;
+		double timeHours = distanceKm / averageSpeedKmh;
+		int durationMinutes = (int) Math.round(timeHours * 60);
+		
+		return new RouteResult(distanceKm, durationMinutes, durationMinutes, false);
+	}
 }
