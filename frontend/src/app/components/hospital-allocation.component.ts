@@ -170,6 +170,15 @@ export class HospitalAllocationComponent implements OnInit {
           const origin = { lat: latitude, lng: longitude };
           const destination = { lat: response.hospital_latitude, lng: response.hospital_longitude };
           console.log('[medhead] scheduling distance+render for origin,destination', origin, destination);
+          console.log('[medhead] Hospital coordinates from backend:', {
+            name: response.hospital_name,
+            lat: response.hospital_latitude,
+            lng: response.hospital_longitude
+          });
+          console.log('[medhead] Patient coordinates from geocoding:', {
+            lat: latitude,
+            lng: longitude
+          });
           // Delay the distance / render call to ensure Angular has time to render
           // the map container (it is shown using *ngIf="allocationResult"). Without this,
           // renderRouteOnMap can run before the DOM element exists; users reported the map
@@ -213,6 +222,9 @@ export class HospitalAllocationComponent implements OnInit {
   /** Initialize or update the map and show route between origin and destination */
   private async renderRouteOnMap(origin: {lat:number,lng:number}, destination: {lat:number,lng:number}) {
     console.log('[medhead] renderRouteOnMap called with origin:', origin, 'destination:', destination);
+    console.log('[medhead] Exact coordinates being used:');
+    console.log('  Origin (Patient):', `${origin.lat}, ${origin.lng}`);
+    console.log('  Destination (Hospital):', `${destination.lat}, ${destination.lng}`);
     
     try {
       await this.gmapsLoader.load();
@@ -291,6 +303,13 @@ export class HospitalAllocationComponent implements OnInit {
         // Optimize for traffic conditions
         optimizeWaypoints: true
       };
+      
+      console.log('[medhead] DirectionsService request:', {
+        origin: `${origin.lat}, ${origin.lng}`,
+        destination: `${destination.lat}, ${destination.lng}`,
+        travelMode: 'DRIVING',
+        trafficModel: 'BEST_GUESS'
+      });
 
       // Wrap route call so synchronous exceptions (InvalidValueError, etc.) can be retried with a simpler request
       const callRoute = (req: any, onResult: (res:any, status:any)=>void) => {
@@ -328,6 +347,14 @@ export class HospitalAllocationComponent implements OnInit {
             duration: res.routes[0].legs[0].duration?.text,
             durationInTraffic: res.routes[0].legs[0].duration_in_traffic?.text
           });
+          
+          // Log the geocoded addresses from Google Maps
+          if (res.routes[0].legs[0].start_address) {
+            console.log('[medhead] Google Maps geocoded start address:', res.routes[0].legs[0].start_address);
+          }
+          if (res.routes[0].legs[0].end_address) {
+            console.log('[medhead] Google Maps geocoded end address:', res.routes[0].legs[0].end_address);
+          }
         }
         
         if (status === 'OK' || status === google.maps.DirectionsStatus.OK) {
@@ -344,6 +371,9 @@ export class HospitalAllocationComponent implements OnInit {
             });
             console.log('[medhead] Selected best route from', res.routes.length, 'alternatives');
           }
+          
+          // Verify hospital location with reverse geocoding
+          this.verifyHospitalLocation(destination, this.allocationResult?.hospital_name);
           
           // Add markers for origin and destination
           this.addOriginDestinationMarkers(origin, destination);
@@ -405,6 +435,43 @@ export class HospitalAllocationComponent implements OnInit {
     this.mapInstance = null;
     this.directionsRendererInstance = null;
     this.directionsServiceInstance = null;
+  }
+
+  /**
+   * Verify hospital location using reverse geocoding
+   */
+  private verifyHospitalLocation(coordinates: {lat: number, lng: number}, hospitalName?: string): void {
+    if (!this.mapInstance) return;
+    
+    const google = (window as any).google;
+    if (!google || !google.maps) return;
+    
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ location: new google.maps.LatLng(coordinates.lat, coordinates.lng) }, (results: any, status: any) => {
+      if (status === 'OK' && results && results[0]) {
+        console.log('[medhead] Hospital location verification:');
+        console.log('  Expected hospital:', hospitalName);
+        console.log('  Coordinates:', `${coordinates.lat}, ${coordinates.lng}`);
+        console.log('  Reverse geocoded address:', results[0].formatted_address);
+        console.log('  Address components:', results[0].address_components);
+        
+        // Check if the geocoded address contains hospital-related keywords
+        const address = results[0].formatted_address.toLowerCase();
+        const isHospital = address.includes('hospital') || 
+                          address.includes('medical') || 
+                          address.includes('health') ||
+                          (hospitalName && address.includes(hospitalName.toLowerCase()));
+        
+        if (!isHospital) {
+          console.warn('[medhead] ⚠️ WARNING: The geocoded address does not appear to be a hospital location!');
+          console.warn('[medhead] This might indicate incorrect coordinates in the database.');
+        } else {
+          console.log('[medhead] ✅ Hospital location verified successfully');
+        }
+      } else {
+        console.warn('[medhead] Failed to reverse geocode hospital location:', status);
+      }
+    });
   }
 
   /**
