@@ -31,13 +31,13 @@ COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
 
 # Variables d'environnement pour la base de données
-ENV SPRING_PROFILES_ACTIVE=test
+ENV SPRING_PROFILES_ACTIVE=docker
 ENV SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/medhead_db
 ENV SPRING_DATASOURCE_USERNAME=medhead_user
 ENV SPRING_DATASOURCE_PASSWORD=medhead_password
 
-# Variables d'environnement pour les performances et éviter les problèmes de métriques
-ENV JAVA_OPTS="-Xms512m -Xmx1g -XX:+UseG1GC -Djava.security.egd=file:/dev/./urandom -Dspring.profiles.active=test -Dmanagement.endpoints.enabled-by-default=false -Dmanagement.endpoint.health.enabled=true -Dmanagement.metrics.system.enabled=false -Dmanagement.metrics.process.enabled=false"
+# Variables d'environnement pour les performances
+ENV JAVA_OPTS="-Xms512m -Xmx2g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseStringDeduplication -XX:+OptimizeStringConcat -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Djava.security.egd=file:/dev/./urandom"
 
 # Commande pour démarrer l'application avec optimisations
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

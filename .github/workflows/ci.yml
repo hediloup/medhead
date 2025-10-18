@@ -327,16 +327,6 @@ jobs:
         echo "⏳ Attente du démarrage du backend..."
         sleep 30
         
-        # Vérifier si le backend crash et le redémarrer si nécessaire
-        echo "🔍 Vérification de l'état du backend..."
-        backend_status=$(docker compose -f ./docker/docker-compose.yml ps --format "table {{.Name}}\t{{.Status}}" | grep medhead-backend | awk '{print $2}')
-        if [[ "$backend_status" == *"Restarting"* ]] || [[ "$backend_status" == *"Exited"* ]]; then
-          echo "⚠️ Backend en erreur, tentative de redémarrage..."
-          docker compose -f ./docker/docker-compose.yml restart backend
-          echo "⏳ Attente du redémarrage..."
-          sleep 30
-        fi
-        
         echo "🔍 Vérification du statut des services..."
         docker compose -f ./docker/docker-compose.yml ps
         
