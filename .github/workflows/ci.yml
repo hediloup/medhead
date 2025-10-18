@@ -129,18 +129,21 @@ jobs:
         npm ci
 
     - name: 🔐 Inject Google Maps key into environment (frontend)
-      if: ${{ secrets.GOOGLE_MAPS_API_KEY }}
       working-directory: ./frontend
       run: |
         echo "🔐 Injecting GOOGLE_MAPS_API_KEY into environment files"
-        echo "export const environment = {" > src/environments/environment.ts
-        echo "  production: false," >> src/environments/environment.ts
-        echo "  googleMapsApiKey: '${{ secrets.GOOGLE_MAPS_API_KEY }}'" >> src/environments/environment.ts
-        echo "};" >> src/environments/environment.ts
-        echo "export const environment = {" > src/environments/environment.prod.ts
-        echo "  production: true," >> src/environments/environment.prod.ts
-        echo "  googleMapsApiKey: '${{ secrets.GOOGLE_MAPS_API_KEY }}'" >> src/environments/environment.prod.ts
-        echo "};" >> src/environments/environment.prod.ts
+        if [ -n "${{ secrets.GOOGLE_MAPS_API_KEY }}" ]; then
+          echo "export const environment = {" > src/environments/environment.ts
+          echo "  production: false," >> src/environments/environment.ts
+          echo "  googleMapsApiKey: \"${{ secrets.GOOGLE_MAPS_API_KEY }}\"" >> src/environments/environment.ts
+          echo "};" >> src/environments/environment.ts
+          echo "export const environment = {" > src/environments/environment.prod.ts
+          echo "  production: true," >> src/environments/environment.prod.ts
+          echo "  googleMapsApiKey: \"${{ secrets.GOOGLE_MAPS_API_KEY }}\"" >> src/environments/environment.prod.ts
+          echo "};" >> src/environments/environment.prod.ts
+        else
+          echo "⚠️ GOOGLE_MAPS_API_KEY not found, using default environment"
+        fi
 
     - name: 🧪 Tests Unitaires Frontend
       working-directory: ./frontend
