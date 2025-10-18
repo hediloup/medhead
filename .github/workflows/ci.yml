@@ -296,27 +296,36 @@ jobs:
         
         # Démarrer le backend avec configuration CI spécifique
         echo "🚀 Démarrage du backend avec configuration CI..."
-        # Ajouter des variables d'environnement spécifiques à la CI pour éviter les problèmes de métriques
-        export MANAGEMENT_METRICS_SYSTEM_ENABLED=false
-        export MANAGEMENT_METRICS_PROCESS_ENABLED=false
-        export MANAGEMENT_METRICS_JVM_ENABLED=false
-        export MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info
-        docker compose -f ./docker/docker-compose.yml up -d backend
+        # Démarrer le backend avec docker run et variables d'environnement spécifiques
+        docker run -d \
+          --name medhead-backend \
+          --network docker_medhead-network \
+          -p 8080:8080 \
+          -e SPRING_PROFILES_ACTIVE=docker \
+          -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/medhead_db \
+          -e SPRING_DATASOURCE_USERNAME=medhead_user \
+          -e SPRING_DATASOURCE_PASSWORD=medhead_password \
+          -e GOOGLE_MAPS_API_KEY=AIzaSyA6EicRUZ_a2YTAuB1ZFWWXB6yOaqnKyB0 \
+          -e MANAGEMENT_METRICS_SYSTEM_ENABLED=false \
+          -e MANAGEMENT_METRICS_PROCESS_ENABLED=false \
+          -e MANAGEMENT_METRICS_JVM_ENABLED=false \
+          -e MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info \
+          docker-backend
         
         echo "⏳ Attente du démarrage du backend..."
         sleep 30
         
         # Vérifier si le backend a des problèmes de démarrage et redémarrer si nécessaire
         echo "🔍 Vérification de l'état du backend..."
-        if ! docker compose -f ./docker/docker-compose.yml ps backend | grep -q "Up"; then
+        if ! docker ps | grep medhead-backend | grep -q "Up"; then
           echo "⚠️ Backend non démarré, tentative de redémarrage avec configuration alternative..."
           # Redémarrer avec une configuration minimale
-          docker compose -f ./docker/docker-compose.yml restart backend
+          docker restart medhead-backend
           sleep 20
         fi
         
         echo "🔍 Vérification du statut des services..."
-        docker compose -f ./docker/docker-compose.yml ps
+        docker ps | grep -E "(medhead-backend|medhead-postgres)"
         
         echo "🔧 Vérification de l'accessibilité du backend (polling jusqu'à 5 minutes)..."
         # Poll the health endpoint, retry up to 60 times (5 minutes total with 5s interval)
@@ -332,20 +341,16 @@ jobs:
         done
         if [ "$success" -ne 0 ]; then
           echo "❌ Backend non accessible après 5 minutes. Dump des logs pour debug..."
-          echo "\n--- docker compose ps ---"
-          docker compose -f ./docker/docker-compose.yml ps || true
+          echo "\n--- docker ps ---"
+          docker ps || true
           echo "\n--- docker logs postgres (last 50 lines) ---"
           docker logs --tail 50 medhead-postgres || true
           echo "\n--- docker logs backend (last 200 lines) ---"
           docker logs --tail 200 medhead-backend || true
-          echo "\n--- docker compose logs backend (last 200 lines) ---"
-          docker compose -f ./docker/docker-compose.yml logs --no-color --tail 200 backend || true
-          echo "\n--- docker compose logs postgres (last 50 lines) ---"
-          docker compose -f ./docker/docker-compose.yml logs --no-color --tail 50 postgres || true
           echo "\n--- Vérification des variables d'environnement ---"
-          docker compose -f ./docker/docker-compose.yml exec backend env | grep -E "(SPRING|MANAGEMENT)" || true
+          docker exec medhead-backend env | grep -E "(SPRING|MANAGEMENT)" || true
           echo "\n--- Test de connectivité à la base de données ---"
-          docker compose -f ./docker/docker-compose.yml exec postgres pg_isready -U medhead_user -d medhead_db || true
+          docker exec medhead-postgres pg_isready -U medhead_user -d medhead_db || true
           exit 1
         fi
 
