@@ -129,7 +129,7 @@ jobs:
         npm ci
 
     - name: 🔐 Inject Google Maps key into environment (frontend)
-      if: ${{ secrets.GOOGLE_MAPS_API_KEY != '' }}
+      if: ${{ secrets.GOOGLE_MAPS_API_KEY }}
       working-directory: ./frontend
       run: |
         echo "🔐 Injecting GOOGLE_MAPS_API_KEY into environment files"
