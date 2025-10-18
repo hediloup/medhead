@@ -42,53 +42,68 @@ describe('HospitalAllocationComponent', () => {
   };
 
   it('should create', () => {
+    console.log('🔍 Test: Création du composant HospitalAllocationComponent');
     expect(component).toBeTruthy();
+    console.log('   ✅ Composant créé avec succès');
   });
 
   it('should initialize form with required validators', () => {
+    console.log('🔍 Test: Initialisation du formulaire avec validateurs requis');
     fixture.detectChanges();
     
     // Mock the automatic health check request
     mockHealthCheckRequest();
     
     const form = component.allocationForm;
+    console.log('   Vérification des erreurs de validation');
     expect(form.get('specialty')?.hasError('required')).toBeTruthy();
     expect(form.get('address')?.hasError('required')).toBeTruthy();
+    console.log('   ✅ Formulaire initialisé avec validateurs requis');
   });
 
   it('should have medical specialties list', () => {
+    console.log('🔍 Test: Liste des spécialités médicales');
     expect(component.medicalSpecialties).toBeTruthy();
     expect(component.medicalSpecialties.length).toBeGreaterThan(0);
+    console.log('   Nombre de spécialités:', component.medicalSpecialties.length);
     expect(component.medicalSpecialties).toContain('Cardiology');
     expect(component.medicalSpecialties).toContain('Neurology');
     expect(component.medicalSpecialties).toContain('Emergency Medicine');
+    console.log('   ✅ Liste des spécialités médicales validée');
   });
 
   it('should check API health on initialization', () => {
+    console.log('🔍 Test: Vérification de la santé de l\'API à l\'initialisation');
     spyOn(component as any, 'checkApiHealth');
     component.ngOnInit();
     expect((component as any).checkApiHealth).toHaveBeenCalled();
+    console.log('   ✅ Vérification de la santé de l\'API effectuée');
   });
 
   it('should validate form correctly', () => {
+    console.log('🔍 Test: Validation du formulaire');
     fixture.detectChanges();
     
     // Mock the automatic health check request
     mockHealthCheckRequest();
     
     // Test invalid form
+    console.log('   Test du formulaire invalide');
     component.onSubmit();
     expect(component.allocationForm.invalid).toBeTruthy();
     
     // Test valid form
+    console.log('   Test du formulaire valide');
     component.allocationForm.patchValue({
       specialty: 'Cardiology',
       address: 'Paris, France'
     });
     expect(component.allocationForm.valid).toBeTruthy();
+    console.log('   ✅ Validation du formulaire réussie');
   });
 
-  it('should handle form submission with valid data', () => {
+  it('should handle form submission with valid data', fakeAsync(() => {
+    console.log('🔍 Test: Soumission du formulaire avec données valides');
     fixture.detectChanges();
     
     // Mock the automatic health check request
@@ -111,21 +126,28 @@ describe('HospitalAllocationComponent', () => {
       estimated_time_minutes: 12
     };
 
+    console.log('   Configuration du formulaire: Cardiology, Paris, France');
     component.allocationForm.patchValue({
       specialty: 'Cardiology',
       address: 'Paris, France'
     });
 
+    console.log('   Soumission du formulaire');
     component.onSubmit();
 
     // Verify geocoding request - use flexible matching
+    console.log('   Vérification de la requête de géocodage');
     const geocodingReq = httpMock.expectOne((request) => {
       return request.url.includes('/geocoding/search') && 
              request.params.get('q') === 'Paris, France';
     });
     geocodingReq.flush(mockGeocodingResponse);
 
+    // Process async operations
+    tick();
+
     // Verify allocation request
+    console.log('   Vérification de la requête d\'allocation');
     const allocationReq = httpMock.expectOne('/api/allocate');
     expect(allocationReq.request.body).toEqual({
       specialty: 'Cardiology',
@@ -134,13 +156,18 @@ describe('HospitalAllocationComponent', () => {
     });
     allocationReq.flush(mockAllocationResponse);
 
+    // Process async operations
+    tick();
+
+    console.log('   Vérification des résultats');
     expect(component.allocationResult).toEqual(mockAllocationResponse);
     expect(component.successMessage).toBe('Recommended hospital found: Hôpital Saint-Antoine');
     expect(component.isLoading).toBeFalsy();
     expect(component.isGeocoding).toBeFalsy();
-  });
+    console.log('   ✅ Soumission du formulaire réussie');
+  }));
 
-  it('should handle geocoding failure', () => {
+  it('should handle geocoding failure', fakeAsync(() => {
     fixture.detectChanges();
     
     // Mock the automatic health check request
@@ -160,12 +187,15 @@ describe('HospitalAllocationComponent', () => {
     });
     geocodingReq.flush([]);
 
+    // Process async operations
+    tick();
+
     expect(component.errorMessage).toBe('Unable to find this address. Please check the address and try again.');
     expect(component.isLoading).toBeFalsy();
     expect(component.isGeocoding).toBeFalsy();
-  });
+  }));
 
-  it('should handle allocation service error', () => {
+  it('should handle allocation service error', fakeAsync(() => {
     fixture.detectChanges();
     
     // Mock the automatic health check request
@@ -191,14 +221,20 @@ describe('HospitalAllocationComponent', () => {
     });
     geocodingReq.flush(mockGeocodingResponse);
 
+    // Process async operations
+    tick();
+
     // Mock allocation failure
     const allocationReq = httpMock.expectOne('/api/allocate');
     allocationReq.flush('No hospital available', { status: 404, statusText: 'Not Found' });
 
+    // Process async operations
+    tick();
+
     expect(component.errorMessage).toBe('No hospital available for this specialty.');
     expect(component.isLoading).toBeFalsy();
     expect(component.isGeocoding).toBeFalsy();
-  });
+  }));
 
   it('should reset form correctly', () => {
     fixture.detectChanges();
