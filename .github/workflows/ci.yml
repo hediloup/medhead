@@ -306,7 +306,7 @@ jobs:
           -e SPRING_DATASOURCE_USERNAME=medhead_user \
           -e SPRING_DATASOURCE_PASSWORD=medhead_password \
           -e GOOGLE_MAPS_API_KEY=AIzaSyA6EicRUZ_a2YTAuB1ZFWWXB6yOaqnKyB0 \
-          -e JAVA_OPTS="-Xms512m -Xmx2g -Dmanagement.endpoints.enabled-by-default=false -Dmanagement.endpoint.health.enabled=true -Dmanagement.endpoints.web.exposure.include=health -Dmanagement.metrics.enabled=false -Dmanagement.metrics.system.enabled=false -Dmanagement.metrics.process.enabled=false -Dmanagement.metrics.jvm.enabled=false" \
+          -e JAVA_OPTS="-Xms512m -Xmx2g -Dmanagement.endpoints.enabled-by-default=false -Dmanagement.endpoint.health.enabled=true -Dmanagement.endpoints.web.exposure.include=health -Dmanagement.metrics.enabled=false -Dmanagement.metrics.system.enabled=false -Dmanagement.metrics.process.enabled=false -Dmanagement.metrics.jvm.enabled=false -Dmanagement.metrics.binders.system.enabled=false -Dspring.autoconfigure.exclude=org.springframework.boot.actuate.autoconfigure.metrics.SystemMetricsAutoConfiguration" \
           docker-backend
         
         echo "⏳ Attente du démarrage du backend..."
@@ -330,7 +330,7 @@ jobs:
             -e SPRING_DATASOURCE_USERNAME=medhead_user \
             -e SPRING_DATASOURCE_PASSWORD=medhead_password \
             -e GOOGLE_MAPS_API_KEY=AIzaSyA6EicRUZ_a2YTAuB1ZFWWXB6yOaqnKyB0 \
-            -e JAVA_OPTS="-Xms512m -Xmx2g -Dmanagement.endpoints.enabled-by-default=false -Dmanagement.endpoint.health.enabled=true -Dmanagement.endpoints.web.exposure.include=health -Dmanagement.metrics.enabled=false -Dmanagement.metrics.system.enabled=false -Dmanagement.metrics.process.enabled=false -Dmanagement.metrics.jvm.enabled=false" \
+            -e JAVA_OPTS="-Xms512m -Xmx2g -Dmanagement.endpoints.enabled-by-default=false -Dmanagement.endpoint.health.enabled=true -Dmanagement.endpoints.web.exposure.include=health -Dmanagement.metrics.enabled=false -Dmanagement.metrics.system.enabled=false -Dmanagement.metrics.process.enabled=false -Dmanagement.metrics.jvm.enabled=false -Dmanagement.metrics.binders.system.enabled=false -Dspring.autoconfigure.exclude=org.springframework.boot.actuate.autoconfigure.metrics.SystemMetricsAutoConfiguration" \
             docker-backend
           sleep 20
         fi
