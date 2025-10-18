@@ -227,21 +227,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     needs: [backend-tests, frontend-tests]
-    
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_DB: medhead_db
-          POSTGRES_USER: medhead_user
-          POSTGRES_PASSWORD: medhead_password
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
 
     steps:
     - name: 📥 Checkout du code
@@ -309,12 +294,26 @@ jobs:
           sleep 2
         done
         
-        # Démarrer le backend
-        echo "🚀 Démarrage du backend..."
+        # Démarrer le backend avec configuration CI spécifique
+        echo "🚀 Démarrage du backend avec configuration CI..."
+        # Ajouter des variables d'environnement spécifiques à la CI pour éviter les problèmes de métriques
+        export MANAGEMENT_METRICS_SYSTEM_ENABLED=false
+        export MANAGEMENT_METRICS_PROCESS_ENABLED=false
+        export MANAGEMENT_METRICS_JVM_ENABLED=false
+        export MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info
         docker compose -f ./docker/docker-compose.yml up -d backend
         
         echo "⏳ Attente du démarrage du backend..."
         sleep 30
+        
+        # Vérifier si le backend a des problèmes de démarrage et redémarrer si nécessaire
+        echo "🔍 Vérification de l'état du backend..."
+        if ! docker compose -f ./docker/docker-compose.yml ps backend | grep -q "Up"; then
+          echo "⚠️ Backend non démarré, tentative de redémarrage avec configuration alternative..."
+          # Redémarrer avec une configuration minimale
+          docker compose -f ./docker/docker-compose.yml restart backend
+          sleep 20
+        fi
         
         echo "🔍 Vérification du statut des services..."
         docker compose -f ./docker/docker-compose.yml ps
