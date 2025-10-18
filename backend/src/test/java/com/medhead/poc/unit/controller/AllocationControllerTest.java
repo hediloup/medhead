@@ -49,21 +49,27 @@ public class AllocationControllerTest {
     @Test
     public void testAllocateHospital_Success() throws Exception {
         // Given
+        System.out.println("🔍 Test: Contrôleur - Allocation réussie");
         AllocationRequest request = new AllocationRequest("Cardiology", 53.3976314, -2.1829641);
         AllocationResponse expectedResponse = new AllocationResponse(
                 "Hôpital Central", 1L, 5.2, "Cardiology", 4, 15
         );
+        System.out.println("   Requête: " + request.getSpecialty() + " à " + request.getLatitude() + ", " + request.getLongitude());
+        System.out.println("   Réponse attendue: " + expectedResponse.getHospitalName());
 
         when(allocationService.findBestHospital(request))
                 .thenReturn(expectedResponse);
 
         // When
+        System.out.println("   Exécution de l'allocation via le contrôleur");
         ResponseEntity<AllocationResponse> response = allocationController.allocateHospital(request);
 
         // Then
+        System.out.println("   Vérification de la réponse");
         assertNotNull("La réponse ne doit pas être null", response);
         assertEquals("Le statut HTTP doit être OK", HttpStatus.OK, response.getStatusCode());
         assertEquals("La réponse doit contenir les bonnes données", expectedResponse, response.getBody());
+        System.out.println("   ✅ Test Contrôleur réussi - Allocation fonctionne");
 
         verify(allocationService).findBestHospital(request);
     }
@@ -155,12 +161,16 @@ public class AllocationControllerTest {
     @Test
     public void testHealth() throws Exception {
         // When
+        System.out.println("🔍 Test: Contrôleur - Endpoint Health");
+        System.out.println("   Test de l'endpoint de santé");
         ResponseEntity<String> response = allocationController.health();
 
         // Then
+        System.out.println("   Vérification de la réponse health");
         assertNotNull("La réponse ne doit pas être null", response);
         assertEquals("Le statut HTTP doit être OK", HttpStatus.OK, response.getStatusCode());
         assertEquals("Le message doit être correct", "Allocation API operational", response.getBody());
+        System.out.println("   ✅ Test Health réussi - API opérationnelle");
     }
 
     @Test

@@ -63,6 +63,7 @@ public class AllocationSteps {
         hospital.setAddress("Test Address");
         hospital.setAvailableBeds(availableBeds);
 
+        // Create a new set with the managed specialty entity
         Set<Speciality> specialties = new HashSet<>();
         specialties.add(specialty);
         hospital.setSpecialities(specialties);
@@ -118,11 +119,6 @@ public class AllocationSteps {
         System.out.println("No hospitals available for specialty: " + specialtyName);
     }
 
-    @Given("^there is a hospital \"([^\"]*)\" with specialty \"([^\"]*)\" and (\\d+) available beds$")
-    @Transactional
-    public void there_is_a_hospital_with_specialty_and_zero_beds(String hospitalName, String specialtyName, int availableBeds) {
-        there_is_a_hospital_with_specialty_and_available_beds(hospitalName, specialtyName, availableBeds);
-    }
 
     @Given("^there is a hospital with specialty \"([^\"]*)\"$")
     @Transactional
@@ -130,11 +126,22 @@ public class AllocationSteps {
         there_is_a_hospital_with_specialty_and_available_beds("Default Hospital", specialtyName, 5);
     }
 
+    @Given("there is a hospital {string} with specialty {string}")
+    @Transactional
+    public void there_is_a_hospital_with_specialty_alt(String hospitalName, String specialtyName) {
+        there_is_a_hospital_with_specialty_and_available_beds(hospitalName, specialtyName, 5);
+    }
+
     @Given("^the patient is located at coordinates (\\d+\\.\\d+), (\\d+\\.\\d+)$")
     public void the_patient_is_located_at_coordinates(Double latitude, Double longitude) {
         this.currentLatitude = latitude;
         this.currentLongitude = longitude;
         System.out.println("Patient location set to: " + latitude + ", " + longitude);
+    }
+
+    @Given("the patient is located at coordinates {double}, {double}")
+    public void the_patient_is_located_at_coordinates_alt(Double latitude, Double longitude) {
+        the_patient_is_located_at_coordinates(latitude, longitude);
     }
 
     @When("^I request an allocation for specialty \"([^\"]*)\"$")
@@ -280,11 +287,19 @@ public class AllocationSteps {
     @Then("^I should receive an error \"([^\"]*)\"$")
     public void i_should_receive_an_error(String expectedError) {
         assertNotNull("Response should not be null", lastResponse);
-        assertTrue("Response should contain error: " + expectedError,
-                  lastResponse.getBody().contains(expectedError) || 
-                  lastResponse.getStatusCode().is4xxClientError() ||
-                  lastResponse.getStatusCode().is5xxServerError());
-        System.out.println("Error received: " + expectedError);
+        
+        // Check if response body contains the error message
+        boolean bodyContainsError = lastResponse.getBody() != null && 
+                                   lastResponse.getBody().contains(expectedError);
+        
+        // Check if status code indicates an error
+        boolean statusIndicatesError = lastResponse.getStatusCode().is4xxClientError() ||
+                                      lastResponse.getStatusCode().is5xxServerError();
+        
+        assertTrue("Response should contain error: " + expectedError + 
+                  " (Body: " + lastResponse.getBody() + ", Status: " + lastResponse.getStatusCode() + ")",
+                  bodyContainsError || statusIndicatesError);
+        System.out.println("Error received: " + expectedError + " (Status: " + lastResponse.getStatusCode() + ")");
     }
 
     @Then("^the HTTP status code should be (\\d+)$")

@@ -160,9 +160,11 @@ public class AllocationServiceTest {
     @Test
     public void testFindBestHospital_Success() {
         // Given - Configuration des mocks
+        System.out.println("🔍 Test: Service - Allocation réussie");
         HospitalProjection projection1 = createProjection(hospital1);
         HospitalProjection projection2 = createProjection(hospital2);
         List<HospitalProjection> eligibleProjections = Arrays.asList(projection1, projection2);
+        System.out.println("   Hôpitaux éligibles: " + eligibleProjections.size());
 
         when(hospitalRepository.findBySpecialtyAndAvailableBedsProjection("Cardiology"))
                 .thenReturn(eligibleProjections);
@@ -170,11 +172,14 @@ public class AllocationServiceTest {
         // Mock des distances (hospital1 plus proche)
         when(distanceService.calculateDistanceToHospital(anyDouble(), anyDouble(), eq(hospital1))).thenReturn(5.2);
         when(distanceService.calculateDistanceToHospital(anyDouble(), anyDouble(), eq(hospital2))).thenReturn(8.1);
+        System.out.println("   Distances mockées: Hôpital1=5.2km, Hôpital2=8.1km");
 
         // When - Exécution du test
+        System.out.println("   Exécution de l'allocation");
         AllocationResponse response = allocationService.findBestHospital(validRequest);
 
         // Then - Vérifications
+        System.out.println("   Vérification de la réponse");
         assertNotNull("La réponse ne doit pas être null", response);
         assertEquals("Le nom de l'hôpital doit être correct", "Hôpital Central", response.getHospitalName());
         assertEquals("L'ID de l'hôpital doit être correct", Long.valueOf(1L), response.getHospitalId());
@@ -182,6 +187,7 @@ public class AllocationServiceTest {
         assertEquals("Le nombre de lits disponibles doit être correct", Integer.valueOf(4), response.getAvailableBedsAfterAllocation());
         // ETA approx à 50 km/h -> ~6 minutes
         assertEquals("Le temps estimé doit être correct", Integer.valueOf(6), response.getEstimatedTimeMinutes());
+        System.out.println("   ✅ Test Service réussi - Allocation fonctionne");
 
         // Vérification des interactions avec les mocks
         verify(hospitalRepository).findBySpecialtyAndAvailableBedsProjection("Cardiology");

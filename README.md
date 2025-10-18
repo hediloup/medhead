@@ -242,6 +242,19 @@ docker-compose up -d postgres
 > - For frontend testing, use local npm commands (recommended) or Chrome-enabled containers.
 
 #### **Backend Tests with Docker**
+Cette commande va lancer tous les tests définis dans le backend, probablement :
+> - Tests unitaires : Tests des services, contrôleurs, repositories
+> - Tests d'intégration : Tests des endpoints API
+> - Tests de base de données : Tests avec une base de données de test
+> - Tests de configuration : Tests des configurations Spring
+
+Pourquoi utiliser Docker ?
+> - Isolation : Les tests s'exécutent dans un environnement isolé
+> - Reproductibilité : Même environnement sur toutes les machines
+> - Réseau : Accès aux services Docker (base de données, etc.)
+> - Profil test : Utilise une configuration de test séparée de la production
+> - Cette approche garantit que vos tests backend s'exécutent dans un environnement propre et reproductible ! 
+
 ```bash
 # Run backend tests using the main docker-compose
 cd docker

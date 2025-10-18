@@ -135,9 +135,13 @@ public class AllocationIntegrationTest {
     @Test
     public void testAllocateHospital_POST_Success() throws Exception {
         // Given
+        System.out.println("🔍 Test: Allocation POST - Succès");
         AllocationRequest request = new AllocationRequest("Cardiology", 53.3976314, -2.1829641);
+        System.out.println("   Spécialité: " + request.getSpecialty());
+        System.out.println("   Coordonnées: " + request.getLatitude() + ", " + request.getLongitude());
 
         // When & Then
+        System.out.println("   Exécution de la requête POST /api/allocate");
         mockMvc.perform(post("/api/allocate")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -148,11 +152,15 @@ public class AllocationIntegrationTest {
                 .andExpect(jsonPath("$.specialty").value("Cardiology"))
                 .andExpect(jsonPath("$.available_beds").exists())
                 .andExpect(jsonPath("$.estimated_time_minutes").exists());
+        System.out.println("   ✅ Test POST réussi - Hôpital trouvé avec toutes les données requises");
     }
 
     @Test
     public void testAllocateHospital_GET_Success() throws Exception {
         // When & Then
+        System.out.println("🔍 Test: Allocation GET - Succès");
+        System.out.println("   Paramètres: specialty=Cardiology, lat=53.3976314, lng=-2.1829641");
+        System.out.println("   Exécution de la requête GET /api/allocate");
         mockMvc.perform(get("/api/allocate")
                 .param("specialty", "Cardiology")
                 .param("latitude", "53.3976314")
@@ -160,6 +168,7 @@ public class AllocationIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.hospital_name").exists())
                 .andExpect(jsonPath("$.specialty").value("Cardiology"));
+        System.out.println("   ✅ Test GET réussi - Hôpital trouvé via paramètres GET");
     }
 
     @Test
@@ -201,9 +210,12 @@ public class AllocationIntegrationTest {
     @Test
     public void testHealthEndpoint() throws Exception {
         // When & Then
+        System.out.println("🔍 Test: Endpoint Health");
+        System.out.println("   Exécution de la requête GET /api/health");
         mockMvc.perform(get("/api/health"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Allocation API operational"));
+        System.out.println("   ✅ Test Health réussi - API opérationnelle");
     }
 
     @Test

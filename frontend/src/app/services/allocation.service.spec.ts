@@ -109,10 +109,12 @@ describe('AllocationService', () => {
 
   describe('checkHealth', () => {
     it('should make a GET request to /api/health', () => {
+      console.log('🔍 Test: Service - Vérification de la santé de l\'API');
       const mockHealthResponse = 'OK';
 
       service.checkHealth().subscribe(response => {
         expect(response).toBe(mockHealthResponse);
+        console.log('   ✅ Vérification de la santé réussie');
       });
 
       const req = httpMock.expectOne('/api/health');
@@ -121,10 +123,163 @@ describe('AllocationService', () => {
     });
 
     it('should handle health check errors', () => {
+      console.log('🔍 Test: Service - Gestion des erreurs de santé');
       service.checkHealth().subscribe({
         next: () => fail('should have failed'),
         error: (error) => {
           expect(error.message).toBe('Backend service temporarily unavailable. Please try again.');
+          console.log('   ✅ Erreur de santé gérée correctement');
+        }
+      });
+
+      const req = httpMock.expectOne('/api/health');
+      req.flush('Service Unavailable', { status: 502, statusText: 'Bad Gateway' });
+    });
+  });
+
+  describe('handleError - Comprehensive Error Testing', () => {
+    it('should handle client-side errors', () => {
+      console.log('🔍 Test: Service - Erreurs côté client');
+      const mockRequest: AllocationRequest = {
+        specialty: 'Cardiology',
+        latitude: 48.8566,
+        longitude: 2.3522
+      };
+
+      service.allocateHospital(mockRequest).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          expect(error.message).toContain('Error:');
+          console.log('   ✅ Erreur côté client gérée');
+        }
+      });
+
+      const req = httpMock.expectOne('/api/allocate');
+      req.error(new ErrorEvent('Network error', { message: 'Connection failed' }));
+    });
+
+    it('should handle 400 Bad Request', () => {
+      console.log('🔍 Test: Service - Erreur 400 Bad Request');
+      const mockRequest: AllocationRequest = {
+        specialty: 'Cardiology',
+        latitude: 48.8566,
+        longitude: 2.3522
+      };
+
+      service.allocateHospital(mockRequest).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          expect(error.message).toBe('Invalid data. Please check your information.');
+          console.log('   ✅ Erreur 400 gérée');
+        }
+      });
+
+      const req = httpMock.expectOne('/api/allocate');
+      req.flush('Bad Request', { status: 400, statusText: 'Bad Request' });
+    });
+
+    it('should handle 503 Service Unavailable', () => {
+      console.log('🔍 Test: Service - Erreur 503 Service Unavailable');
+      const mockRequest: AllocationRequest = {
+        specialty: 'Cardiology',
+        latitude: 48.8566,
+        longitude: 2.3522
+      };
+
+      service.allocateHospital(mockRequest).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          expect(error.message).toBe('Service temporarily unavailable. Please try again later.');
+          console.log('   ✅ Erreur 503 gérée');
+        }
+      });
+
+      const req = httpMock.expectOne('/api/allocate');
+      req.flush('Service Unavailable', { status: 503, statusText: 'Service Unavailable' });
+    });
+
+    it('should handle 504 Gateway Timeout', () => {
+      console.log('🔍 Test: Service - Erreur 504 Gateway Timeout');
+      const mockRequest: AllocationRequest = {
+        specialty: 'Cardiology',
+        latitude: 48.8566,
+        longitude: 2.3522
+      };
+
+      service.allocateHospital(mockRequest).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          expect(error.message).toBe('Request timeout. The service is taking too long to respond. Please try again.');
+          console.log('   ✅ Erreur 504 gérée');
+        }
+      });
+
+      const req = httpMock.expectOne('/api/allocate');
+      req.flush('Gateway Timeout', { status: 504, statusText: 'Gateway Timeout' });
+    });
+
+    it('should handle unknown status codes', () => {
+      console.log('🔍 Test: Service - Codes de statut inconnus');
+      const mockRequest: AllocationRequest = {
+        specialty: 'Cardiology',
+        latitude: 48.8566,
+        longitude: 2.3522
+      };
+
+      service.allocateHospital(mockRequest).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          expect(error.message).toContain('Error 418:');
+          console.log('   ✅ Code de statut inconnu géré');
+        }
+      });
+
+      const req = httpMock.expectOne('/api/allocate');
+      req.flush('I\'m a teapot', { status: 418, statusText: 'I\'m a teapot' });
+    });
+
+    it('should handle browser extension errors gracefully', () => {
+      console.log('🔍 Test: Service - Erreurs d\'extension de navigateur');
+      const mockRequest: AllocationRequest = {
+        specialty: 'Cardiology',
+        latitude: 48.8566,
+        longitude: 2.3522
+      };
+
+      service.allocateHospital(mockRequest).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          expect(error.message).toBe('Error: runtime.lastError');
+          console.log('   ✅ Erreur d\'extension gérée');
+        }
+      });
+
+      const req = httpMock.expectOne('/api/allocate');
+      const errorEvent = new ErrorEvent('Error', { message: 'runtime.lastError' });
+      req.error(errorEvent);
+    });
+  });
+
+  describe('checkHealth', () => {
+    it('should make a GET request to /api/health', () => {
+      console.log('🔍 Test: Service - Vérification de la santé de l\'API');
+      service.checkHealth().subscribe(response => {
+        expect(response).toBe('{"status":"UP"}');
+        console.log('   ✅ Vérification de la santé réussie');
+      });
+
+      const req = httpMock.expectOne('/api/health');
+      expect(req.request.method).toBe('GET');
+      req.flush('{"status":"UP"}');
+    });
+
+    it('should handle health check errors', () => {
+      console.log('🔍 Test: Service - Erreurs de vérification de la santé');
+      service.checkHealth().subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          expect(error.message).toBe('Backend service temporarily unavailable. Please try again.');
+          console.log('   ✅ Erreur de santé gérée');
         }
       });
 

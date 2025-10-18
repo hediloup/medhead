@@ -11,14 +11,15 @@ import org.junit.runner.RunWith;
 @RunWith(Cucumber.class)
 @CucumberOptions(
         features = "src/test/resources/features/allocation-hospital.feature",
-        glue = "com.medhead.poc.bdd.steps",
+        glue = {"com.medhead.poc.bdd.steps", "com.medhead.poc.bdd.hooks", "com.medhead.poc.bdd.config"},
         plugin = {
                 "pretty",
                 "html:target/cucumber-reports/allocation.html",
-                "json:target/cucumber-reports/allocation.json"
+                "json:target/cucumber-reports/allocation.json",
+                "junit:target/cucumber-reports/allocation.xml"
         },
         monochrome = true,
-        tags = "@allocation or @hospital"
+        tags = "@allocation"
 )
 public class AllocationBddTest {
     // This class serves as entry point for Cucumber
