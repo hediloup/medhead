@@ -26,21 +26,6 @@ jobs:
     name: 🧪 Tests Backend
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_DB: medhead_test
-          POSTGRES_USER: medhead_user
-          POSTGRES_PASSWORD: medhead_password
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
 
     steps:
     - name: 📥 Checkout du code
