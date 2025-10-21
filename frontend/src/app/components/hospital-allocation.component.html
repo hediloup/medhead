@@ -101,16 +101,44 @@
       
       <div class="result-item">
         <div class="result-label">Distance</div>
-        <div class="result-value">{{ distanceText || (allocationResult.distance_km + ' km') }}</div>
-        <div *ngIf="distanceText" class="data-source">Données temps réel Google Maps</div>
-        <div *ngIf="!distanceText" class="data-source">Estimation backend</div>
+        <div class="result-value">
+          <span *ngIf="isLoadingGoogleMapsData" class="loading-text">
+            <i class="fas fa-spinner fa-spin"></i> Chargement des données temps réel...
+          </span>
+          <span *ngIf="!isLoadingGoogleMapsData && distanceText">{{ distanceText }}</span>
+          <span *ngIf="!isLoadingGoogleMapsData && !distanceText && !googleMapsError">{{ allocationResult.distance_km + ' km' }}</span>
+          <span *ngIf="googleMapsError" class="error-text">{{ allocationResult.distance_km + ' km' }}</span>
+        </div>
+        <div *ngIf="distanceText" class="data-source google-maps-source">
+          <i class="fas fa-map-marker-alt"></i> Données temps réel Google Maps
+        </div>
+        <div *ngIf="!distanceText && !isLoadingGoogleMapsData && !googleMapsError" class="data-source backend-source">
+          <i class="fas fa-server"></i> Estimation backend
+        </div>
+        <div *ngIf="googleMapsError" class="data-source error-source">
+          <i class="fas fa-exclamation-triangle"></i> {{ googleMapsError }} (affichage backend)
+        </div>
       </div>
       
       <div class="result-item">
         <div class="result-label">Temps estimé</div>
-        <div class="result-value">{{ durationText || (allocationResult.estimated_time_minutes + ' minutes') }}</div>
-        <div *ngIf="durationText" class="data-source">Données temps réel Google Maps</div>
-        <div *ngIf="!durationText" class="data-source">Estimation backend</div>
+        <div class="result-value">
+          <span *ngIf="isLoadingGoogleMapsData" class="loading-text">
+            <i class="fas fa-spinner fa-spin"></i> Chargement des données temps réel...
+          </span>
+          <span *ngIf="!isLoadingGoogleMapsData && durationText">{{ durationText }}</span>
+          <span *ngIf="!isLoadingGoogleMapsData && !durationText && !googleMapsError">{{ allocationResult.estimated_time_minutes + ' minutes' }}</span>
+          <span *ngIf="googleMapsError" class="error-text">{{ allocationResult.estimated_time_minutes + ' minutes' }}</span>
+        </div>
+        <div *ngIf="durationText" class="data-source google-maps-source">
+          <i class="fas fa-clock"></i> Données temps réel Google Maps
+        </div>
+        <div *ngIf="!durationText && !isLoadingGoogleMapsData && !googleMapsError" class="data-source backend-source">
+          <i class="fas fa-server"></i> Estimation backend
+        </div>
+        <div *ngIf="googleMapsError" class="data-source error-source">
+          <i class="fas fa-exclamation-triangle"></i> {{ googleMapsError }} (affichage backend)
+        </div>
       </div>
       
       <div class="result-item">

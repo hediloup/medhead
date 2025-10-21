@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Distance Service</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA6EicRUZ_a2YTAuB1ZFWWXB6yOaqnKyB0&libraries=places"></script>
+</head>
+<body>
+    <h1>Test Distance Service</h1>
+    <div id="result"></div>
+    
+    <script>
+        function testDistanceService() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Testing Google Maps Distance Service...</p>';
+            
+            if (!window.google || !window.google.maps) {
+                resultDiv.innerHTML += '<p style="color: red;">Google Maps API not loaded!</p>';
+                return;
+            }
+            
+            const directionsService = new google.maps.DirectionsService();
+            
+            const request = {
+                origin: new google.maps.LatLng(53.4808, -2.2426), // Manchester
+                destination: new google.maps.LatLng(53.3864368, -2.1965351), // Stepping Hill Hospital
+                travelMode: google.maps.TravelMode.DRIVING,
+                drivingOptions: {
+                    departureTime: new Date(),
+                    trafficModel: google.maps.TrafficModel.BEST_GUESS
+                }
+            };
+            
+            console.log('Making directions request:', request);
+            
+            directionsService.route(request, (result, status) => {
+                console.log('Directions response:', { status, result });
+                
+                if (status !== google.maps.DirectionsStatus.OK) {
+                    resultDiv.innerHTML += `<p style="color: red;">Directions request failed: ${status}</p>`;
+                    return;
+                }
+                
+                const leg = result.routes[0].legs[0];
+                const distanceText = leg.distance.text;
+                const durationText = leg.duration_in_traffic?.text || leg.duration.text;
+                
+                resultDiv.innerHTML += `
+                    <p style="color: green;">✅ Success!</p>
+                    <p><strong>Distance:</strong> ${distanceText}</p>
+                    <p><strong>Duration:</strong> ${durationText}</p>
+                    <p><strong>Raw result:</strong></p>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                `;
+            });
+        }
+        
+        // Test when page loads
+        window.onload = testDistanceService;
+    </script>
+</body>
+</html>

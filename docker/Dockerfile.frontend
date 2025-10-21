@@ -1,5 +1,5 @@
 # Utiliser l'image Node.js officielle avec Alpine Linux
-FROM node:18-alpine
+FROM node:18-alpine AS build-stage
 
 # Définir le répertoire de travail
 WORKDIR /app
@@ -11,8 +11,8 @@ COPY frontend/package*.json ./
 # Installer les dépendances
 RUN npm install
 
-# Installer Angular CLI globalement
-RUN npm install -g @angular/cli@16.2.16
+# Installer Angular CLI globalement (version compatible avec Angular 15.2.0)
+RUN npm install -g @angular/cli@15.2.0
 
 # Copier le code source
 COPY frontend/ .
@@ -24,7 +24,7 @@ RUN ng build --configuration production
 FROM nginx:alpine
 
 # Copier les fichiers construits depuis l'étape précédente
-COPY --from=0 /app/dist/medhead-frontend /usr/share/nginx/html
+COPY --from=build-stage /app/dist/medhead-frontend /usr/share/nginx/html
 
 # Copier la configuration nginx personnalisée
 # Support pour les deux contextes : racine (CI) et docker/ (local)

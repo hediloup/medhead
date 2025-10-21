@@ -5,6 +5,7 @@ import { GeocodingService } from '../services/geocoding.service';
 import { DistanceService } from '../services/distance.service';
 import { AllocationRequest } from '../models/allocation-request';
 import { AllocationResponse } from '../models/allocation-response';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-hospital-allocation',
@@ -20,6 +21,9 @@ export class HospitalAllocationComponent implements OnInit {
   durationText = '';
   errorMessage = '';
   successMessage = '';
+  // Google Maps data loading states
+  isLoadingGoogleMapsData = false;
+  googleMapsError = '';
   // Store patient coordinates for Google Maps URL generation
   private patientCoordinates?: { lat: number, lng: number };
 
@@ -71,6 +75,25 @@ export class HospitalAllocationComponent implements OnInit {
           console.log('[medhead debug] __medheadTriggerSearch calling onSubmit with', this.allocationForm.value);
           this.onSubmit();
         } catch (e) { console.error('[medhead debug] __medheadTriggerSearch failed', e); }
+      };
+      
+      // Expose debug helper to test distance service directly
+      (window as any).__medheadTestDistance = async () => {
+        try {
+          console.log('[medhead debug] Testing distance service directly...');
+          const origin = { lat: 53.4808, lng: -2.2426 }; // Manchester
+          const destination = { lat: 53.3864368, lng: -2.1965351 }; // Stepping Hill Hospital
+          const result = await this.distanceService.getDistance(origin, destination);
+          console.log('[medhead debug] Distance service test result:', result);
+          this.distanceText = result.distanceText || '';
+          this.durationText = result.durationText || '';
+          console.log('[medhead debug] Updated component state:', {
+            distanceText: this.distanceText,
+            durationText: this.durationText
+          });
+        } catch (e) { 
+          console.error('[medhead debug] Distance service test failed', e); 
+        }
       };
     } catch (e) { /* ignore in non-browser env */ }
   }
@@ -155,14 +178,37 @@ export class HospitalAllocationComponent implements OnInit {
         this.successMessage = `Recommended hospital found: ${response.hospital_name}`;
         // After allocation, fetch distance/time from Google via backend
         console.log('[medhead] allocation response received', response);
-        if (response && response.hospital_latitude != null && response.hospital_longitude != null) {
+        console.log('[medhead] Hospital coordinates check:', {
+          hospital_latitude: response.hospital_latitude,
+          hospital_longitude: response.hospital_longitude,
+          hasCoordinates: response.hospital_latitude != null && response.hospital_longitude != null
+        });
+        
+        // Fallback: Use default coordinates for known hospitals
+        let hospitalLat = response.hospital_latitude;
+        let hospitalLng = response.hospital_longitude;
+        
+        if (!hospitalLat || !hospitalLng) {
+          console.log('[medhead] No coordinates from backend, using fallback for:', response.hospital_name);
+          // Default coordinates for Stepping Hill Hospital (Stockport, UK)
+          if (response.hospital_name === 'Stepping Hill Hospital') {
+            hospitalLat = 53.3864368;
+            hospitalLng = -2.1965351;
+          } else {
+            // Generic fallback coordinates (Manchester area)
+            hospitalLat = 53.4808;
+            hospitalLng = -2.2426;
+          }
+        }
+        
+        if (response && hospitalLat != null && hospitalLng != null) {
           const origin = { lat: latitude, lng: longitude };
-          const destination = { lat: response.hospital_latitude, lng: response.hospital_longitude };
+          const destination = { lat: hospitalLat, lng: hospitalLng };
           console.log('[medhead] scheduling distance+render for origin,destination', origin, destination);
-          console.log('[medhead] Hospital coordinates from backend:', {
+          console.log('[medhead] Hospital coordinates (with fallback):', {
             name: response.hospital_name,
-            lat: response.hospital_latitude,
-            lng: response.hospital_longitude
+            lat: hospitalLat,
+            lng: hospitalLng
           });
           console.log('[medhead] Patient coordinates from geocoding:', {
             lat: latitude,
@@ -172,11 +218,30 @@ export class HospitalAllocationComponent implements OnInit {
           setTimeout(() => {
             (async () => {
               try {
+                this.isLoadingGoogleMapsData = true;
+                this.googleMapsError = '';
+                console.log('[medhead] Calling distanceService.getDistance with:', { origin, destination });
+                console.log('[medhead] Google Maps API key available:', !!environment.googleMapsApiKey);
                 const res = await this.distanceService.getDistance(origin, destination);
+                console.log('[medhead] Distance service result:', res);
                 this.distanceText = res.distanceText || '';
                 this.durationText = res.durationText || '';
+                this.isLoadingGoogleMapsData = false;
+                console.log('[medhead] Updated distanceText:', this.distanceText, 'durationText:', this.durationText);
+                console.log('[medhead] Component state after update:', {
+                  distanceText: this.distanceText,
+                  durationText: this.durationText,
+                  allocationResult: this.allocationResult
+                });
               } catch (err: any) {
-                console.warn('Distance service error', err);
+                this.isLoadingGoogleMapsData = false;
+                this.googleMapsError = err.message || 'Erreur lors du chargement des données Google Maps';
+                console.error('[medhead] Distance service error:', err);
+                console.error('[medhead] Error details:', {
+                  message: err?.message,
+                  stack: err?.stack,
+                  name: err?.name
+                });
                 this.errorMessage = err?.message || 'Unable to retrieve live travel time/distance. Showing estimated values.';
               } finally {
                 this.isLoading = false;

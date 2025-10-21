@@ -7,7 +7,7 @@ import { GeocodingResponse } from '../models/geocoding-response';
   providedIn: 'root'
 })
 export class GeocodingService {
-  private readonly NOMINATIM_BASE_URL = '/geocoding';
+  private readonly NOMINATIM_BASE_URL = 'https://nominatim.openstreetmap.org';
 
   constructor(private http: HttpClient) { }
 
