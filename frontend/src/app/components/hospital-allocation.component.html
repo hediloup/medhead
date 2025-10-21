@@ -1,6 +1,6 @@
 <div class="container">
   <div class="card">
-    <h1>🏥 MedHead - Allocation d'Lits d'Hôpital</h1>
+    <h1> MedHead - Allocation d'Lits d'Hôpital</h1>
     <p>Sélectionnez une spécialité médicale et saisissez votre localisation pour obtenir une recommandation d'hôpital.</p>
 
     <!-- Messages d'erreur et de succès -->
@@ -69,8 +69,8 @@
           type="submit" 
           class="btn" 
           [disabled]="isLoading || allocationForm.invalid">
-          <span *ngIf="!isLoading">🔍 Rechercher un hôpital</span>
-          <span *ngIf="isLoading">⏳ Recherche en cours...</span>
+          <span *ngIf="!isLoading"> Rechercher un hôpital</span>
+          <span *ngIf="isLoading"> Recherche en cours...</span>
         </button>
         
         <button 
@@ -78,7 +78,7 @@
           class="btn btn-secondary" 
           (click)="resetForm()"
           [disabled]="isLoading">
-          🔄 Nouvelle recherche
+           Nouvelle recherche
         </button>
       </div>
     </form>
@@ -86,7 +86,7 @@
 
   <!-- Résultats de l'allocation -->
   <div *ngIf="allocationResult" class="card result-card">
-    <h2 class="result-title">✅ Hôpital Recommandé</h2>
+    <h2 class="result-title"> Hôpital Recommandé</h2>
     
     <div class="result-info">
       <div class="result-item">
@@ -102,15 +102,15 @@
       <div class="result-item">
         <div class="result-label">Distance</div>
         <div class="result-value">{{ distanceText || (allocationResult.distance_km + ' km') }}</div>
-        <div *ngIf="distanceText" class="data-source">📡 Données temps réel Google Maps</div>
-        <div *ngIf="!distanceText" class="data-source">📊 Estimation backend</div>
+        <div *ngIf="distanceText" class="data-source"> Données temps réel Google Maps</div>
+        <div *ngIf="!distanceText" class="data-source"> Estimation backend</div>
       </div>
       
       <div class="result-item">
         <div class="result-label">Temps estimé</div>
         <div class="result-value">{{ durationText || (allocationResult.estimated_time_minutes + ' minutes') }}</div>
-        <div *ngIf="durationText" class="data-source">📡 Données temps réel Google Maps</div>
-        <div *ngIf="!durationText" class="data-source">📊 Estimation backend</div>
+        <div *ngIf="durationText" class="data-source"> Données temps réel Google Maps</div>
+        <div *ngIf="!durationText" class="data-source"> Estimation backend</div>
       </div>
       
       <div class="result-item">
@@ -134,23 +134,23 @@
   <!-- Informations sur le service -->
   <!-- Google Maps button: shown when allocation result is available -->
   <div *ngIf="allocationResult" class="card map-card">
-    <h3>🗺️ Itinéraire</h3>
+    <h3> Itinéraire</h3>
     <div class="map-controls" style="margin-bottom: 10px;">
       <button 
         type="button" 
         class="btn btn-primary" 
         (click)="openGoogleMaps()"
         title="Ouvrir l'itinéraire dans Google Maps">
-        🗺️ Voir sur Google Maps
+         Voir sur Google Maps
       </button>
     </div>
     <div class="alert alert-info" style="margin-top:8px;">
-      <strong>💡 Conseil :</strong> Cliquez sur le bouton ci-dessus pour ouvrir l'itinéraire optimal dans Google Maps avec les conditions de trafic en temps réel.
+      <strong> Conseil :</strong> Cliquez sur le bouton ci-dessus pour ouvrir l'itinéraire optimal dans Google Maps avec les conditions de trafic en temps réel.
     </div>
   </div>
 
   <div class="card">
-    <h3>ℹ️ À propos de ce service</h3>
+    <h3>ℹ À propos de ce service</h3>
     <ul>
       <li><strong>Géolocalisation :</strong> Utilise OpenStreetMap Nominatim pour convertir les adresses en coordonnées</li>
       <li><strong>Allocation intelligente :</strong> Trouve l'hôpital le plus proche avec des lits disponibles dans la spécialité demandée</li>
