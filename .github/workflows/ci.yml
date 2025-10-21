@@ -1,4 +1,4 @@
-name: 🚀 CI - Intégration Continue
+name: CI - Intégration Continue
 
 on:
   push:
@@ -23,48 +23,48 @@ permissions:
 jobs:
   # Job 1: Tests Backend (TDD - Unitaires + Intégration)
   backend-tests:
-    name: 🧪 Tests Backend
+    name: Tests Backend
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
-    - name: 📥 Checkout du code
+    - name: Checkout du code
       uses: actions/checkout@v4
 
-    - name: ☕ Configuration Java ${{ env.JAVA_VERSION }}
+    - name: Configuration Java ${{ env.JAVA_VERSION }}
       uses: actions/setup-java@v4
       with:
         java-version: ${{ env.JAVA_VERSION }}
         distribution: 'temurin'
 
-    - name: 🔧 Cache Maven dependencies
+    - name: Cache Maven dependencies
       uses: actions/cache@v4
       with:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
 
-    - name: 🏗️ Compilation Backend
+    - name: Compilation Backend
       working-directory: ./backend
       run: |
-        echo "🔨 Compilation du backend avec Maven..."
+        echo " Compilation du backend avec Maven..."
         mvn clean compile -DskipTests
 
-    - name: 🧪 Tests Unitaires Backend
+    - name: Tests Unitaires Backend
       working-directory: ./backend
       run: |
-        echo "🧪 Exécution des tests unitaires..."
+        echo " Exécution des tests unitaires..."
         mvn test -P unit-tests \
           -Dspring.profiles.active=test
 
-    - name: 🔗 Tests d'Intégration Backend
+    - name: Tests d'Intégration Backend
       working-directory: ./backend
       run: |
-        echo "🔗 Exécution des tests d'intégration..."
+        echo " Exécution des tests d'intégration..."
         mvn test -P integration-tests \
           -Dspring.profiles.active=test
 
-    - name: 📊 Upload rapports tests Backend
+    - name:  Upload rapports tests Backend
       uses: actions/upload-artifact@v4
       if: always()
       with:
@@ -74,7 +74,7 @@ jobs:
           backend/target/failsafe-reports/
         retention-days: 30
 
-    - name: 📈 Publish Test Results
+    - name: Publish Test Results
       uses: dorny/test-reporter@v1
       if: always()
       with:
@@ -92,31 +92,31 @@ jobs:
 
   # Job 2: Tests Frontend (Unitaires + E2E)
   frontend-tests:
-    name: 🎨 Tests Frontend
+    name: Tests Frontend
     runs-on: ubuntu-latest
     timeout-minutes: 20
     
     steps:
-    - name: 📥 Checkout du code
+    - name: Checkout du code
       uses: actions/checkout@v4
 
-    - name: 📦 Configuration Node.js ${{ env.NODE_VERSION }}
+    - name: Configuration Node.js ${{ env.NODE_VERSION }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
         cache-dependency-path: './frontend/package-lock.json'
 
-    - name: 📥 Installation dépendances Frontend
+    - name: Installation dépendances Frontend
       working-directory: ./frontend
       run: |
-        echo "📦 Installation des dépendances npm..."
+        echo " Installation des dépendances npm..."
         npm ci
 
-    - name: 🔐 Inject Google Maps key into environment (frontend)
+    - name: Inject Google Maps key into environment (frontend)
       working-directory: ./frontend
       run: |
-        echo "🔐 Injecting GOOGLE_MAPS_API_KEY into environment files"
+        echo " Injecting GOOGLE_MAPS_API_KEY into environment files"
         if [ -n "${{ secrets.GOOGLE_MAPS_API_KEY }}" ]; then
           echo "export const environment = {" > src/environments/environment.ts
           echo "  production: false," >> src/environments/environment.ts
@@ -127,23 +127,23 @@ jobs:
           echo "  googleMapsApiKey: \"${{ secrets.GOOGLE_MAPS_API_KEY }}\"" >> src/environments/environment.prod.ts
           echo "};" >> src/environments/environment.prod.ts
         else
-          echo "⚠️ GOOGLE_MAPS_API_KEY not found, using default environment"
+          echo " GOOGLE_MAPS_API_KEY not found, using default environment"
         fi
 
-    - name: 🧪 Tests Unitaires Frontend
+    - name: Tests Unitaires Frontend
       working-directory: ./frontend
       run: |
-        echo "🧪 Exécution des tests unitaires Angular..."
+        echo " Exécution des tests unitaires Angular..."
         npm run test:coverage -- --watch=false --browsers=ChromeHeadless --reporters=html,coverage,junit || echo "⚠️ Tests frontend échoués mais continuation du pipeline"
       continue-on-error: true
 
-    - name: 🏗️ Build Frontend
+    - name: Build Frontend
       working-directory: ./frontend
       run: |
-        echo "🏗️ Build de l'application Angular..."
+        echo " Build de l'application Angular..."
         npm run build --configuration=production
 
-    - name: 📊 Upload rapports tests Frontend
+    - name: Upload rapports tests Frontend
       uses: actions/upload-artifact@v4
       if: always()
       with:
@@ -153,7 +153,7 @@ jobs:
           frontend/dist/
         retention-days: 30
 
-    - name: 📈 Publish Coverage Reports
+    - name: Publish Coverage Reports
       uses: codecov/codecov-action@v4
       if: always()
       with:
@@ -167,7 +167,7 @@ jobs:
 
   # Job 3: Tests BDD (Scénarios métier)
   bdd-tests:
-    name: 📋 Tests BDD
+    name: Tests BDD
     runs-on: ubuntu-latest
     timeout-minutes: 25
     needs: [backend-tests]
@@ -188,32 +188,32 @@ jobs:
           - 5432:5432
 
     steps:
-    - name: 📥 Checkout du code
+    - name: Checkout du code
       uses: actions/checkout@v4
 
-    - name: ☕ Configuration Java ${{ env.JAVA_VERSION }}
+    - name: Configuration Java ${{ env.JAVA_VERSION }}
       uses: actions/setup-java@v4
       with:
         java-version: ${{ env.JAVA_VERSION }}
         distribution: 'temurin'
 
-    - name: 🔧 Cache Maven dependencies
+    - name: Cache Maven dependencies
       uses: actions/cache@v4
       with:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
 
-    - name: 📋 Tests BDD avec Cucumber
+    - name: Tests BDD avec Cucumber
       working-directory: ./backend
       run: |
-        echo "📋 Exécution des tests BDD..."
-        echo "⏱️ Timeout de 10 minutes pour éviter les blocages..."
+        echo " Exécution des tests BDD..."
+        echo " Timeout de 10 minutes pour éviter les blocages..."
         timeout 600s mvn test -P bdd-tests \
           -Dspring.profiles.active=test || echo "⚠️ Tests BDD terminés (timeout ou erreur normale)"
       continue-on-error: true
 
-    - name: 📊 Upload rapports BDD
+    - name:  Upload rapports BDD
       uses: actions/upload-artifact@v4
       if: always()
       with:
@@ -223,79 +223,79 @@ jobs:
 
   # Job 4: Tests E2E (Interface utilisateur complète)
   e2e-tests:
-    name: 🌐 Tests E2E
+    name: Tests E2E
     runs-on: ubuntu-latest
     timeout-minutes: 40
     needs: [backend-tests, frontend-tests]
 
     steps:
-    - name: 📥 Checkout du code
+    - name: Checkout du code
       uses: actions/checkout@v4
 
-    - name: ☕ Configuration Java ${{ env.JAVA_VERSION }}
+    - name: Configuration Java ${{ env.JAVA_VERSION }}
       uses: actions/setup-java@v4
       with:
         java-version: ${{ env.JAVA_VERSION }}
         distribution: 'temurin'
 
-    - name: 📦 Configuration Node.js ${{ env.NODE_VERSION }}
+    - name: Configuration Node.js ${{ env.NODE_VERSION }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
         cache-dependency-path: './frontend/package-lock.json'
 
-    - name: 🔧 Cache Maven dependencies
+    - name: Cache Maven dependencies
       uses: actions/cache@v4
       with:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
 
-    - name: 📥 Installation dépendances Frontend
+    - name: Installation dépendances Frontend
       working-directory: ./frontend
       run: npm ci
 
-    - name: 🐳 Démarrage du backend avec Docker Compose
+    - name: Démarrage du backend avec Docker Compose
       run: |
-        echo "🐳 Démarrage du backend MedHead..."
+        echo " Démarrage du backend MedHead..."
         
         # Vérifier Docker et Docker Compose
-        echo "🔍 Vérification de Docker..."
-        docker --version || { echo "❌ Docker non disponible"; exit 1; }
-        docker compose version || { echo "❌ Docker Compose non disponible"; exit 1; }
+        echo " Vérification de Docker..."
+        docker --version || { echo " Docker non disponible"; exit 1; }
+        docker compose version || { echo " Docker Compose non disponible"; exit 1; }
         
         # Vérifier que le fichier docker-compose existe
         if [ ! -f "./docker/docker-compose.yml" ]; then
-          echo "❌ Fichier docker-compose.yml non trouvé"
+          echo " Fichier docker-compose.yml non trouvé"
           exit 1
         fi
         
         # Nettoyer les conteneurs existants
-        echo "🧹 Nettoyage des conteneurs existants..."
+        echo " Nettoyage des conteneurs existants..."
         docker compose -f ./docker/docker-compose.yml down -v || true
         
         # Forcer la reconstruction de l'image backend (sans cache)
-        echo "🔨 Reconstruction de l'image backend (sans cache)..."
+        echo " Reconstruction de l'image backend (sans cache)..."
         docker compose -f ./docker/docker-compose.yml build --no-cache backend
         
         # Démarrer postgres d'abord
-        echo "🐘 Démarrage de PostgreSQL..."
+        echo " Démarrage de PostgreSQL..."
         docker compose -f ./docker/docker-compose.yml up -d postgres
         
         # Attendre que PostgreSQL soit prêt
-        echo "⏳ Attente de PostgreSQL..."
+        echo " Attente de PostgreSQL..."
         for i in $(seq 1 30); do
           if docker compose -f ./docker/docker-compose.yml exec -T postgres pg_isready -U medhead_user -d medhead_db > /dev/null 2>&1; then
-            echo "✅ PostgreSQL prêt"
+            echo " PostgreSQL prêt"
             break
           fi
-          echo "⏳ En attente de PostgreSQL... ($i/30)"
+          echo " En attente de PostgreSQL... ($i/30)"
           sleep 2
         done
         
         # Démarrer le backend avec configuration CI spécifique
-        echo "🚀 Démarrage du backend avec configuration CI..."
+        echo " Démarrage du backend avec configuration CI..."
         # Démarrer le backend avec docker run et options JVM pour désactiver Actuator
         docker run -d \
           --name medhead-backend \
@@ -309,15 +309,15 @@ jobs:
           -e JAVA_OPTS="-Xms512m -Xmx2g -Dmanagement.endpoints.enabled-by-default=false -Dmanagement.endpoint.health.enabled=true -Dmanagement.endpoints.web.exposure.include=health -Dmanagement.metrics.enabled=false -Dmanagement.metrics.system.enabled=false -Dmanagement.metrics.process.enabled=false -Dmanagement.metrics.jvm.enabled=false -Dmanagement.metrics.binders.system.enabled=false -Dmanagement.metrics.binders.tomcat.enabled=false -Dspring.autoconfigure.exclude=org.springframework.boot.actuate.autoconfigure.metrics.SystemMetricsAutoConfiguration,org.springframework.boot.actuate.autoconfigure.metrics.web.tomcat.TomcatMetricsAutoConfiguration" \
           docker-backend
         
-        echo "⏳ Attente du démarrage du backend..."
+        echo " Attente du démarrage du backend..."
         sleep 30
         
         # Vérifier si le backend a des problèmes de démarrage et redémarrer si nécessaire
-        echo "🔍 Vérification de l'état du backend..."
+        echo " Vérification de l'état du backend..."
         if ! docker ps | grep medhead-backend | grep -q "Up"; then
-          echo "⚠️ Backend non démarré, vérification des logs..."
+          echo " Backend non démarré, vérification des logs..."
           docker logs medhead-backend --tail 20 || echo "Aucun log disponible"
-          echo "⚠️ Tentative de redémarrage avec configuration alternative..."
+          echo " Tentative de redémarrage avec configuration alternative..."
           # Nettoyer le conteneur existant
           docker rm -f medhead-backend || true
           # Redémarrer avec une configuration minimale (sans métriques)
@@ -335,23 +335,23 @@ jobs:
           sleep 20
         fi
         
-        echo "🔍 Vérification du statut des services..."
+        echo " Vérification du statut des services..."
         docker ps | grep -E "(medhead-backend|medhead-postgres)"
         
-        echo "🔧 Vérification de l'accessibilité du backend (polling jusqu'à 5 minutes)..."
+        echo " Vérification de l'accessibilité du backend (polling jusqu'à 5 minutes)..."
         # Poll the health endpoint, retry up to 60 times (5 minutes total with 5s interval)
         success=1
         for i in $(seq 1 60); do
           if curl -sSf http://localhost:8080/api/health > /dev/null 2>&1; then
-            echo "✅ Backend accessible"
+            echo " Backend accessible"
             success=0
             break
           fi
-          echo "⏳ En attente du backend... ($i/60)"
+          echo " En attente du backend... ($i/60)"
           sleep 5
         done
         if [ "$success" -ne 0 ]; then
-          echo "❌ Backend non accessible après 5 minutes. Dump des logs pour debug..."
+          echo " Backend non accessible après 5 minutes. Dump des logs pour debug..."
           echo "\n--- docker ps ---"
           docker ps || true
           echo "\n--- docker logs postgres (last 50 lines) ---"
@@ -365,10 +365,10 @@ jobs:
           exit 1
         fi
 
-    - name: 🌐 Démarrage du frontend Angular
+    - name:  Démarrage du frontend Angular
       working-directory: ./frontend
       run: |
-        echo "🌐 Démarrage de l'application Angular..."
+        echo " Démarrage de l'application Angular..."
         
         # Créer les répertoires de rapports nécessaires
         mkdir -p ../reports/frontend
@@ -376,7 +376,7 @@ jobs:
         
         # Inject Google Maps key (if present) before building
         if [ -n "${{ secrets.GOOGLE_MAPS_API_KEY }}" ]; then
-          echo "🔐 Injecting GOOGLE_MAPS_API_KEY into environment files"
+          echo " Injecting GOOGLE_MAPS_API_KEY into environment files"
           echo "export const environment = {" > src/environments/environment.ts
           echo "  production: false," >> src/environments/environment.ts
           echo "  googleMapsApiKey: \"${{ secrets.GOOGLE_MAPS_API_KEY }}\"" >> src/environments/environment.ts
@@ -388,36 +388,36 @@ jobs:
         fi
 
         # Construire l'application d'abord
-        echo "🔨 Construction de l'application Angular..."
+        echo " Construction de l'application Angular..."
         npx ng build --configuration development
         
         # Installer un serveur HTTP simple
-        echo "📦 Installation de http-server..."
+        echo " Installation de http-server..."
         npm install -g http-server
         
         # Démarrer le serveur HTTP en arrière-plan
-        echo "🚀 Démarrage du serveur HTTP..."
+        echo " Démarrage du serveur HTTP..."
         nohup http-server dist/medhead-frontend -p 4200 -a 0.0.0.0 --cors --gzip > ../reports/frontend/angular.log 2>&1 &
         echo $! > ../reports/frontend/angular.pid
         
-        echo "⏳ Attente du démarrage du serveur HTTP..."
+        echo " Attente du démarrage du serveur HTTP..."
         sleep 10
         
         # Vérifier que le processus est toujours en cours
         if ! kill -0 $(cat ../reports/frontend/angular.pid) 2>/dev/null; then
-          echo "❌ Le serveur HTTP s'est arrêté. Vérifiant les logs..."
+          echo " Le serveur HTTP s'est arrêté. Vérifiant les logs..."
           cat ../reports/frontend/angular.log || echo "Aucun log disponible"
           exit 1
         fi
         
-        echo "🌐 Vérification de l'accessibilité du frontend..."
-        timeout 30s bash -c 'until curl -f http://localhost:4200 > /dev/null 2>&1; do sleep 2; echo "⏳ En attente du serveur HTTP..."; done'
-        echo "✅ Frontend Angular accessible via serveur HTTP"
+        echo " Vérification de l'accessibilité du frontend..."
+        timeout 30s bash -c 'until curl -f http://localhost:4200 > /dev/null 2>&1; do sleep 2; echo " En attente du serveur HTTP..."; done'
+        echo " Frontend Angular accessible via serveur HTTP"
 
-    - name: 🌐 Tests E2E avec Cypress
+    - name:  Tests E2E avec Cypress
       working-directory: ./frontend
       run: |
-        echo "🌐 Exécution des tests E2E..."
+        echo " Exécution des tests E2E..."
         
         # Créer les répertoires de rapports nécessaires
         mkdir -p ../reports/frontend/e2e-tests
@@ -425,35 +425,35 @@ jobs:
         mkdir -p reports/videos
         
         # Vérifier que l'application est accessible
-        curl -f http://localhost:4200 || (echo "❌ Frontend non accessible" && exit 1)
+        curl -f http://localhost:4200 || (echo " Frontend non accessible" && exit 1)
         
         # Exécuter les tests E2E
         npm run e2e:ci -- --reporter junit \
-          --reporter-options "mochaFile=../reports/frontend/e2e-tests/results-[hash].xml" || echo "⚠️ Tests E2E échoués mais continuation du pipeline"
+          --reporter-options "mochaFile=../reports/frontend/e2e-tests/results-[hash].xml" || echo " Tests E2E échoués mais continuation du pipeline"
       env:
         CYPRESS_BASE_URL: http://localhost:4200
       continue-on-error: true
 
-    - name: 🛑 Arrêt du frontend Angular
+    - name:  Arrêt du frontend Angular
       if: always()
       run: |
-        echo "🛑 Arrêt de l'application Angular..."
+        echo " Arrêt de l'application Angular..."
         if [ -f ./reports/frontend/angular.pid ]; then
           PID=$(cat ./reports/frontend/angular.pid)
-          echo "🔍 PID du processus Angular: $PID"
+          echo " PID du processus Angular: $PID"
           kill $PID 2>/dev/null || echo "Processus Angular déjà arrêté"
           rm -f ./reports/frontend/angular.pid
         fi
         
         # Afficher les logs pour debugging
-        echo "📋 Logs Angular (dernières 20 lignes):"
+        echo " Logs Angular (dernières 20 lignes):"
         if [ -f ./reports/frontend/angular.log ]; then
           tail -20 ./reports/frontend/angular.log || echo "Impossible de lire les logs"
         else
           echo "Aucun fichier de log trouvé"
         fi
 
-    - name: 📊 Upload rapports E2E
+    - name:  Upload rapports E2E
       uses: actions/upload-artifact@v4
       if: always()
       with:
@@ -473,23 +473,23 @@ jobs:
 
   # Job 5: Analyse de qualité du code
   code-quality:
-    name: 🔍 Analyse Qualité Code
+    name:  Analyse Qualité Code
     runs-on: ubuntu-latest
     timeout-minutes: 15
     
     steps:
-    - name: 📥 Checkout du code
+    - name:  Checkout du code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
-    - name: ☕ Configuration Java ${{ env.JAVA_VERSION }}
+    - name:  Configuration Java ${{ env.JAVA_VERSION }}
       uses: actions/setup-java@v4
       with:
         java-version: ${{ env.JAVA_VERSION }}
         distribution: 'temurin'
 
-    - name: 📦 Configuration Node.js ${{ env.NODE_VERSION }}
+    - name:  Configuration Node.js ${{ env.NODE_VERSION }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
@@ -503,16 +503,16 @@ jobs:
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
 
-    - name: 📥 Installation dépendances Frontend
+    - name:  Installation dépendances Frontend
       working-directory: ./frontend
       run: npm ci
 
-    - name: 🔍 Analyse SonarQube Backend
+    - name:  Analyse SonarQube Backend
       working-directory: ./backend
       run: |
-        echo "🔍 Analyse SonarQube du backend..."
+        echo " Analyse SonarQube du backend..."
         if [ -n "${{ secrets.SONAR_HOST_URL }}" ] && [ -n "${{ secrets.SONAR_TOKEN }}" ]; then
-          echo "✅ Configuration SonarQube trouvée, exécution de l'analyse..."
+          echo " Configuration SonarQube trouvée, exécution de l'analyse..."
           mvn sonar:sonar \
             -Dsonar.projectKey=medhead-backend \
             -Dsonar.organization=medhead \
@@ -520,15 +520,15 @@ jobs:
             -Dsonar.login="${{ secrets.SONAR_TOKEN }}" \
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
         else
-          echo "⚠️ Configuration SonarQube non trouvée (SONAR_HOST_URL ou SONAR_TOKEN manquants)"
-          echo "📋 Pour activer SonarQube, configurez les secrets suivants dans GitHub:"
+          echo " Configuration SonarQube non trouvée (SONAR_HOST_URL ou SONAR_TOKEN manquants)"
+          echo " Pour activer SonarQube, configurez les secrets suivants dans GitHub:"
           echo "   - SONAR_HOST_URL: URL de votre instance SonarQube"
           echo "   - SONAR_TOKEN: Token d'authentification SonarQube"
-          echo "🔄 Exécution de l'analyse locale avec rapport de couverture..."
+          echo " Exécution de l'analyse locale avec rapport de couverture..."
           # Générer un rapport de couverture local sans SonarQube
-          mvn jacoco:report || echo "⚠️ Rapport JaCoCo non disponible"
+          mvn jacoco:report || echo " Rapport JaCoCo non disponible"
           # Créer un rapport de qualité local
-          echo "📊 Génération du rapport de qualité local..."
+          echo " Génération du rapport de qualité local..."
           mkdir -p target/sonar-reports
           echo "Rapport de qualité généré localement" > target/sonar-reports/quality-report.txt
         fi
@@ -536,12 +536,12 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       continue-on-error: true
 
-    - name: 🔍 Analyse SonarQube Frontend
+    - name:  Analyse SonarQube Frontend
       working-directory: ./frontend
       run: |
-        echo "🔍 Analyse SonarQube du frontend..."
+        echo " Analyse SonarQube du frontend..."
         if [ -n "${{ secrets.SONAR_HOST_URL }}" ] && [ -n "${{ secrets.SONAR_TOKEN }}" ]; then
-          echo "✅ Configuration SonarQube trouvée, exécution de l'analyse..."
+          echo " Configuration SonarQube trouvée, exécution de l'analyse..."
           npx sonar-scanner \
             -Dsonar.projectKey=medhead-frontend \
             -Dsonar.organization=medhead \
@@ -549,21 +549,21 @@ jobs:
             -Dsonar.login="${{ secrets.SONAR_TOKEN }}" \
             -Dsonar.javascript.lcov.reportPaths=coverage/medhead-frontend/lcov.info
         else
-          echo "⚠️ Configuration SonarQube non trouvée (SONAR_HOST_URL ou SONAR_TOKEN manquants)"
-          echo "📋 Pour activer SonarQube, configurez les secrets suivants dans GitHub:"
+          echo " Configuration SonarQube non trouvée (SONAR_HOST_URL ou SONAR_TOKEN manquants)"
+          echo " Pour activer SonarQube, configurez les secrets suivants dans GitHub:"
           echo "   - SONAR_HOST_URL: URL de votre instance SonarQube"
           echo "   - SONAR_TOKEN: Token d'authentification SonarQube"
-          echo "🔄 Exécution de l'analyse locale avec rapport de couverture..."
+          echo " Exécution de l'analyse locale avec rapport de couverture..."
           # Vérifier si le rapport de couverture existe
           if [ -f "coverage/medhead-frontend/lcov.info" ]; then
-            echo "✅ Rapport de couverture trouvé: coverage/medhead-frontend/lcov.info"
+            echo " Rapport de couverture trouvé: coverage/medhead-frontend/lcov.info"
             # Créer un rapport de qualité local
-            echo "📊 Génération du rapport de qualité local..."
+            echo " Génération du rapport de qualité local..."
             mkdir -p sonar-reports
             echo "Rapport de qualité frontend généré localement" > sonar-reports/frontend-quality-report.txt
           else
-            echo "⚠️ Rapport de couverture non trouvé"
-            echo "📊 Génération d'un rapport de base..."
+            echo " Rapport de couverture non trouvé"
+            echo " Génération d'un rapport de base..."
             mkdir -p sonar-reports
             echo "Rapport de qualité frontend généré localement (sans couverture)" > sonar-reports/frontend-quality-report.txt
           fi
@@ -574,57 +574,57 @@ jobs:
 
   # Job 6: Build et Push des images Docker
   docker-build:
-    name: 🐳 Build Images Docker
+    name:  Build Images Docker
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [backend-tests, frontend-tests]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     
     steps:
-    - name: 📥 Checkout du code
+    - name:  Checkout du code
       uses: actions/checkout@v4
 
-    - name: ☕ Configuration Java ${{ env.JAVA_VERSION }}
+    - name:  Configuration Java ${{ env.JAVA_VERSION }}
       uses: actions/setup-java@v4
       with:
         java-version: ${{ env.JAVA_VERSION }}
         distribution: 'temurin'
 
-    - name: 📦 Configuration Node.js ${{ env.NODE_VERSION }}
+    - name:  Configuration Node.js ${{ env.NODE_VERSION }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
         cache-dependency-path: './frontend/package-lock.json'
 
-    - name: 🔧 Cache Maven dependencies
+    - name:  Cache Maven dependencies
       uses: actions/cache@v4
       with:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
 
-    - name: 📥 Installation dépendances Frontend
+    - name:  Installation dépendances Frontend
       working-directory: ./frontend
       run: npm ci
 
-    - name: 🏗️ Build Frontend
+    - name:  Build Frontend
       working-directory: ./frontend
       run: npm run build --configuration=production
 
-    - name: 🐳 Login to GitHub Container Registry
+    - name:  Login to GitHub Container Registry
       uses: docker/login-action@v3
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: 🐳 Setup Docker Buildx
+    - name:  Setup Docker Buildx
       uses: docker/setup-buildx-action@v3
       with:
         driver: docker-container
 
-    - name: 🐳 Build et Push Backend Image
+    - name:  Build et Push Backend Image
       uses: docker/build-push-action@v5
       with:
         context: ./backend
@@ -635,7 +635,7 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-    - name: 🐳 Build et Push Frontend Image
+    - name:  Build et Push Frontend Image
       uses: docker/build-push-action@v5
       with:
         context: .
@@ -649,23 +649,23 @@ jobs:
 
   # Job 7: Rapport consolidé et notifications
   ci-summary:
-    name: 📊 Résumé CI
+    name:  Résumé CI
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [backend-tests, frontend-tests, bdd-tests, e2e-tests, code-quality]
     if: always()
     
     steps:
-    - name: 📥 Checkout du code
+    - name:  Checkout du code
       uses: actions/checkout@v4
 
-    - name: 📊 Download all test reports
+    - name:  Download all test reports
       uses: actions/download-artifact@v4
       if: always()
 
-    - name: 📊 Génération rapport consolidé
+    - name:  Génération rapport consolidé
       run: |
-        echo "📊 Génération du rapport consolidé CI..."
+        echo " Génération du rapport consolidé CI..."
         mkdir -p reports/ci-summary
         
         cat > reports/ci-summary/ci-report.html << EOF
@@ -689,7 +689,7 @@ jobs:
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>🚀 Rapport CI - MedHead</h1>
+                    <h1> Rapport CI - MedHead</h1>
                     <p>Pipeline d'Intégration Continue - ${{ github.run_number }}</p>
                     <p>Commit: ${{ github.sha }}</p>
                     <p>Branche: ${{ github.ref_name }}</p>
@@ -697,23 +697,23 @@ jobs:
                 
                 <div class="summary">
                     <div class="card">
-                        <h3>🧪 Tests Backend</h3>
+                        <h3> Tests Backend</h3>
                         <div class="${{ needs.backend-tests.result == 'success' && 'success' || 'error' }}">${{ needs.backend-tests.result }}</div>
                     </div>
                     <div class="card">
-                        <h3>🎨 Tests Frontend</h3>
+                        <h3> Tests Frontend</h3>
                         <div class="${{ needs.frontend-tests.result == 'success' && 'success' || 'error' }}">${{ needs.frontend-tests.result }}</div>
                     </div>
                     <div class="card">
-                        <h3>📋 Tests BDD</h3>
+                        <h3> Tests BDD</h3>
                         <div class="${{ needs.bdd-tests.result == 'success' && 'success' || 'error' }}">${{ needs.bdd-tests.result }}</div>
                     </div>
                     <div class="card">
-                        <h3>🌐 Tests E2E</h3>
+                        <h3> Tests E2E</h3>
                         <div class="${{ needs.e2e-tests.result == 'success' && 'success' || 'error' }}">${{ needs.e2e-tests.result }}</div>
                     </div>
                     <div class="card">
-                        <h3>🔍 Qualité Code</h3>
+                        <h3> Qualité Code</h3>
                         <div class="${{ needs.code-quality.result == 'success' && 'success' || 'error' }}">${{ needs.code-quality.result }}</div>
                     </div>
                 </div>
@@ -722,7 +722,7 @@ jobs:
         </html>
         EOF
 
-    - name: 📊 Upload rapport CI
+    - name:  Upload rapport CI
       uses: actions/upload-artifact@v4
       if: always()
       with:
@@ -730,7 +730,7 @@ jobs:
         path: reports/ci-summary/
         retention-days: 30
 
-    # - name: 📢 Notification Slack
+    # - name:  Notification Slack
     #   if: always()
     #   uses: 8398a7/action-slack@v3
     #   continue-on-error: true

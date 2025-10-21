@@ -1,4 +1,4 @@
-name: 🏷️ Release Automatique
+name:  Release Automatique
 
 on:
   push:
@@ -41,7 +41,7 @@ permissions:
 jobs:
   # Job 1: Validation de la release
   validate-release:
-    name: ✅ Validation Release
+    name:  Validation Release
     runs-on: ubuntu-latest
     timeout-minutes: 15
     outputs:
@@ -49,12 +49,12 @@ jobs:
       is_prerelease: ${{ steps.version.outputs.is_prerelease }}
     
     steps:
-    - name: 📥 Checkout du code
+    - name:  Checkout du code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
-    - name: 📋 Détermination de la version
+    - name:  Détermination de la version
       id: version
       run: |
         if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -75,55 +75,55 @@ jobs:
         fi
         
         echo "version=$VERSION" >> $GITHUB_OUTPUT
-        echo "🏷️ Version: $VERSION"
-        echo "🔖 Pre-release: ${{ steps.version.outputs.is_prerelease }}"
+        echo " Version: $VERSION"
+        echo " Pre-release: ${{ steps.version.outputs.is_prerelease }}"
 
-    - name: ✅ Validation du format de version
+    - name:  Validation du format de version
       run: |
         VERSION="${{ steps.version.outputs.version }}"
         
         # Validation du format semantic versioning
         if [[ $VERSION =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
-          echo "✅ Format de version valide: $VERSION"
+          echo " Format de version valide: $VERSION"
         else
-          echo "❌ Format de version invalide: $VERSION"
+          echo " Format de version invalide: $VERSION"
           echo "Format attendu: v1.2.3 ou 1.2.3-rc.1"
           exit 1
         fi
 
-    - name: 📝 Mise à jour des versions dans les fichiers
+    - name:  Mise à jour des versions dans les fichiers
       run: |
         VERSION="${{ steps.version.outputs.version }}"
         CLEAN_VERSION=${VERSION#v}  # Supprime le préfixe 'v' si présent
         
-        echo "📝 Mise à jour des versions..."
+        echo " Mise à jour des versions..."
         
         # Mise à jour package.json frontend
         if [ -f "frontend/package.json" ]; then
           jq ".version = \"$CLEAN_VERSION\"" frontend/package.json > tmp.json && mv tmp.json frontend/package.json
-          echo "✅ Version frontend mise à jour: $CLEAN_VERSION"
+          echo " Version frontend mise à jour: $CLEAN_VERSION"
         fi
         
         # Mise à jour pom.xml backend
         if [ -f "backend/pom.xml" ]; then
           sed -i "s/<version>.*<\/version>/<version>$CLEAN_VERSION<\/version>/" backend/pom.xml
-          echo "✅ Version backend mise à jour: $CLEAN_VERSION"
+          echo " Version backend mise à jour: $CLEAN_VERSION"
         fi
 
-    - name: 📊 Génération du changelog
+    - name:  Génération du changelog
       run: |
         VERSION="${{ steps.version.outputs.version }}"
         
-        echo "📊 Génération du changelog..."
+        echo " Génération du changelog..."
         
         # Récupération des commits depuis la dernière release
         LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
         
         if [ -n "$LAST_TAG" ]; then
-          echo "📋 Changelog depuis $LAST_TAG:"
+          echo " Changelog depuis $LAST_TAG:"
           git log --pretty=format:"- %s (%h)" $LAST_TAG..HEAD > CHANGELOG.md
         else
-          echo "📋 Changelog complet:"
+          echo " Changelog complet:"
           git log --pretty=format:"- %s (%h)" > CHANGELOG.md
         fi
         
@@ -134,52 +134,52 @@ jobs:
 
   # Job 2: Tests complets avant release
   pre-release-tests:
-    name: 🧪 Tests Pré-Release
+    name:  Tests Pré-Release
     runs-on: ubuntu-latest
     timeout-minutes: 45
     needs: validate-release
     
     steps:
-    - name: 📥 Checkout du code
+    - name:  Checkout du code
       uses: actions/checkout@v4
 
-    - name: ☕ Configuration Java ${{ env.JAVA_VERSION }}
+    - name:  Configuration Java ${{ env.JAVA_VERSION }}
       uses: actions/setup-java@v4
       with:
         java-version: ${{ env.JAVA_VERSION }}
         distribution: 'temurin'
 
-    - name: 📦 Configuration Node.js ${{ env.NODE_VERSION }}
+    - name:  Configuration Node.js ${{ env.NODE_VERSION }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
         cache-dependency-path: './frontend/package-lock.json'
 
-    - name: 🔧 Cache Maven dependencies
+    - name:  Cache Maven dependencies
       uses: actions/cache@v4
       with:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
 
-    - name: 🧪 Tests Backend complets
+    - name:  Tests Backend complets
       working-directory: ./backend
       run: |
-        echo "🧪 Tests Backend complets..."
+        echo " Tests Backend complets..."
         mvn clean test -Dspring.profiles.active=test
 
-    - name: 🧪 Tests Frontend complets
+    - name:  Tests Frontend complets
       working-directory: ./frontend
       run: |
-        echo "🧪 Tests Frontend complets..."
+        echo " Tests Frontend complets..."
         npm ci
         npm run test:coverage -- --watch=false --browsers=ChromeHeadless --reporters=html,coverage,junit || echo "⚠️ Tests frontend échoués mais continuation du pipeline"
       continue-on-error: true
 
-    - name: 🏗️ Build complet
+    - name:  Build complet
       run: |
-        echo "🏗️ Build complet..."
+        echo " Build complet..."
         
         # Build Backend
         cd backend
@@ -191,9 +191,9 @@ jobs:
         npm run build --configuration=production
         cd ..
         
-        echo "✅ Build complet réussi"
+        echo " Build complet réussi"
 
-    - name: 📊 Upload rapports de tests
+    - name:  Upload rapports de tests
       uses: actions/upload-artifact@v4
       if: always()
       with:
@@ -205,61 +205,61 @@ jobs:
 
   # Job 3: Build des images Docker pour release
   build-release-images:
-    name: 🐳 Build Images Release
+    name:  Build Images Release
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: [validate-release, pre-release-tests]
     
     steps:
-    - name: 📥 Checkout du code
+    - name:  Checkout du code
       uses: actions/checkout@v4
 
-    - name: ☕ Configuration Java ${{ env.JAVA_VERSION }}
+    - name:  Configuration Java ${{ env.JAVA_VERSION }}
       uses: actions/setup-java@v4
       with:
         java-version: ${{ env.JAVA_VERSION }}
         distribution: 'temurin'
 
-    - name: 📦 Configuration Node.js ${{ env.NODE_VERSION }}
+    - name:  Configuration Node.js ${{ env.NODE_VERSION }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
         cache-dependency-path: './frontend/package-lock.json'
 
-    - name: 🔧 Cache Maven dependencies
+    - name:  Cache Maven dependencies
       uses: actions/cache@v4
       with:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
 
-    - name: 🏗️ Build Backend pour release
+    - name:  Build Backend pour release
       working-directory: ./backend
       run: |
-        echo "🏗️ Build Backend release..."
+        echo " Build Backend release..."
         mvn clean package -DskipTests -P production
 
-    - name: 🏗️ Build Frontend pour release
+    - name:  Build Frontend pour release
       working-directory: ./frontend
       run: |
-        echo "🏗️ Build Frontend release..."
+        echo " Build Frontend release..."
         npm ci
         npm run build --configuration=production
 
-    - name: 🐳 Login to GitHub Container Registry
+    - name:  Login to GitHub Container Registry
       uses: docker/login-action@v3
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: 🐳 Setup Docker Buildx
+    - name:  Setup Docker Buildx
       uses: docker/setup-buildx-action@v3
       with:
         driver: docker-container
 
-    - name: 🐳 Build et Push Backend Image
+    - name:  Build et Push Backend Image
       uses: docker/build-push-action@v5
       with:
         context: ./backend
@@ -274,7 +274,7 @@ jobs:
           build-date=${{ github.run_number }}
           commit-sha=${{ github.sha }}
 
-    - name: 🐳 Build et Push Frontend Image
+    - name:  Build et Push Frontend Image
       uses: docker/build-push-action@v5
       with:
         context: .
@@ -292,31 +292,31 @@ jobs:
 
   # Job 4: Création de la release GitHub
   create-github-release:
-    name: 🏷️ Création Release GitHub
+    name:  Création Release GitHub
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [validate-release, pre-release-tests, build-release-images]
     
     steps:
-    - name: 📥 Checkout du code
+    - name:  Checkout du code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
-    - name: 📊 Génération du changelog
+    - name:  Génération du changelog
       run: |
         VERSION="${{ needs.validate-release.outputs.version }}"
         
-        echo "📊 Génération du changelog..."
+        echo " Génération du changelog..."
         
         # Récupération des commits depuis la dernière release
         LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
         
         if [ -n "$LAST_TAG" ]; then
-          echo "📋 Changelog depuis $LAST_TAG:"
+          echo " Changelog depuis $LAST_TAG:"
           git log --pretty=format:"- %s (%h)" $LAST_TAG..HEAD > CHANGELOG.md
         else
-          echo "📋 Changelog complet:"
+          echo " Changelog complet:"
           git log --pretty=format:"- %s (%h)" > CHANGELOG.md
         fi
         
@@ -325,7 +325,7 @@ jobs:
         echo "Release Date: $(date '+%Y-%m-%d')" >> CHANGELOG.md
         echo "" >> CHANGELOG.md
 
-    - name: 🏷️ Création de la release GitHub
+    - name:  Création de la release GitHub
       uses: softprops/action-gh-release@v1
       id: create_release
       env:
@@ -337,7 +337,7 @@ jobs:
         draft: false
         prerelease: ${{ needs.validate-release.outputs.is_prerelease }}
 
-    - name: 📦 Upload artefacts de release
+    - name:  Upload artefacts de release
       uses: softprops/action-gh-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -351,7 +351,7 @@ jobs:
 
   # Job 5: Déploiement automatique en production
   deploy-production:
-    name: 🌟 Déploiement Production
+    name:  Déploiement Production
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [validate-release, pre-release-tests, build-release-images, create-github-release]
@@ -359,10 +359,10 @@ jobs:
     if: needs.validate-release.outputs.is_prerelease == 'false'
     
     steps:
-    - name: 📥 Checkout du code
+    - name:  Checkout du code
       uses: actions/checkout@v4
 
-    - name: 🌟 Déploiement en production
+    - name:  Déploiement en production
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.PRODUCTION_HOST }}
@@ -371,7 +371,7 @@ jobs:
         script: |
           VERSION="${{ needs.validate-release.outputs.version }}"
           
-          echo "🌟 Déploiement production version $VERSION..."
+          echo " Déploiement production version $VERSION..."
           
           # Mise à jour des images
           docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-backend:$VERSION
@@ -386,28 +386,28 @@ jobs:
           
           # Déploiement avec rollback automatique en cas d'échec
           if ! docker compose -f /opt/medhead/docker-compose.production.yml up -d; then
-            echo "❌ Échec du déploiement, rollback..."
+            echo " Échec du déploiement, rollback..."
             docker compose -f /opt/medhead/docker-compose.production.yml down
             docker compose -f /opt/medhead/docker-compose.production.yml up -d
             exit 1
           fi
           
           # Tests de validation
-          echo "🔍 Validation du déploiement..."
+          echo " Validation du déploiement..."
           sleep 30
           
           if ! curl -f https://medhead.com/api/health; then
-            echo "❌ Tests de validation échoués, rollback..."
+            echo " Tests de validation échoués, rollback..."
             docker compose -f /opt/medhead/docker-compose.production.yml down
             docker compose -f /opt/medhead/docker-compose.production.yml up -d
             exit 1
           fi
           
-          echo "✅ Déploiement production réussi !"
+          echo " Déploiement production réussi !"
 
-    - name: 📊 Mise à jour des métriques de déploiement
+    - name:  Mise à jour des métriques de déploiement
       run: |
-        echo "📊 Mise à jour des métriques..."
+        echo " Mise à jour des métriques..."
         
         # Envoi vers système de monitoring
         curl -X POST "${{ secrets.MONITORING_WEBHOOK }}" \
@@ -425,31 +425,31 @@ jobs:
 
   # Job 6: Notification et documentation
   release-summary:
-    name: 📢 Résumé Release
+    name:  Résumé Release
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [validate-release, pre-release-tests, build-release-images, create-github-release, deploy-production]
     if: always()
     
     steps:
-    - name: 📥 Checkout du code
+    - name:  Checkout du code
       uses: actions/checkout@v4
 
-    - name: 📊 Génération du résumé de release
+    - name:  Génération du résumé de release
       run: |
-        echo "📊 Génération du résumé de release..."
+        echo " Génération du résumé de release..."
         
         cat > release-summary.md << EOF
-        # 🏷️ Release ${{ needs.validate-release.outputs.version }}
+        #  Release ${{ needs.validate-release.outputs.version }}
         
-        ## 📊 Résumé
+        ##  Résumé
         
         - **Version:** ${{ needs.validate-release.outputs.version }}
         - **Type:** ${{ needs.validate-release.outputs.is_prerelease == 'true' && 'Pre-release' || 'Release' }}
         - **Date:** $(date '+%Y-%m-%d %H:%M:%S')
         - **Commit:** ${{ github.sha }}
         
-        ## ✅ Statuts des Jobs
+        ##  Statuts des Jobs
         
         - **Validation:** ${{ needs.validate-release.result }}
         - **Tests:** ${{ needs.pre-release-tests.result }}
@@ -457,12 +457,12 @@ jobs:
         - **Release GitHub:** ${{ needs.create-github-release.result }}
         - **Déploiement:** ${{ needs.deploy-production.result }}
         
-        ## 🐳 Images Docker
+        ##  Images Docker
         
         - **Backend:** \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-backend:${{ needs.validate-release.outputs.version }}\`
         - **Frontend:** \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/medhead-frontend:${{ needs.validate-release.outputs.version }}\`
         
-        ## 🔗 Liens
+        ##  Liens
         
         - **Release GitHub:** https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate-release.outputs.version }}
         - **Production:** https://medhead.com
@@ -470,7 +470,7 @@ jobs:
         
         EOF
 
-    - name: 📧 Notification Email
+    - name:  Notification Email
       if: always()
       uses: dawidd6/action-send-mail@v3
       with:
