@@ -1,6 +1,8 @@
 package com.medhead.poc.listener;
 
 import com.medhead.poc.event.BedReservedEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
@@ -11,25 +13,27 @@ import org.springframework.stereotype.Component;
 @Component
 public class BedReservedEventListener {
     
+    private static final Logger logger = LoggerFactory.getLogger(BedReservedEventListener.class);
+    
     /**
      * Listens and processes BED_RESERVED events
      */
     @EventListener
     public void handleBedReservedEvent(BedReservedEvent event) {
         try {
-            System.out.println("=== BED_RESERVED EVENT RECEIVED ===");
-            System.out.println("Event ID: " + event.getEventId());
-            System.out.println("Timestamp: " + event.getTimestamp());
-            System.out.println("Anonymized Patient: " + event.getAnonymizedPatientId());
-            System.out.println("Specialty: " + event.getRequiredSpecialty());
-            System.out.println("Severity Level: " + event.getSeverityLevel());
-            System.out.println("Age Group: " + event.getAgeGroup());
-            System.out.println("Hospital: " + event.getHospitalName() + " (" + event.getHospitalCity() + ")");
-            System.out.println("Distance: " + event.getDistanceKm() + " km");
-            System.out.println("Available beds after: " + event.getAvailableBedsAfter());
-            System.out.println("Estimated time: " + event.getEstimatedTimeMinutes() + " minutes");
-            System.out.println("Status: " + event.getAllocationStatus());
-            System.out.println("=====================================");
+            logger.info("=== BED_RESERVED EVENT RECEIVED ===");
+            logger.info("Event ID: {}", event.getEventId());
+            logger.info("Timestamp: {}", event.getTimestamp());
+            logger.info("Anonymized Patient: {}", event.getAnonymizedPatientId());
+            logger.info("Specialty: {}", event.getRequiredSpecialty());
+            logger.info("Severity Level: {}", event.getSeverityLevel());
+            logger.info("Age Group: {}", event.getAgeGroup());
+            logger.info("Hospital: {} ({})", event.getHospitalName(), event.getHospitalCity());
+            logger.info("Distance: {} km", event.getDistanceKm());
+            logger.info("Available beds after: {}", event.getAvailableBedsAfter());
+            logger.info("Estimated time: {} minutes", event.getEstimatedTimeMinutes());
+            logger.info("Status: {}", event.getAllocationStatus());
+            logger.info("=====================================");
             
             // Here you can add other processing:
             // - Sending notifications
@@ -41,8 +45,7 @@ public class BedReservedEventListener {
             processBedReservation(event);
             
         } catch (Exception e) {
-            System.err.println("Error processing BED_RESERVED event: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error processing BED_RESERVED event: {}", e.getMessage(), e);
         }
     }
     
@@ -70,11 +73,11 @@ public class BedReservedEventListener {
      */
     private void notifyMedicalTeams(BedReservedEvent event) {
         // Notification simulation
-        System.out.println("📧 Notification sent to teams at " + event.getHospitalName());
-        System.out.println("   Patient: " + event.getAnonymizedPatientId());
-        System.out.println("   Specialty: " + event.getRequiredSpecialty());
-        System.out.println("   Level: " + event.getSeverityLevel());
-        System.out.println("   Estimated arrival: " + event.getEstimatedTimeMinutes() + " minutes");
+        logger.info("📧 Notification sent to teams at {}", event.getHospitalName());
+        logger.info("   Patient: {}", event.getAnonymizedPatientId());
+        logger.info("   Specialty: {}", event.getRequiredSpecialty());
+        logger.info("   Level: {}", event.getSeverityLevel());
+        logger.info("   Estimated arrival: {} minutes", event.getEstimatedTimeMinutes());
     }
     
     /**
@@ -82,10 +85,10 @@ public class BedReservedEventListener {
      */
     private void updateStatistics(BedReservedEvent event) {
         // Statistics update simulation
-        System.out.println("📊 Statistics updated:");
-        System.out.println("   - " + event.getRequiredSpecialty() + " allocation to " + event.getHospitalName());
-        System.out.println("   - Response time: " + event.getEstimatedTimeMinutes() + " minutes");
-        System.out.println("   - Average distance for " + event.getRequiredSpecialty() + ": " + event.getDistanceKm() + " km");
+        logger.info("📊 Statistics updated:");
+        logger.info("   - {} allocation to {}", event.getRequiredSpecialty(), event.getHospitalName());
+        logger.info("   - Response time: {} minutes", event.getEstimatedTimeMinutes());
+        logger.info("   - Average distance for {}: {} km", event.getRequiredSpecialty(), event.getDistanceKm());
     }
     
     /**
@@ -93,11 +96,11 @@ public class BedReservedEventListener {
      */
     private void logAuditTrail(BedReservedEvent event) {
         // Audit trail simulation
-        System.out.println("🔍 Audit Trail - Bed reservation:");
-        System.out.println("   Patient UUID: " + event.getPatientUuid());
-        System.out.println("   Hospital: " + event.getHospitalId() + " - " + event.getHospitalName());
-        System.out.println("   Timestamp: " + event.getTimestamp());
-        System.out.println("   Sensitive data: ANONYMIZED ✅");
+        logger.info("🔍 Audit Trail - Bed reservation:");
+        logger.info("   Patient UUID: {}", event.getPatientUuid());
+        logger.info("   Hospital: {} - {}", event.getHospitalId(), event.getHospitalName());
+        logger.info("   Timestamp: {}", event.getTimestamp());
+        logger.info("   Sensitive data: ANONYMIZED ✅");
     }
     
     /**
@@ -105,10 +108,10 @@ public class BedReservedEventListener {
      */
     private void integrateWithExternalSystems(BedReservedEvent event) {
         // External systems integration simulation
-        System.out.println("🔗 External systems integration:");
-        System.out.println("   - Hospital management system: Reservation confirmed");
-        System.out.println("   - Transport system: Ambulance notified");
-        System.out.println("   - Real-time dashboard: Update completed");
-        System.out.println("   - Billing system: File preparation");
+        logger.info("🔗 External systems integration:");
+        logger.info("   - Hospital management system: Reservation confirmed");
+        logger.info("   - Transport system: Ambulance notified");
+        logger.info("   - Real-time dashboard: Update completed");
+        logger.info("   - Billing system: File preparation");
     }
 }

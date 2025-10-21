@@ -1,0 +1,87 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AllocationRequest",
+  "description": "Modèle de demande d'allocation de lit d'hôpital",
+  "type": "object",
+  "required": ["specialty", "latitude", "longitude"],
+  "properties": {
+    "specialty": {
+      "type": "string",
+      "description": "Spécialité médicale requise",
+      "example": "Cardiology",
+      "enum": [
+        "Cardiology",
+        "Dermatology", 
+        "Neurology",
+        "Orthopedics",
+        "Pediatrics",
+        "Emergency",
+        "Surgery",
+        "Oncology",
+        "Psychiatry",
+        "Radiology",
+        "Anesthesiology",
+        "Gynecology",
+        "Urology",
+        "Ophthalmology",
+        "ENT",
+        "Gastroenterology",
+        "Endocrinology",
+        "Hematology",
+        "Infectious Diseases",
+        "Nephrology",
+        "Pulmonology",
+        "Rheumatology",
+        "Dermatology",
+        "Pathology",
+        "Radiology",
+        "Nuclear Medicine",
+        "Physical Medicine",
+        "Rehabilitation",
+        "Sports Medicine",
+        "Occupational Medicine",
+        "Preventive Medicine",
+        "Public Health",
+        "Family Medicine",
+        "Internal Medicine"
+      ]
+    },
+    "latitude": {
+      "type": "number",
+      "format": "double",
+      "description": "Latitude du patient (coordonnées GPS)",
+      "example": 53.3976314,
+      "minimum": -90,
+      "maximum": 90
+    },
+    "longitude": {
+      "type": "number", 
+      "format": "double",
+      "description": "Longitude du patient (coordonnées GPS)",
+      "example": -2.1829641,
+      "minimum": -180,
+      "maximum": 180
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "specialty": "Cardiology",
+      "latitude": 53.3976314,
+      "longitude": -2.1829641,
+      "description": "Demande de cardiologie à Manchester"
+    },
+    {
+      "specialty": "Dermatology", 
+      "latitude": 51.5074,
+      "longitude": -0.1278,
+      "description": "Demande de dermatologie à Londres"
+    },
+    {
+      "specialty": "Emergency",
+      "latitude": 52.4862,
+      "longitude": -1.8904,
+      "description": "Demande d'urgence à Birmingham"
+    }
+  ]
+}

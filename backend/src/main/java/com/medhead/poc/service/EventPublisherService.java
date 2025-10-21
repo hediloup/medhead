@@ -1,6 +1,8 @@
 package com.medhead.poc.service;
 
 import com.medhead.poc.event.BedReservedEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -11,6 +13,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class EventPublisherService {
+    
+    private static final Logger logger = LoggerFactory.getLogger(EventPublisherService.class);
     
     @Autowired
     private ApplicationEventPublisher eventPublisher;
@@ -30,10 +34,10 @@ public class EventPublisherService {
             // Publish the event
             eventPublisher.publishEvent(event);
             
-            System.out.println("BED_RESERVED event published: " + event.getEventId());
+            logger.info("BED_RESERVED event published: {}", event.getEventId());
             
         } catch (Exception e) {
-            System.err.println("Error publishing BED_RESERVED event: " + e.getMessage());
+            logger.error("Error publishing BED_RESERVED event: {}", e.getMessage(), e);
             throw new RuntimeException("Impossible de publier l'événement", e);
         }
     }
@@ -109,9 +113,9 @@ public class EventPublisherService {
         
         try {
             eventPublisher.publishEvent(event);
-            System.out.println("Event published: " + event.getClass().getSimpleName());
+            logger.info("Event published: {}", event.getClass().getSimpleName());
         } catch (Exception e) {
-            System.err.println("Error publishing event: " + e.getMessage());
+            logger.error("Error publishing event: {}", e.getMessage(), e);
             throw new RuntimeException("Impossible de publier l'événement", e);
         }
     }

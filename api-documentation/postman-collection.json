@@ -1,0 +1,659 @@
+{
+  "info": {
+    "name": "MedHead Hospital Bed Allocation API",
+    "description": "Collection Postman pour l'API MedHead - Système d'allocation de lits d'hôpitaux",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "jwtToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwtToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health & Status",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "health"]
+            },
+            "description": "Vérifier que l'API est opérationnelle"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/health",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "health"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "plain",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/plain"
+                }
+              ],
+              "cookie": [],
+              "body": "Allocation API operational"
+            }
+          ]
+        },
+        {
+          "name": "Diagnostic Test",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "test"]
+            },
+            "description": "Test de diagnostic automatique"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/test",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "test"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "plain",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/plain"
+                }
+              ],
+              "cookie": [],
+              "body": "Test successful: Stepping Hill Hospital"
+            }
+          ]
+        },
+        {
+          "name": "Debug Hospitals",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/debug/hospitals",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "debug", "hospitals"]
+            },
+            "description": "Debug - Lister les hôpitaux avec spécialité Cardiology"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Hospital Allocation",
+      "item": [
+        {
+          "name": "Allocate Hospital (POST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"specialty\": \"Cardiology\",\n  \"latitude\": 53.3976314,\n  \"longitude\": -2.1829641\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/allocate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "allocate"]
+            },
+            "description": "Allouer un lit d'hôpital (POST)"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"specialty\": \"Cardiology\",\n  \"latitude\": 53.3976314,\n  \"longitude\": -2.1829641\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/allocate",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "allocate"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"hospital_name\": \"Stepping Hill Hospital\",\n  \"hospital_id\": 10,\n  \"distance_km\": 3.29,\n  \"specialty\": \"Cardiology\",\n  \"available_beds\": 31,\n  \"estimated_time_minutes\": 4,\n  \"hospital_latitude\": 53.3969,\n  \"hospital_longitude\": -2.1333\n}"
+            }
+          ]
+        },
+        {
+          "name": "Allocate Hospital (GET)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/allocate?specialty=Cardiology&latitude=53.3976314&longitude=-2.1829641",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "allocate"],
+              "query": [
+                {
+                  "key": "specialty",
+                  "value": "Cardiology"
+                },
+                {
+                  "key": "latitude",
+                  "value": "53.3976314"
+                },
+                {
+                  "key": "longitude",
+                  "value": "-2.1829641"
+                }
+              ]
+            },
+            "description": "Allouer un lit d'hôpital (GET) - Version pour tests"
+          }
+        },
+        {
+          "name": "Allocate - Dermatology",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"specialty\": \"Dermatology\",\n  \"latitude\": 51.5074,\n  \"longitude\": -0.1278\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/allocate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "allocate"]
+            },
+            "description": "Allocation pour dermatologie à Londres"
+          }
+        },
+        {
+          "name": "Allocate - Emergency",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"specialty\": \"Emergency\",\n  \"latitude\": 52.4862,\n  \"longitude\": -1.8904\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/allocate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "allocate"]
+            },
+            "description": "Allocation pour urgence à Birmingham"
+          }
+        },
+        {
+          "name": "Allocate - Invalid Specialty",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"specialty\": \"NonExistentSpecialty\",\n  \"latitude\": 53.3976314,\n  \"longitude\": -2.1829641\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/allocate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "allocate"]
+            },
+            "description": "Test d'erreur - Spécialité inexistante"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patient Management",
+      "item": [
+        {
+          "name": "Get Patient Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/patients/statistics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "patients", "statistics"]
+            },
+            "description": "Obtenir les statistiques patients anonymisées (ADMIN requis)"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/patients/statistics",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "patients", "statistics"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"totalPatients\": 150,\n  \"anonymizedPatients\": 145,\n  \"nonAnonymizedPatients\": 5,\n  \"expiredPatients\": 3,\n  \"averageAgeGroup\": \"ADULT\",\n  \"severityDistribution\": {\n    \"LOW\": 45,\n    \"MEDIUM\": 80,\n    \"HIGH\": 20,\n    \"CRITICAL\": 5\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Anonymize All Patients",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/patients/anonymize-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "patients", "anonymize-all"]
+            },
+            "description": "Anonymiser tous les patients non-anonymisés (ADMIN requis)"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/patients/anonymize-all",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "patients", "anonymize-all"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "plain",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/plain"
+                }
+              ],
+              "cookie": [],
+              "body": "Anonymization successful: 15 patients processed"
+            }
+          ]
+        },
+        {
+          "name": "Cleanup Expired Patients",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/patients/cleanup-expired",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "patients", "cleanup-expired"]
+            },
+            "description": "Nettoyer les données patients expirées (ADMIN requis)"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/patients/cleanup-expired",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "patients", "cleanup-expired"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "plain",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/plain"
+                }
+              ],
+              "cookie": [],
+              "body": "Cleanup successful: 3 expired patients deleted"
+            }
+          ]
+        },
+        {
+          "name": "Get Patient by UUID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/patients/123e4567-e89b-12d3-a456-426614174000",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "patients", "123e4567-e89b-12d3-a456-426614174000"]
+            },
+            "description": "Obtenir un patient par UUID (MEDICAL_STAFF requis)"
+          }
+        },
+        {
+          "name": "Check Patient Exists",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/patients/exists/123e4567-e89b-12d3-a456-426614174000",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "patients", "exists", "123e4567-e89b-12d3-a456-426614174000"]
+            },
+            "description": "Vérifier l'existence d'un patient (MEDICAL_STAFF requis)"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/patients/exists/123e4567-e89b-12d3-a456-426614174000",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "patients", "exists", "123e4567-e89b-12d3-a456-426614174000"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "true"
+            }
+          ]
+        },
+        {
+          "name": "Patient Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/patients/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "patients", "health"]
+            },
+            "description": "Vérifier la santé du contrôleur patients"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/patients/health",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "patients", "health"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "plain",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/plain"
+                }
+              ],
+              "cookie": [],
+              "body": "Patient Controller operational - Data protected by GDPR"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Load Testing",
+      "item": [
+        {
+          "name": "Load Test - Cardiology",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"specialty\": \"Cardiology\",\n  \"latitude\": 53.3976314,\n  \"longitude\": -2.1829641\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/allocate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "allocate"]
+            },
+            "description": "Test de charge - Cardiologie"
+          }
+        },
+        {
+          "name": "Load Test - Dermatology",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"specialty\": \"Dermatology\",\n  \"latitude\": 51.5074,\n  \"longitude\": -0.1278\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/allocate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "allocate"]
+            },
+            "description": "Test de charge - Dermatologie"
+          }
+        },
+        {
+          "name": "Load Test - Emergency",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"specialty\": \"Emergency\",\n  \"latitude\": 52.4862,\n  \"longitude\": -1.8904\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/allocate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "allocate"]
+            },
+            "description": "Test de charge - Urgence"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Log de la requête",
+          "console.log('🚀 Exécution de la requête:', pm.info.requestName);",
+          "",
+          "// Vérification de l'URL de base",
+          "if (!pm.environment.get('baseUrl')) {",
+          "    pm.environment.set('baseUrl', 'http://localhost:8080');",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Tests automatiques",
+          "pm.test('Status code is 200', function () {",
+          "    pm.response.to.have.status(200);",
+          "});",
+          "",
+          "pm.test('Response time is less than 200ms', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(200);",
+          "});",
+          "",
+          "pm.test('Content-Type is present', function () {",
+          "    pm.expect(pm.response.headers.get('Content-Type')).to.exist;",
+          "});",
+          "",
+          "// Test spécifique pour l'allocation",
+          "if (pm.info.requestName.includes('Allocate')) {",
+          "    pm.test('Response contains hospital information', function () {",
+          "        const jsonData = pm.response.json();",
+          "        pm.expect(jsonData).to.have.property('hospital_name');",
+          "        pm.expect(jsonData).to.have.property('hospital_id');",
+          "        pm.expect(jsonData).to.have.property('distance_km');",
+          "        pm.expect(jsonData).to.have.property('available_beds');",
+          "    });",
+          "}",
+          "",
+          "// Test spécifique pour les statistiques patients",
+          "if (pm.info.requestName.includes('Statistics')) {",
+          "    pm.test('Response contains patient statistics', function () {",
+          "        const jsonData = pm.response.json();",
+          "        pm.expect(jsonData).to.have.property('totalPatients');",
+          "        pm.expect(jsonData).to.have.property('anonymizedPatients');",
+          "    });",
+          "}",
+          "",
+          "// Log de la réponse",
+          "console.log('✅ Réponse reçue:', pm.response.status, pm.response.responseTime + 'ms');"
+        ]
+      }
+    }
+  ]
+}

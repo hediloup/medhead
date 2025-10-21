@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Patient",
+  "description": "Modèle de patient anonymisé conforme GDPR",
+  "type": "object",
+  "required": [
+    "patientUuid",
+    "anonymizedPatientId"
+  ],
+  "properties": {
+    "patientUuid": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID unique du patient (identifiant technique)",
+      "example": "123e4567-e89b-12d3-a456-426614174000"
+    },
+    "anonymizedPatientId": {
+      "type": "string",
+      "description": "Identifiant anonymisé du patient",
+      "example": "PATIENT_ABC123",
+      "pattern": "^PATIENT_[A-Z0-9]{8}$"
+    },
+    "anonymizedName": {
+      "type": "string",
+      "description": "Nom anonymisé du patient",
+      "example": "Patient_ABC123",
+      "pattern": "^Patient_[A-Z0-9]{8}$"
+    },
+    "severityLevel": {
+      "type": "string",
+      "description": "Niveau de sévérité de la condition médicale",
+      "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+      "example": "MEDIUM"
+    },
+    "ageGroup": {
+      "type": "string",
+      "description": "Groupe d'âge anonymisé",
+      "enum": ["CHILD", "ADULT", "ELDERLY"],
+      "example": "ADULT"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date et heure de création du patient",
+      "example": "2025-10-21T14:51:14.401432137Z"
+    },
+    "lastUpdated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date et heure de dernière mise à jour",
+      "example": "2025-10-21T14:51:14.401432137Z"
+    },
+    "isAnonymized": {
+      "type": "boolean",
+      "description": "Indique si le patient est anonymisé",
+      "example": true
+    },
+    "dataRetentionExpiry": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date d'expiration des données selon la politique GDPR",
+      "example": "2026-10-21T14:51:14.401432137Z"
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "patientUuid": "123e4567-e89b-12d3-a456-426614174000",
+      "anonymizedPatientId": "PATIENT_ABC123",
+      "anonymizedName": "Patient_ABC123",
+      "severityLevel": "MEDIUM",
+      "ageGroup": "ADULT",
+      "createdAt": "2025-10-21T14:51:14.401432137Z",
+      "lastUpdated": "2025-10-21T14:51:14.401432137Z",
+      "isAnonymized": true,
+      "dataRetentionExpiry": "2026-10-21T14:51:14.401432137Z",
+      "description": "Patient anonymisé complet"
+    },
+    {
+      "patientUuid": "987fcdeb-51a2-43d7-8f9e-123456789abc",
+      "anonymizedPatientId": "PATIENT_XYZ789",
+      "anonymizedName": "Patient_XYZ789",
+      "severityLevel": "HIGH",
+      "ageGroup": "ELDERLY",
+      "createdAt": "2025-10-21T10:30:00.000Z",
+      "lastUpdated": "2025-10-21T14:51:14.401432137Z",
+      "isAnonymized": true,
+      "dataRetentionExpiry": "2026-10-21T10:30:00.000Z",
+      "description": "Patient âgé avec sévérité élevée"
+    }
+  ]
+}

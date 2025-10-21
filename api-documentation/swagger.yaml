@@ -1,0 +1,671 @@
+openapi: 3.0.3
+info:
+  title: MedHead Hospital Bed Allocation API
+  description: |
+    API REST pour le système d'allocation de lits d'hôpitaux MedHead.
+    
+    Cette API permet de :
+    - Allouer des lits d'hôpitaux basés sur la spécialité médicale et la géolocalisation
+    - Gérer les données patients de manière anonymisée (conformité GDPR)
+    - Obtenir des statistiques sur les allocations
+    - Surveiller la santé du système
+    
+    ## Architecture
+    - **Backend**: Spring Boot 3.5.6 avec Java 17
+    - **Base de données**: PostgreSQL 15
+    - **Sécurité**: Spring Security avec JWT
+    - **Documentation**: OpenAPI 3.0 (Swagger)
+    
+    ## Endpoints Principaux
+    - `/api/allocate` - Allocation de lits d'hôpitaux
+    - `/api/patients` - Gestion des patients (anonymisés)
+    - `/api/health` - Santé du système
+    
+  version: 1.0.0
+  contact:
+    name: MedHead Development Team
+    email: dev@medhead.com
+    url: https://medhead.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Serveur de développement local
+  - url: https://api.medhead.com
+    description: Serveur de production
+  - url: https://staging-api.medhead.com
+    description: Serveur de staging
+
+tags:
+  - name: Allocation
+    description: |
+      Endpoints pour l'allocation de lits d'hôpitaux.
+      
+      Le système utilise un algorithme intelligent qui :
+      1. Trouve les hôpitaux avec la spécialité requise
+      2. Calcule la distance géographique
+      3. Vérifie la disponibilité des lits
+      4. Retourne l'hôpital optimal
+      
+      **Événements déclenchés** : Chaque allocation génère un `BedReservedEvent` 
+      avec toutes les informations de réservation.
+      
+  - name: Patients
+    description: |
+      Gestion sécurisée des données patients avec anonymisation GDPR.
+      
+      **Sécurité** : Tous les endpoints nécessitent une authentification
+      et les données sensibles sont automatiquement anonymisées.
+      
+  - name: Health
+    description: |
+      Endpoints de surveillance et de santé du système.
+      
+      Permet de vérifier l'état opérationnel de l'API et des services.
+
+paths:
+  /api/allocate:
+    post:
+      tags:
+        - Allocation
+      summary: Allouer un lit d'hôpital
+      description: |
+        Trouve et alloue le meilleur hôpital pour un patient basé sur :
+        - La spécialité médicale requise
+        - La position géographique du patient
+        - La disponibilité des lits
+        
+        **Événement déclenché** : Un `BedReservedEvent` est publié avec :
+        - ID de l'événement unique
+        - Données patient anonymisées
+        - Informations de l'hôpital
+        - Distance et temps estimé
+        - Statut de confirmation
+        
+      operationId: allocateHospital
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllocationRequest'
+            examples:
+              cardiology:
+                summary: Demande de cardiologie
+                value:
+                  specialty: "Cardiology"
+                  latitude: 53.3976314
+                  longitude: -2.1829641
+              dermatology:
+                summary: Demande de dermatologie
+                value:
+                  specialty: "Dermatology"
+                  latitude: 51.5074
+                  longitude: -0.1278
+      responses:
+        '200':
+          description: Allocation réussie
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllocationResponse'
+              examples:
+                success:
+                  summary: Allocation réussie
+                  value:
+                    hospital_name: "Stepping Hill Hospital"
+                    hospital_id: 10
+                    distance_km: 3.29
+                    specialty: "Cardiology"
+                    available_beds: 31
+                    estimated_time_minutes: 4
+                    hospital_latitude: 53.3969
+                    hospital_longitude: -2.1333
+        '400':
+          description: Requête invalide (paramètres manquants ou invalides)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Aucun hôpital trouvé pour la spécialité
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Erreur serveur interne
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - {} # Endpoint public
+    get:
+      tags:
+        - Allocation
+      summary: Allouer un lit d'hôpital (GET)
+      description: |
+        Version GET de l'allocation pour faciliter les tests.
+        Même fonctionnalité que POST mais avec paramètres de requête.
+      operationId: allocateHospitalGet
+      parameters:
+        - name: specialty
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Spécialité médicale requise
+          example: "Cardiology"
+        - name: latitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+          description: Latitude du patient
+          example: 53.3976314
+        - name: longitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+          description: Longitude du patient
+          example: -2.1829641
+      responses:
+        '200':
+          description: Allocation réussie
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllocationResponse'
+        '400':
+          description: Paramètres invalides
+        '404':
+          description: Aucun hôpital trouvé
+        '500':
+          description: Erreur serveur
+      security:
+        - {} # Endpoint public
+
+  /api/health:
+    get:
+      tags:
+        - Health
+      summary: Vérifier la santé de l'API
+      description: |
+        Endpoint de santé pour vérifier que l'API est opérationnelle.
+        Utilisé par les systèmes de monitoring et les load balancers.
+      operationId: healthCheck
+      responses:
+        '200':
+          description: API opérationnelle
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Allocation API operational"
+      security:
+        - {} # Endpoint public
+
+  /api/test:
+    get:
+      tags:
+        - Health
+      summary: Test de diagnostic
+      description: |
+        Endpoint de test pour diagnostiquer les problèmes d'allocation.
+        Exécute un test automatique avec des données de test.
+      operationId: diagnosticTest
+      responses:
+        '200':
+          description: Test réussi
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Test successful: Stepping Hill Hospital"
+        '500':
+          description: Test échoué
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Test failed: No hospitals found for specialty"
+      security:
+        - {} # Endpoint public
+
+  /api/debug/hospitals:
+    get:
+      tags:
+        - Health
+      summary: Debug - Lister les hôpitaux
+      description: |
+        Endpoint de debug pour lister tous les hôpitaux avec la spécialité Cardiology.
+        Utile pour le diagnostic et le développement.
+      operationId: debugHospitals
+      responses:
+        '200':
+          description: Liste des hôpitaux
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Found 5 hospitals with Cardiology specialty"
+        '500':
+          description: Erreur lors du debug
+      security:
+        - {} # Endpoint public
+
+  /api/patients/statistics:
+    get:
+      tags:
+        - Patients
+      summary: Obtenir les statistiques patients
+      description: |
+        Récupère les statistiques anonymisées des patients.
+        Conformité GDPR - aucune donnée personnelle n'est exposée.
+      operationId: getPatientStatistics
+      responses:
+        '200':
+          description: Statistiques récupérées
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientStatistics'
+        '401':
+          description: Non authentifié
+        '403':
+          description: Accès refusé (rôle ADMIN requis)
+        '500':
+          description: Erreur serveur
+      security:
+        - BearerAuth: []
+
+  /api/patients/anonymize-all:
+    post:
+      tags:
+        - Patients
+      summary: Anonymiser tous les patients
+      description: |
+        Anonymise tous les patients non-anonymisés.
+        Opération de conformité GDPR pour protéger les données.
+      operationId: anonymizeAllPatients
+      responses:
+        '200':
+          description: Anonymisation réussie
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Anonymization successful: 15 patients processed"
+        '401':
+          description: Non authentifié
+        '403':
+          description: Accès refusé (rôle ADMIN requis)
+        '500':
+          description: Erreur lors de l'anonymisation
+      security:
+        - BearerAuth: []
+
+  /api/patients/cleanup-expired:
+    delete:
+      tags:
+        - Patients
+      summary: Nettoyer les données expirées
+      description: |
+        Supprime les données patients expirées selon la politique de rétention GDPR.
+        Opération de maintenance pour la conformité.
+      operationId: cleanupExpiredPatients
+      responses:
+        '200':
+          description: Nettoyage réussi
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Cleanup successful: 3 expired patients deleted"
+        '401':
+          description: Non authentifié
+        '403':
+          description: Accès refusé (rôle ADMIN requis)
+        '500':
+          description: Erreur lors du nettoyage
+      security:
+        - BearerAuth: []
+
+  /api/patients/{patientUuid}:
+    get:
+      tags:
+        - Patients
+      summary: Obtenir un patient par UUID
+      description: |
+        Récupère les informations anonymisées d'un patient par son UUID.
+        Seuls les membres du personnel médical peuvent accéder à ces données.
+      operationId: getPatientByUuid
+      parameters:
+        - name: patientUuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID du patient
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Patient trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+        '401':
+          description: Non authentifié
+        '403':
+          description: Accès refusé (rôle MEDICAL_STAFF requis)
+        '404':
+          description: Patient non trouvé
+        '500':
+          description: Erreur serveur
+      security:
+        - BearerAuth: []
+
+  /api/patients/exists/{patientUuid}:
+    get:
+      tags:
+        - Patients
+      summary: Vérifier l'existence d'un patient
+      description: |
+        Vérifie si un patient existe dans le système par son UUID.
+        Utilisé pour la validation avant d'autres opérations.
+      operationId: patientExists
+      parameters:
+        - name: patientUuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID du patient
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Statut d'existence
+          content:
+            application/json:
+              schema:
+                type: boolean
+                example: true
+        '401':
+          description: Non authentifié
+        '403':
+          description: Accès refusé (rôle MEDICAL_STAFF requis)
+        '500':
+          description: Erreur serveur
+      security:
+        - BearerAuth: []
+
+  /api/patients/health:
+    get:
+      tags:
+        - Patients
+      summary: Santé du contrôleur patients
+      description: |
+        Vérifie que le contrôleur de gestion des patients est opérationnel.
+        Indique que les données sont protégées par GDPR.
+      operationId: patientHealth
+      responses:
+        '200':
+          description: Contrôleur opérationnel
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Patient Controller operational - Data protected by GDPR"
+      security:
+        - {} # Endpoint public
+
+components:
+  schemas:
+    AllocationRequest:
+      type: object
+      required:
+        - specialty
+        - latitude
+        - longitude
+      properties:
+        specialty:
+          type: string
+          description: Spécialité médicale requise
+          example: "Cardiology"
+          enum:
+            - "Cardiology"
+            - "Dermatology"
+            - "Neurology"
+            - "Orthopedics"
+            - "Pediatrics"
+            - "Emergency"
+            - "Surgery"
+            - "Oncology"
+            - "Psychiatry"
+            - "Radiology"
+        latitude:
+          type: number
+          format: double
+          description: Latitude du patient
+          example: 53.3976314
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          format: double
+          description: Longitude du patient
+          example: -2.1829641
+          minimum: -180
+          maximum: 180
+      example:
+        specialty: "Cardiology"
+        latitude: 53.3976314
+        longitude: -2.1829641
+
+    AllocationResponse:
+      type: object
+      properties:
+        hospital_name:
+          type: string
+          description: Nom de l'hôpital recommandé
+          example: "Stepping Hill Hospital"
+        hospital_id:
+          type: integer
+          format: int64
+          description: Identifiant unique de l'hôpital
+          example: 10
+        distance_km:
+          type: number
+          format: double
+          description: Distance en kilomètres
+          example: 3.29
+        specialty:
+          type: string
+          description: Spécialité médicale
+          example: "Cardiology"
+        available_beds:
+          type: integer
+          description: Nombre de lits disponibles après allocation
+          example: 31
+        estimated_time_minutes:
+          type: integer
+          description: Temps estimé d'arrivée en minutes
+          example: 4
+        hospital_latitude:
+          type: number
+          format: double
+          description: Latitude de l'hôpital
+          example: 53.3969
+        hospital_longitude:
+          type: number
+          format: double
+          description: Longitude de l'hôpital
+          example: -2.1333
+      example:
+        hospital_name: "Stepping Hill Hospital"
+        hospital_id: 10
+        distance_km: 3.29
+        specialty: "Cardiology"
+        available_beds: 31
+        estimated_time_minutes: 4
+        hospital_latitude: 53.3969
+        hospital_longitude: -2.1333
+
+    Patient:
+      type: object
+      properties:
+        patientUuid:
+          type: string
+          format: uuid
+          description: UUID unique du patient
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        anonymizedPatientId:
+          type: string
+          description: Identifiant anonymisé du patient
+          example: "PATIENT_ABC123"
+        anonymizedName:
+          type: string
+          description: Nom anonymisé du patient
+          example: "Patient_ABC123"
+        severityLevel:
+          type: string
+          description: Niveau de sévérité
+          example: "MEDIUM"
+          enum:
+            - "LOW"
+            - "MEDIUM"
+            - "HIGH"
+            - "CRITICAL"
+        ageGroup:
+          type: string
+          description: Groupe d'âge anonymisé
+          example: "ADULT"
+          enum:
+            - "CHILD"
+            - "ADULT"
+            - "ELDERLY"
+        createdAt:
+          type: string
+          format: date-time
+          description: Date de création
+          example: "2025-10-21T14:51:14.401432137Z"
+        lastUpdated:
+          type: string
+          format: date-time
+          description: Dernière mise à jour
+          example: "2025-10-21T14:51:14.401432137Z"
+
+    PatientStatistics:
+      type: object
+      properties:
+        totalPatients:
+          type: integer
+          description: Nombre total de patients
+          example: 150
+        anonymizedPatients:
+          type: integer
+          description: Nombre de patients anonymisés
+          example: 145
+        nonAnonymizedPatients:
+          type: integer
+          description: Nombre de patients non-anonymisés
+          example: 5
+        expiredPatients:
+          type: integer
+          description: Nombre de patients expirés
+          example: 3
+        averageAgeGroup:
+          type: string
+          description: Groupe d'âge moyen
+          example: "ADULT"
+        severityDistribution:
+          type: object
+          properties:
+            LOW:
+              type: integer
+              example: 45
+            MEDIUM:
+              type: integer
+              example: 80
+            HIGH:
+              type: integer
+              example: 20
+            CRITICAL:
+              type: integer
+              example: 5
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Type d'erreur
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          description: Message d'erreur
+          example: "Invalid specialty provided"
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp de l'erreur
+          example: "2025-10-21T14:51:14.401432137Z"
+        path:
+          type: string
+          description: Chemin de l'endpoint
+          example: "/api/allocate"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Authentification JWT requise pour les endpoints protégés.
+        
+        **Rôles disponibles** :
+        - `ADMIN` : Accès complet aux statistiques et gestion
+        - `MEDICAL_STAFF` : Accès aux données patients anonymisées
+        
+        **Format du token** : `Bearer <jwt-token>`
+
+  examples:
+    AllocationRequestExample:
+      summary: Exemple de demande d'allocation
+      value:
+        specialty: "Cardiology"
+        latitude: 53.3976314
+        longitude: -2.1829641
+
+    AllocationResponseExample:
+      summary: Exemple de réponse d'allocation
+      value:
+        hospital_name: "Stepping Hill Hospital"
+        hospital_id: 10
+        distance_km: 3.29
+        specialty: "Cardiology"
+        available_beds: 31
+        estimated_time_minutes: 4
+        hospital_latitude: 53.3969
+        hospital_longitude: -2.1333
+
+    ErrorExample:
+      summary: Exemple d'erreur
+      value:
+        error: "VALIDATION_ERROR"
+        message: "Specialty is required"
+        timestamp: "2025-10-21T14:51:14.401432137Z"
+        path: "/api/allocate"
+
+security:
+  - BearerAuth: []
+  - {} # Endpoints publics
